@@ -1,0 +1,13 @@
+databaseChangeLog:
+  - changeSet:
+      id: 0.0.1
+      author: illine
+      comment: Database Initial
+      changes:
+        - tagDatabase:
+            tag: 0.0.1
+
+  # DDL
+  - include:
+      file: ddl/01_user_notifications.sql
+      relativeToChangelogFile: true

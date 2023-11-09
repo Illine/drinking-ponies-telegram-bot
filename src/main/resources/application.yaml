@@ -1,0 +1,49 @@
+spring:
+  main:
+    allow-bean-definition-overriding: true
+  jpa:
+    hibernate:
+      ddl-auto: none
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        temp.use_jdbc_metadata_defaults: false
+        default_schema: drinking_ponies
+    open-in-view: false
+  data:
+    jpa:
+      repositories:
+        bootstrap-mode: default
+  datasource:
+    url: ${DATABASE_URL}
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      driver-class-name: ${spring.datasource.driver-class-name}
+      jdbc-url: ${spring.datasource.url}
+      username: ${spring.datasource.username}
+      password: ${spring.datasource.password}
+      pool-name: ${HIKARI_POOL_NAME:HikariPool}
+      max-lifetime: ${HIKARI_MAX_LIFE_TIME:600000}
+      connection-timeout: ${HIKARI_CONNECTION_TIMEOUT:15000}
+      maximum-pool-size: ${HIKARI_MAXIMUM_POOL_SIZE:5}
+      idle-timeout: ${HIKARI_IDLE_TIMEOUT:200000}
+      minimum-idle: ${HIKARI_MINIMUM_IDLE:2}
+      schema: ${spring.jpa.properties.hibernate.default_schema}
+  liquibase:
+    enabled: false
+
+telegram-bot:
+  token: ${TELEGRAM_BOT_TOKEN}
+  http:
+    connection-time-to-live-in-sec: ${TELEGRAM_BOT_HTTP_CONNECTION_TIME_TO_LIVE:60}
+    max-connection-total: ${TELEGRAM_BOT_MAX_CONNECTION_TOTAL:100}
+
+logbook:
+  strategy: body-only-if-status-at-least
+  minimum-status: ${LOGBOOK_MINIMUM_STATUS:200}
+  format:
+    style: http
+  logger:
+    name: API
