@@ -1,0 +1,59 @@
+name: "Building and Publishing"
+
+on:
+  push:
+    branches:
+      - develop
+
+env:
+  ARTEFACT_NAME: drinking-ponies-telegram-bot
+  ARTEFACT_PATH: build/libs/drinking-ponies-telegram-bot.jar
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          architecture: x64
+          java-version: 17
+
+      - name: Gradle Assemble
+        run: ./gradlew assemble
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: ${{ env.ARTEFACT_NAME }}
+          path: ${{ env.ARTEFACT_PATH }}
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    env:
+      TAG_PATTERN: v[0-9].*
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - id: docker-version
+        run: echo "DOCKER_VERSION=$(git describe --tags --abbrev=0 --match '${{ env.TAG_PATTERN }}')" >> $GITHUB_ENV
+
+      - uses: actions/download-artifact@v3
+        with:
+          name: ${{ env.ARTEFACT_NAME }}
+          path: ${{ env.ARTEFACT_PATH }}
+
+      - name: Docker Build and Push
+        uses: elgohr/Publish-Docker-Github-Action@v5
+        with:
+          name: illine/drinking-ponies-telegram-bot
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          tags: "latest,${{ env.DOCKER_VERSION }}"
+          tag_semver: true
