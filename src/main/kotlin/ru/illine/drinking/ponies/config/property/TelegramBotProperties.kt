@@ -1,6 +1,7 @@
 package ru.illine.drinking.ponies.config.property
 
 import org.springframework.boot.context.properties.ConfigurationProperties
+import org.springframework.lang.NonNull
 import org.springframework.validation.annotation.Validated
 import javax.validation.constraints.Max
 import javax.validation.constraints.Min
@@ -13,6 +14,15 @@ data class TelegramBotProperties(
 
     @NotEmpty
     val token: String,
+
+    @NotEmpty
+    val username: String,
+
+    @NotNull
+    val creatorId: Long,
+
+    @NonNull
+    val autoUpdateCommands: Boolean,
 
     @NotNull
     val http: Http

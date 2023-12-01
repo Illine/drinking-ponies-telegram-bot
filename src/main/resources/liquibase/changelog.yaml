@@ -5,5 +5,5 @@ databaseChangeLog:
               type: postgresql
 
   - include:
-      file: 0.0.1/changes.yaml
+      file: 0.1.0/changes.yaml
       relativeToChangelogFile: true

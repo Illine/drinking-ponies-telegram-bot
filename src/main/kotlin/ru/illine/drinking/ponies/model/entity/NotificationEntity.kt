@@ -4,43 +4,28 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import jakarta.persistence.*
 import org.hibernate.annotations.Where
 import ru.illine.drinking.ponies.model.base.DelayNotificationType
-import ru.illine.drinking.ponies.model.dto.UserNotificationDto
+import ru.illine.drinking.ponies.model.dto.NotificationDto
 import java.time.OffsetDateTime
 
 @Entity
 @Table(
-    name = "user_notifications",
-    indexes = [Index(name = "user_notifications_user_id_unique_index", columnList = "user_id", unique = true)]
+    name = "notifications",
+    indexes = [Index(name = "notifications_user_id_unique_index", columnList = "user_id", unique = true)]
 )
 @Where(clause = "deleted = false")
-class UserNotificationEntity(
+class NotificationEntity(
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "userNotificationSeqGenerator")
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "notificationSeqGenerator")
     @SequenceGenerator(
-        name = "userNotificationSeqGenerator",
-        sequenceName = "user_notification_seq",
+        name = "notificationSeqGenerator",
+        sequenceName = "notification_seq",
         allocationSize = 1
     )
     var id: Long? = null,
 
     @Column(name = "user_id", nullable = false)
     var userId: Long,
-
-    @Column(name = "username", nullable = false)
-    var username: String,
-
-    @Column(name = "first_name")
-    var firstName: String? = null,
-
-    @Column(name = "last_name")
-    var lastName: String? = null,
-
-    @Column(name = "language_code", nullable = false)
-    var languageCode: String? = null,
-
-    @Column(name = "premium", nullable = false)
-    var premium: Boolean = false,
 
     @Column(name = "chat_id", nullable = false, updatable = false)
     val chatId: Long,
@@ -59,11 +44,11 @@ class UserNotificationEntity(
 
     @Column(name = "created", nullable = false, updatable = false)
     @JsonIgnore
-    lateinit var created: OffsetDateTime
+    var created: OffsetDateTime? = null
 
     @Column(name = "updated", nullable = false)
     @JsonIgnore
-    lateinit var updated: OffsetDateTime
+    var updated: OffsetDateTime? = null
 
     @PrePersist
     private fun onCreate() {
@@ -87,7 +72,7 @@ class UserNotificationEntity(
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
 
-        other as UserNotificationEntity
+        other as NotificationEntity
 
         if (id != other.id) return false
         if (userId != other.userId) return false
@@ -105,15 +90,10 @@ class UserNotificationEntity(
         return result
     }
 
-    fun toDto(): UserNotificationDto {
-        return UserNotificationDto(
+    fun toDto(): NotificationDto {
+        return NotificationDto(
             id = id,
             userId = userId,
-            username = username,
-            firstName = firstName,
-            lastName = lastName,
-            languageCode = languageCode,
-            premium = premium,
             chatId = chatId,
             delayNotification = delayNotification,
             timeOfLastNotification = timeOfLastNotification,

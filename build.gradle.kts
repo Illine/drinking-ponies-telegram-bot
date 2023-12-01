@@ -4,7 +4,6 @@ import java.util.*
 plugins {
     id("org.springframework.boot") version "3.1.5"
     id("io.spring.dependency-management") version "1.1.3"
-    id("org.jlleitschuh.gradle.ktlint") version "11.3.1"
     id("org.liquibase.gradle") version "2.2.0"
 
     kotlin("jvm") version "1.8.22"
@@ -13,7 +12,7 @@ plugins {
 }
 
 group = "ru.illine"
-version = "0.0.1"
+version = "0.1.0"
 
 java {
     sourceCompatibility = JavaVersion.VERSION_17
@@ -36,12 +35,12 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-validation")
 
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("javax.validation:validation-api:2.0.1.Final")
     implementation("org.zalando:logbook-spring-boot-starter:3.6.0")
     implementation("org.zalando:logbook-httpclient:3.6.0")
-    implementation("org.telegram:telegrambots:6.8.0")
+    implementation("org.telegram:telegrambots-abilities:6.8.0")
 
     liquibaseRuntime("org.liquibase:liquibase-core:4.20.0")
     liquibaseRuntime("org.liquibase:liquibase-groovy-dsl:3.0.2")
@@ -99,7 +98,7 @@ tasks.compileKotlin {
 }
 
 tasks.bootJar {
-    archiveFileName = "drinking_ponies_telegram_bot.jar"
+    archiveFileName = "drinking-ponies-telegram-bot.jar"
 }
 
 tasks.jar {
