@@ -4,6 +4,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import org.telegram.abilitybots.api.bot.AbilityBot
 import org.telegram.abilitybots.api.bot.BaseAbilityBot
+import org.telegram.abilitybots.api.db.MapDBContext.offlineInstance
 import org.telegram.abilitybots.api.objects.*
 import org.telegram.abilitybots.api.toggle.BareboneToggle
 import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands
@@ -32,7 +33,12 @@ import java.util.function.BiConsumer
 class DrinkingPoniesTelegramBot(
     private val telegramBotProperties: TelegramBotProperties,
     private val notificationAccessService: NotificationAccessService
-) : AbilityBot(telegramBotProperties.token, telegramBotProperties.username, BareboneToggle()) {
+) : AbilityBot(
+    telegramBotProperties.token,
+    telegramBotProperties.username,
+    offlineInstance(telegramBotProperties.username),
+    BareboneToggle()
+) {
 
     private val log = LoggerFactory.getLogger("BOT")
 
