@@ -7,6 +7,7 @@ import ru.illine.drinking.ponies.dao.access.NotificationAccessService
 import ru.illine.drinking.ponies.dao.repository.NotificationRepository
 import ru.illine.drinking.ponies.model.dto.NotificationDto
 import java.time.OffsetDateTime
+import java.util.stream.Collectors
 
 @Service
 class NotificationAccessServiceImpl(
@@ -59,7 +60,28 @@ class NotificationAccessServiceImpl(
             repository.findByUserId(userId),
             { "Not found a Notification by userId [$userId]" }
         )
-        foundEntity.timeOfLastNotification = time
-        return repository.save(foundEntity).toDto()
+
+        return foundEntity
+            .apply {
+                timeOfLastNotification = time
+                notificationAttempts = 0
+            }
+            .let { repository.save(it) }.toDto()
+    }
+
+    @Transactional
+    override fun updateNotifications(notifications: Collection<NotificationDto>): Set<NotificationDto> {
+        log.info("Updating of notifications...")
+
+        val updatedEntities =
+            notifications
+                .stream()
+                .map { it.toEntity() }
+                .toList()
+
+        return repository.saveAll(updatedEntities)
+            .stream()
+            .map { it.toDto() }
+            .collect(Collectors.toSet())
     }
 }

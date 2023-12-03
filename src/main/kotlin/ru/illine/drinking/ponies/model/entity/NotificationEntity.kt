@@ -37,6 +37,12 @@ class NotificationEntity(
     @Column(name = "time_of_last_notification", nullable = false)
     var timeOfLastNotification: OffsetDateTime,
 
+    @Column(name = "notification_attempts", nullable = false)
+    var notificationAttempts: Int = 0,
+
+    @Column(name = "previous_notification_message_id")
+    var previousNotificationMessageId: Int? = null,
+
     @Column(name = "deleted", nullable = false)
     var deleted: Boolean = false
 
@@ -97,6 +103,8 @@ class NotificationEntity(
             chatId = chatId,
             delayNotification = delayNotification,
             timeOfLastNotification = timeOfLastNotification,
+            notificationAttempts = notificationAttempts,
+            previousNotificationMessageId = previousNotificationMessageId,
             created = created,
             updated = updated,
             deleted = deleted

@@ -9,6 +9,7 @@ import org.telegram.abilitybots.api.objects.*
 import org.telegram.abilitybots.api.toggle.BareboneToggle
 import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
+import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageReplyMarkup
 import org.telegram.telegrambots.meta.api.objects.Update
 import org.telegram.telegrambots.meta.api.objects.commands.BotCommand
@@ -17,8 +18,7 @@ import ru.illine.drinking.ponies.config.property.TelegramBotProperties
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
 import ru.illine.drinking.ponies.model.base.AnswerNotificationType
 import ru.illine.drinking.ponies.model.base.DelayNotificationType
-import ru.illine.drinking.ponies.model.base.ReplayType.ANSWER_NOTIFICATION_BUTTON
-import ru.illine.drinking.ponies.model.base.ReplayType.TIME_BUTTON
+import ru.illine.drinking.ponies.model.base.ReplayType
 import ru.illine.drinking.ponies.model.base.TelegramCommandType
 import ru.illine.drinking.ponies.model.dto.NotificationDto
 import ru.illine.drinking.ponies.util.MessageHelper
@@ -110,8 +110,8 @@ class DrinkingPoniesTelegramBot(
             val replayType = TelegramBotHelper.getReplayType(queryData)
 
             when (replayType) {
-                TIME_BUTTON -> sendReplayOnTimeButtons(queryData, userId, chatId, messageId)
-                ANSWER_NOTIFICATION_BUTTON -> sendReplayOnNotificationAnswerButtons(
+                ReplayType.TIME_BUTTON -> sendReplayOnTimeButtons(queryData, userId, chatId, messageId)
+                ReplayType.ANSWER_NOTIFICATION_BUTTON -> sendReplayOnNotificationAnswerButtons(
                     queryData,
                     userId,
                     chatId,
@@ -123,12 +123,54 @@ class DrinkingPoniesTelegramBot(
         return Reply.of(action, Flag.CALLBACK_QUERY)
     }
 
-    fun notify(chatId: Long) {
-        SendMessage().apply {
-            text = MessageHelper.NOTIFICATION_MESSAGE
-            setChatId(chatId)
-            replyMarkup = TelegramBotKeyboardHelper.notifyButtons()
-        }.apply { sender.execute(this) }
+    fun sendNotifications(notifications: Collection<NotificationDto>) {
+        deletePreviousNotificationMessage(notifications)
+
+        notifications
+            .forEach {
+                it.notificationAttempts += 1
+                it.previousNotificationMessageId =
+                    SendMessage().apply {
+                        text = MessageHelper.NOTIFICATION_MESSAGE
+                        setChatId(it.chatId)
+                        replyMarkup = TelegramBotKeyboardHelper.notifyButtons()
+                    }.let { sender.execute(it) }.messageId
+            }
+
+        notificationAccessService.updateNotifications(notifications)
+    }
+
+    fun suspendNotifications(notifications: Collection<NotificationDto>) {
+        deletePreviousNotificationMessage(notifications)
+
+        val now = OffsetDateTime.now()
+        notifications
+            .forEach {
+                SendMessage().apply {
+                    text = MessageHelper.NOTIFICATION_SUSPEND_MESSAGE.format(it.delayNotification.displayName)
+                    setChatId(it.chatId)
+                    disableNotification = true
+                }.apply { sender.execute(this) }
+
+                it.notificationAttempts = 0
+                it.timeOfLastNotification = now
+                it.previousNotificationMessageId = null
+
+            }
+
+        notificationAccessService.updateNotifications(notifications)
+    }
+
+    private fun deletePreviousNotificationMessage(notifications: Collection<NotificationDto>) {
+        notifications.stream()
+            .filter { it.previousNotificationMessageId != null }
+            .forEach {
+                DeleteMessage()
+                    .apply {
+                        setChatId(it.chatId)
+                        messageId = it.previousNotificationMessageId!!
+                    }.let { sender.execute(it) }
+            }
     }
 
     private fun sendReplayOnTimeButtons(queryData: String, userId: Long, chatId: Long, messageId: Int) {
@@ -177,6 +219,14 @@ class DrinkingPoniesTelegramBot(
 
                 silent.send(
                     MessageHelper.NOTIFICATION_ANSWER_NO_MESSAGE,
+                    chatId
+                )
+            }
+
+            AnswerNotificationType.CANCEL -> {
+                notificationAccessService.updateTimeOfLastNotification(userId, OffsetDateTime.now())
+                silent.send(
+                    MessageHelper.NOTIFICATION_ANSWER_CANCEL_MESSAGE,
                     chatId
                 )
             }
