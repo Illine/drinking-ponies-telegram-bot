@@ -24,16 +24,21 @@ jobs:
 
       - id: versions
         run: |
-          VERSION=$(git describe --tags --abbrev=0 --match "${{ env.TAG_PATTERN }}")
-          BUILD_NUMBER=$(echo "$VERSION" | awk -F. '{print $4}')
+          VERSION=$(git describe --tags --abbrev=0 --match "v[0-9].*")
+          IFS='.' read -r -a VERSION_PARTS <<< "$VERSION"
+          BUILD_NUMBER=${VERSION_PARTS[3]}
+          
           if [ -z "$BUILD_NUMBER" ]; then
             BUILD_NUMBER=1
           else
             BUILD_NUMBER=$((BUILD_NUMBER + 1))
           fi
           
+          VERSION_PARTS[3]=$BUILD_NUMBER
+          WITH_NUMBER=$(IFS='.'; echo "${VERSION_PARTS[*]}")
+          
           echo "default=${VERSION}" >> $GITHUB_OUTPUT
-          echo "with_number=${VERSION}.${BUILD_NUMBER}" >> $GITHUB_OUTPUT
+          echo "with_number=${WITH_NUMBER}" >> $GITHUB_OUTPUT
 
   build:
     runs-on: ubuntu-latest
@@ -83,7 +88,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/github-script@v5
+      - uses: actions/github-script@v7
         with:
           script: |
             github.rest.git.createRef({
