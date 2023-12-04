@@ -13,4 +13,6 @@ interface NotificationAccessService {
 
     fun updateTimeOfLastNotification(userId: Long, time: OffsetDateTime): NotificationDto
 
+    fun updateNotifications(notifications: Collection<NotificationDto>): Set<NotificationDto>
+
 }

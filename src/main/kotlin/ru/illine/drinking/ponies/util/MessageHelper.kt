@@ -18,9 +18,21 @@ class MessageHelper {
 
         val NOTIFICATION_MESSAGE = "Вы выпили воду?"
 
+        val NOTIFICATION_SUSPEND_MESSAGE =
+            """
+                Котик, Ваше уведомление отложено! 
+                Надеюсь в следующий раз (который будет через %s) я снова тебе напомню, не волнуйся!
+            """.trimIndent()
+
         val NOTIFICATION_ANSWER_YES_MESSAGE = "Вы солнышко! Так держать!"
 
-        val NOTIFICATION_ANSWER_NO_MESSAGE = "Это грустно, наверное, Вы были заняты? Ничего страшного! Я напомню Вам через 10 минут!"
+        val NOTIFICATION_ANSWER_NO_MESSAGE =
+            """
+                Это грустно! 
+                Наверное, Вы были заняты? Ничего страшного! Я напомню Вам через несколько минут!
+            """.trimIndent()
+
+        val NOTIFICATION_ANSWER_CANCEL_MESSAGE = "Милый зайчик, пожалуйста, напейтесь в следующий раз!"
     }
 
 }

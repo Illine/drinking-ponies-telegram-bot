@@ -13,7 +13,11 @@ data class NotificationDto(
 
     val delayNotification: DelayNotificationType,
 
-    var timeOfLastNotification: OffsetDateTime,
+    var timeOfLastNotification: OffsetDateTime = OffsetDateTime.now(),
+
+    var notificationAttempts: Int = 0,
+
+    var previousNotificationMessageId: Int? = null,
 
     var created: OffsetDateTime? = null,
 
@@ -29,6 +33,8 @@ data class NotificationDto(
             chatId = chatId,
             delayNotification = delayNotification,
             timeOfLastNotification = timeOfLastNotification,
+            notificationAttempts = notificationAttempts,
+            previousNotificationMessageId = previousNotificationMessageId,
             deleted = deleted
         )
     }
@@ -42,8 +48,7 @@ data class NotificationDto(
             return NotificationDto(
                 userId = userId,
                 chatId = chatId,
-                delayNotification = delayNotification,
-                timeOfLastNotification = OffsetDateTime.now()
+                delayNotification = delayNotification
             )
         }
     }

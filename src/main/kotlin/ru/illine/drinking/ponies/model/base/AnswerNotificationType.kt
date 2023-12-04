@@ -7,7 +7,8 @@ enum class AnswerNotificationType(
 ) {
 
     YES("Да"),
-    NO("Нет");
+    NO("Нет"),
+    CANCEL("Отменить");
 
     companion object {
 
