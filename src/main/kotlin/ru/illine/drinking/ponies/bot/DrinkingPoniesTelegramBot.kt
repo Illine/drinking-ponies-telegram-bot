@@ -57,20 +57,50 @@ class DrinkingPoniesTelegramBot(
             .locality(Locality.USER)
             .privacy(Privacy.PUBLIC)
             .action {
-                log.debug("Sending greeting message for the [START] command")
-                silent.send(
-                    MessageHelper.START_GREETING_MESSAGE.format(it.user().userName),
-                    it.chatId()
-                )
+                SendMessage().apply {
+                    text = MessageHelper.START_GREETING_MESSAGE.format(it.user().userName)
+                    setChatId(it.chatId())
+                }.apply { sender.execute(this) }
 
-                log.debug("Sending message with a keyboard for the [START] command")
-                sender.execute(
-                    SendMessage().apply {
-                        text = MessageHelper.START_BUTTON_MESSAGE
-                        setChatId(it.chatId())
-                        replyMarkup = TelegramBotKeyboardHelper.delayTimeButtons()
-                    }
-                )
+                SendMessage().apply {
+                    text = MessageHelper.START_BUTTON_MESSAGE
+                    setChatId(it.chatId())
+                    replyMarkup = TelegramBotKeyboardHelper.delayTimeButtons()
+                }.apply { sender.execute(this) }
+            }
+            .build()
+
+    fun resumeCommand() =
+        Ability
+            .builder()
+            .name(TelegramCommandType.RESUME.command)
+            .info(TelegramCommandType.RESUME.info)
+            .locality(Locality.USER)
+            .privacy(Privacy.PUBLIC)
+            .action {
+                notificationAccessService.enableByUserId(it.user().id)
+
+                SendMessage().apply {
+                    text = MessageHelper.RESUME_GREETING_MESSAGE.format(it.user().userName)
+                    setChatId(it.chatId())
+                }.apply { sender.execute(this) }
+            }
+            .build()
+
+    fun stopCommand() =
+        Ability
+            .builder()
+            .name(TelegramCommandType.STOP.command)
+            .info(TelegramCommandType.STOP.info)
+            .locality(Locality.USER)
+            .privacy(Privacy.PUBLIC)
+            .action {
+                notificationAccessService.disableByUserId(it.user().id)
+
+                SendMessage().apply {
+                    text = MessageHelper.STOP_GREETING_MESSAGE.format(it.user().userName)
+                    setChatId(it.chatId())
+                }.apply { sender.execute(this) }
             }
             .build()
 
@@ -82,15 +112,13 @@ class DrinkingPoniesTelegramBot(
             .locality(Locality.USER)
             .privacy(Privacy.PUBLIC)
             .action {
-                log.debug("Sending settings message for the [SETTINGS] command")
                 val currentNotification =
                     notificationAccessService.findByUserId(it.user().id).delayNotification
-                silent.sendMd(
-                    MessageHelper.SETTINGS_GREETING_MESSAGE.format(currentNotification),
-                    it.chatId()
-                )
 
-                log.debug("Sending message with a keyboard for the [SETTINGS] command")
+                SendMessage().apply {
+                    text = MessageHelper.SETTINGS_GREETING_MESSAGE.format(currentNotification)
+                    setChatId(it.chatId())
+                }.apply { sender.execute(this) }
 
                 SendMessage().apply {
                     text = MessageHelper.SETTINGS_BUTTON_MESSAGE
@@ -169,7 +197,7 @@ class DrinkingPoniesTelegramBot(
                     .apply {
                         setChatId(it.chatId)
                         messageId = it.previousNotificationMessageId!!
-                    }.let { sender.execute(it) }
+                    }.apply { sender.execute(this) }
             }
     }
 
@@ -188,10 +216,10 @@ class DrinkingPoniesTelegramBot(
         val savedNotification = notificationAccessService.save(notification)
         log.info("The notification (id: [{}]) has saved", savedNotification.id)
 
-        silent.send(
-            MessageHelper.TIME_BUTTON_RESULT_MESSAGE.format(delayNotification.displayName),
-            chatId
-        )
+        SendMessage().apply {
+            text = MessageHelper.TIME_BUTTON_RESULT_MESSAGE.format(delayNotification.displayName)
+            setChatId(chatId)
+        }.apply { sender.execute(this) }
 
         deleteOldButtons(chatId, messageId)
     }
@@ -206,10 +234,10 @@ class DrinkingPoniesTelegramBot(
             AnswerNotificationType.YES -> {
                 notificationAccessService.updateTimeOfLastNotification(userId, OffsetDateTime.now())
 
-                silent.send(
-                    MessageHelper.NOTIFICATION_ANSWER_YES_MESSAGE,
-                    chatId
-                )
+                SendMessage().apply {
+                    text = MessageHelper.NOTIFICATION_ANSWER_YES_MESSAGE
+                    setChatId(chatId)
+                }.apply { sender.execute(this) }
             }
 
             AnswerNotificationType.NO -> {
@@ -217,10 +245,10 @@ class DrinkingPoniesTelegramBot(
                 notificationAccessService
                     .updateTimeOfLastNotification(userId, notification.timeOfLastNotification.plusMinutes(10))
 
-                silent.send(
-                    MessageHelper.NOTIFICATION_ANSWER_NO_MESSAGE,
-                    chatId
-                )
+                SendMessage().apply {
+                    text = MessageHelper.NOTIFICATION_ANSWER_NO_MESSAGE
+                    setChatId(chatId)
+                }.apply { sender.execute(this) }
             }
 
             AnswerNotificationType.CANCEL -> {

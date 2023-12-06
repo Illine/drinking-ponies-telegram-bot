@@ -15,4 +15,8 @@ interface NotificationAccessService {
 
     fun updateNotifications(notifications: Collection<NotificationDto>): Set<NotificationDto>
 
+    fun enableByUserId(userId: Long)
+
+    fun disableByUserId(userId: Long)
+
 }

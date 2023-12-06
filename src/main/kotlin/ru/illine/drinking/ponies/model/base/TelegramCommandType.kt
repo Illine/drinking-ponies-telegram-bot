@@ -7,6 +7,8 @@ enum class TelegramCommandType(
     val visible: Boolean
 ) {
 
-    START("start", "Start command", "Команда для начала взаимодействия с ботом", false),
-    SETTINGS("settings", "User's settings command", "Команда для изменения настроек напоминания", true)
+    START("start", "Start command", "Начало взаимодействия с ботом", false),
+    SETTINGS("settings", "User's settings command", "Изменение настроек уведомлений", true),
+    RESUME("resume", "Resuming of notifications for a user", "Возобновить отправку уведомления", true),
+    STOP("stop", "Stopping of notifications for a user", "Остановить отправку уведомлений", true)
 }
