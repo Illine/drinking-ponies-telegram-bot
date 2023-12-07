@@ -5,6 +5,7 @@ import org.apache.http.impl.client.CloseableHttpClient
 import org.apache.http.impl.client.HttpClientBuilder
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.telegram.abilitybots.api.sender.MessageSender
 import org.telegram.telegrambots.meta.TelegramBotsApi
 import org.telegram.telegrambots.meta.generics.BotSession
 import org.telegram.telegrambots.updatesreceivers.DefaultBotSession
@@ -44,5 +45,10 @@ class TelegramBotConfig {
     ): BotSession {
         return telegramBotsApi.registerBot(drinkingPoniesTelegramBot)
             .apply { TelegramBotHelper.replaceBotSessionHttpClient(this, telegramHttpClient) }
+    }
+
+    @Bean
+    fun defaultMessageSender(drinkingPoniesTelegramBot: DrinkingPoniesTelegramBot): MessageSender {
+        return drinkingPoniesTelegramBot.sender()
     }
 }

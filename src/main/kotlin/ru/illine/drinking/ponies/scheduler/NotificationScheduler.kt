@@ -3,16 +3,16 @@ package ru.illine.drinking.ponies.scheduler
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
-import ru.illine.drinking.ponies.bot.DrinkingPoniesTelegramBot
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
 import ru.illine.drinking.ponies.model.dto.NotificationDto
+import ru.illine.drinking.ponies.service.NotificationService
 import java.time.OffsetDateTime
 import java.util.stream.Collectors
 
 @Component
 class NotificationScheduler(
     private val notificationAccessService: NotificationAccessService,
-    private val drinkingPoniesTelegramBot: DrinkingPoniesTelegramBot
+    private val notificationService: NotificationService
 ) {
 
     private val MAX_NOTIFICATION_ATTEMPTS = 3
@@ -45,7 +45,7 @@ class NotificationScheduler(
         val forNotifying = notifications.getValue(FOR_NOTIFICATIONS)
         log.info("The notifications will be sent [{}] users", forNotifying.size)
 
-        drinkingPoniesTelegramBot.sendNotifications(forNotifying)
+        notificationService.sendNotifications(forNotifying)
     }
 
     private fun cancelAll(notifications: Map<Boolean, List<NotificationDto>>) {
@@ -53,6 +53,6 @@ class NotificationScheduler(
         val forSuspending = notifications.getValue(FOR_CANCEL)
         log.info("The notifications will be suspended for [{}] users", forSuspending.size)
 
-        drinkingPoniesTelegramBot.suspendNotifications(forSuspending)
+        notificationService.suspendNotifications(forSuspending)
     }
 }
