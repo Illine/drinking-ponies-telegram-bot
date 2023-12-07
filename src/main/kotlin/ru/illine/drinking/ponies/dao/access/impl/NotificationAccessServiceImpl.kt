@@ -36,6 +36,12 @@ class NotificationAccessServiceImpl(
     }
 
     @Transactional
+    override fun existsByUserId(userId: Long): Boolean {
+        log.info("Does a notification exist for the userId: [$userId]?")
+        return repository.existsByUserId(userId)
+    }
+
+    @Transactional
     override fun save(dto: NotificationDto): NotificationDto {
         log.info("Saving a Notification by userId [${dto.userId}]")
 

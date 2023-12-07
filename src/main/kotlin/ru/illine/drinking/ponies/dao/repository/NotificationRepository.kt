@@ -16,6 +16,8 @@ interface NotificationRepository : JpaRepository<NotificationEntity, Long> {
 
     fun findByUserId(userId: Long): NotificationEntity?
 
+    fun existsByUserId(userId: Long): Boolean
+
     fun deleteByUserId(userId: Long): Long
 
     @Modifying

@@ -43,7 +43,7 @@ data class NotificationDto(
         fun create(
             userId: Long,
             chatId: Long,
-            delayNotification: DelayNotificationType
+            delayNotification: DelayNotificationType = DelayNotificationType.TWO_HOURS
         ): NotificationDto {
             return NotificationDto(
                 userId = userId,

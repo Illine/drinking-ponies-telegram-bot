@@ -9,6 +9,8 @@ interface NotificationAccessService {
 
     fun findByUserId(userId: Long): NotificationDto
 
+    fun existsByUserId(userId: Long): Boolean
+
     fun save(dto: NotificationDto): NotificationDto
 
     fun updateTimeOfLastNotification(userId: Long, time: OffsetDateTime): NotificationDto
