@@ -1,5 +1,7 @@
 package ru.illine.drinking.ponies.config
 
+import org.apache.http.HttpRequestInterceptor
+import org.apache.http.HttpResponseInterceptor
 import org.apache.http.conn.ssl.NoopHostnameVerifier
 import org.apache.http.impl.client.CloseableHttpClient
 import org.apache.http.impl.client.HttpClientBuilder
@@ -9,8 +11,6 @@ import org.telegram.abilitybots.api.sender.MessageSender
 import org.telegram.telegrambots.meta.TelegramBotsApi
 import org.telegram.telegrambots.meta.generics.BotSession
 import org.telegram.telegrambots.updatesreceivers.DefaultBotSession
-import org.zalando.logbook.httpclient.LogbookHttpRequestInterceptor
-import org.zalando.logbook.httpclient.LogbookHttpResponseInterceptor
 import ru.illine.drinking.ponies.bot.DrinkingPoniesTelegramBot
 import ru.illine.drinking.ponies.config.property.TelegramBotProperties
 import ru.illine.drinking.ponies.util.TelegramBotHelper
@@ -22,15 +22,15 @@ class TelegramBotConfig {
     @Bean
     fun telegramHttpClient(
         telegramBotProperties: TelegramBotProperties,
-        telegramLogbookRequestInterceptor: LogbookHttpRequestInterceptor,
-        telegramLogbookResponseInterceptor: LogbookHttpResponseInterceptor
+        telegramLogbookRequestInterceptor: HttpRequestInterceptor,
+        telegramLogbookResponseInterceptor: HttpResponseInterceptor,
     ): CloseableHttpClient {
         return HttpClientBuilder.create()
             .setSSLHostnameVerifier(NoopHostnameVerifier())
             .setConnectionTimeToLive(telegramBotProperties.http.connectionTimeToLiveInSec, TimeUnit.SECONDS)
             .setMaxConnTotal(telegramBotProperties.http.maxConnectionTotal)
             .addInterceptorFirst(telegramLogbookRequestInterceptor)
-            .addInterceptorFirst(telegramLogbookResponseInterceptor)
+            .addInterceptorLast(telegramLogbookResponseInterceptor)
             .build()
     }
 

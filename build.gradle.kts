@@ -2,8 +2,8 @@ import java.io.FileInputStream
 import java.util.*
 
 plugins {
-    id("org.springframework.boot") version "3.1.5"
-    id("io.spring.dependency-management") version "1.1.3"
+    id("org.springframework.boot") version "3.2.0"
+    id("io.spring.dependency-management") version "1.1.4"
     id("org.liquibase.gradle") version "2.2.0"
 
     kotlin("jvm") version "1.8.22"
@@ -31,15 +31,18 @@ repositories {
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-    implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-validation")
+    implementation("org.springframework.boot:spring-boot-starter-web")
 
+    implementation("javax.xml.bind:jaxb-api:2.3.0")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("javax.validation:validation-api:2.0.1.Final")
     implementation("org.zalando:logbook-spring-boot-starter:3.6.0")
     implementation("org.zalando:logbook-httpclient:3.6.0")
     implementation("org.telegram:telegrambots-abilities:6.8.0")
+    implementation("com.github.gavlyukovskiy:datasource-decorator-spring-boot-autoconfigure:1.9.1")
+    implementation("p6spy:p6spy:3.9.1")
 
     liquibaseRuntime("org.liquibase:liquibase-core:4.20.0")
     liquibaseRuntime("org.liquibase:liquibase-groovy-dsl:3.0.2")
@@ -89,21 +92,23 @@ liquibase {
     runList = "main"
 }
 
-tasks.compileKotlin {
-    kotlinOptions {
-        freeCompilerArgs += "-Xjsr305=strict"
-        jvmTarget = "17"
+tasks {
+    bootJar {
+        archiveFileName = "drinking-ponies-telegram-bot.jar"
     }
-}
 
-tasks.bootJar {
-    archiveFileName = "drinking-ponies-telegram-bot.jar"
-}
+    jar {
+        enabled = false
+    }
 
-tasks.jar {
-    enabled = false
-}
+    test {
+        useJUnitPlatform()
+    }
 
-tasks.test {
-    useJUnitPlatform()
+    compileKotlin {
+        kotlinOptions {
+            freeCompilerArgs += "-Xjsr305=strict"
+            jvmTarget = "17"
+        }
+    }
 }
