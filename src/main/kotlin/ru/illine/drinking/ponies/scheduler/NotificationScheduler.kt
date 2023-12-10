@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
 import ru.illine.drinking.ponies.model.dto.NotificationDto
 import ru.illine.drinking.ponies.service.NotificationService
-import java.time.OffsetDateTime
+import java.time.*
 import java.util.stream.Collectors
 
 @Component
@@ -21,13 +21,13 @@ class NotificationScheduler(
 
     private val log = LoggerFactory.getLogger("SCHEDULER")
 
-    //@Scheduled(fixedRate = 300000)
-    @Scheduled(fixedRate = 30000)
+    @Scheduled(cron = "\${telegram-bot.schedule.notification.cron}")
     fun drinkingNotification() {
-        log.info("The Drinking Notification Scheduler is started...")
+        log.info("The Drinking Notification Scheduler is started")
         val notifications = notificationAccessService.findAll()
             .stream()
-            .filter { compareLastSentNotification(it) }
+            .filter { ifTimeOfNotification(it) }
+            .filter { ifNotSilenceTime(it) }
             .collect(Collectors.partitioningBy { it.notificationAttempts == MAX_NOTIFICATION_ATTEMPTS })
         notifyAll(notifications)
         cancelAll(notifications)
@@ -35,9 +35,17 @@ class NotificationScheduler(
         log.info("The Drinking Notification Scheduler is finished")
     }
 
-    private fun compareLastSentNotification(it: NotificationDto): Boolean {
-        val whenSendNotification = it.timeOfLastNotification.plusMinutes(it.delayNotification.minutes)
-        return whenSendNotification.toEpochSecond() < OffsetDateTime.now().toEpochSecond()
+    private fun ifTimeOfNotification(dto: NotificationDto): Boolean {
+        val expectedSentNotificationTime = dto.timeOfLastNotification.plusMinutes(dto.delayNotification.minutes)
+        return expectedSentNotificationTime.isBefore(OffsetDateTime.now())
+    }
+
+    private fun ifNotSilenceTime(dto: NotificationDto): Boolean {
+        val userZoneId = ZoneId.of(dto.userTimeZone)
+        val userDateTime = ZonedDateTime.now(userZoneId)
+
+        return userDateTime.toLocalTime().isBefore(LocalTime.of(23, 0))
+                && userDateTime.toLocalTime().isAfter(LocalTime.of(11, 0))
     }
 
     private fun notifyAll(notifications: Map<Boolean, List<NotificationDto>>) {

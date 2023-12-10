@@ -42,6 +42,9 @@ telegram-bot:
   http:
     connection-time-to-live-in-sec: ${TELEGRAM_BOT_HTTP_CONNECTION_TIME_TO_LIVE:60}
     max-connection-total: ${TELEGRAM_BOT_MAX_CONNECTION_TOTAL:100}
+  schedule:
+    notification:
+      cron: ${TELEGRAM_BOT_SCHEDULE_NOTIFICATION_CRON:0 */5 * ? * *}
 
 logbook:
   strategy: body-only-if-status-at-least

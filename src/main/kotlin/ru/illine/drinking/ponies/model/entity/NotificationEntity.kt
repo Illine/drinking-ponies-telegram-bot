@@ -7,6 +7,7 @@ import org.hibernate.annotations.SQLRestriction
 import ru.illine.drinking.ponies.model.base.DelayNotificationType
 import ru.illine.drinking.ponies.model.dto.NotificationDto
 import java.time.OffsetDateTime
+import java.time.ZoneId
 
 @Entity
 @Table(
@@ -38,6 +39,9 @@ class NotificationEntity(
 
     @Column(name = "time_of_last_notification", nullable = false)
     var timeOfLastNotification: OffsetDateTime,
+
+    @Column(name = "user_time_zone", nullable = false)
+    var userTimeZone: String = ZoneId.systemDefault().toString(),
 
     @Column(name = "notification_attempts", nullable = false)
     var notificationAttempts: Int = 0,
@@ -106,6 +110,7 @@ class NotificationEntity(
             delayNotification = delayNotification,
             timeOfLastNotification = timeOfLastNotification,
             notificationAttempts = notificationAttempts,
+            userTimeZone = userTimeZone,
             previousNotificationMessageId = previousNotificationMessageId,
             created = created,
             updated = updated,
