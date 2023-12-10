@@ -1,4 +1,4 @@
-name: "Deploying"
+name: "Deploying to stage"
 
 on:
   push:
@@ -33,7 +33,6 @@ jobs:
           fi
 
   deploy:
-    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: self-hosted
     needs:
       - prepare
