@@ -3,6 +3,7 @@ package ru.illine.drinking.ponies.model.dto
 import ru.illine.drinking.ponies.model.base.DelayNotificationType
 import ru.illine.drinking.ponies.model.entity.NotificationEntity
 import java.time.OffsetDateTime
+import java.time.ZoneId
 
 data class NotificationDto(
     var id: Long? = null,
@@ -16,6 +17,8 @@ data class NotificationDto(
     var timeOfLastNotification: OffsetDateTime = OffsetDateTime.now(),
 
     var notificationAttempts: Int = 0,
+
+    var userTimeZone: String = ZoneId.systemDefault().toString(),
 
     var previousNotificationMessageId: Int? = null,
 
@@ -34,6 +37,7 @@ data class NotificationDto(
             delayNotification = delayNotification,
             timeOfLastNotification = timeOfLastNotification,
             notificationAttempts = notificationAttempts,
+            userTimeZone = userTimeZone,
             previousNotificationMessageId = previousNotificationMessageId,
             deleted = deleted
         )

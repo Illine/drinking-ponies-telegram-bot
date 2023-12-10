@@ -10,3 +10,8 @@ comment on column drinking_ponies.notifications.notification_attempts is 'The nu
 alter table drinking_ponies.notifications
     add previous_notification_message_id integer;
 comment on column drinking_ponies.notifications.previous_notification_message_id is 'The id of previous notification message';
+
+--rollback alter table drinking_ponies.notifications drop column user_time_zone;
+alter table drinking_ponies.notifications
+    add user_time_zone text default 'Europe/Moscow' not null;
+comment on column drinking_ponies.notifications.user_time_zone is 'Timezone of user, default Europe/Moscow';

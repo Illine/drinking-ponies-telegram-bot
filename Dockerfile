@@ -3,8 +3,7 @@ FROM azul/zulu-openjdk-alpine:17
 ARG APP_HOME=/opt/drinking-ponies
 ARG APP_JAR=drinking-ponies
 
-ENV TZ=Europe/Moscow \
-    HOME=$APP_HOME \
+ENV HOME=$APP_HOME \
     JAR=$APP_JAR
 
 WORKDIR $HOME
