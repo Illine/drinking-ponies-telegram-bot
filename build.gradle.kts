@@ -94,7 +94,7 @@ liquibase {
 
 tasks {
     bootJar {
-        archiveFileName = "drinking-ponies-telegram-bot.jar"
+        archiveFileName = "drinking-ponies.jar"
     }
 
     jar {
