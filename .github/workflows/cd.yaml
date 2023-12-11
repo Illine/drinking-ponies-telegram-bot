@@ -38,6 +38,7 @@ jobs:
       - prepare
     env:
       LIQUIBASE_PROPERTIES_PATH: ${{ needs.prepare.outputs.liquibase_path }}
+      DOCKER_IMAGE_LATEST: illine/drinking-ponies-telegram-bot:latest
     steps:
       - uses: actions/checkout@v4
 
@@ -50,11 +51,11 @@ jobs:
       - name: Updating a ${{ needs.prepare.outputs.stage }} database via liquibase
         run: ./gradlew update
 
-      - name: Stopping and removing containers, networks
+      - name: Stopping and removing images, containers, networks
         run: |
           docker-compose -p ${{ needs.prepare.outputs.stack_name }} -f ${{ needs.prepare.outputs.docker_compose_path }} down
+          docker rmi $DOCKER_IMAGE_LATEST
 
       - name: Deploying via Docker Compose to ${{ needs.prepare.outputs.stage }}
         run: |
-          docker-compose -p ${{ needs.prepare.outputs.stack_name }} -f ${{ needs.prepare.outputs.docker_compose_path }} pull
           docker-compose -p ${{ needs.prepare.outputs.stack_name }} -f ${{ needs.prepare.outputs.docker_compose_path }} up -d
