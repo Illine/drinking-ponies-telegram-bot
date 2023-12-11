@@ -44,7 +44,6 @@ jobs:
           echo "with_number=${WITH_NUMBER}" >> $GITHUB_OUTPUT
 
   build:
-    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -59,7 +58,7 @@ jobs:
         run: ./gradlew test
 
       - name: Gradle Assemble
-        run: ./gradlew assemble
+        run: ./gradlew clean assemble
 
       - uses: actions/upload-artifact@v3
         with:
@@ -67,7 +66,6 @@ jobs:
           path: ${{ env.ARTEFACT_PATH }}
 
   publish:
-    if: github.event.pull_request.merged == true
     needs: [version, build]
     runs-on: ubuntu-latest
     steps:
@@ -88,7 +86,6 @@ jobs:
           tag_semver: true
 
   repository:
-    if: github.event.pull_request.merged == true
     needs: [version, publish]
     runs-on: ubuntu-latest
     steps:
