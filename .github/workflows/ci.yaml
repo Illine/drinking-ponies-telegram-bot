@@ -1,10 +1,11 @@
 name: "Building and Publishing"
 
 on:
-  push:
+  pull_request:
     branches:
       - develop
-      - feature/DPTB-11
+    types:
+      - closed
 
 env:
   ARTEFACT_NAME: drinking-ponies-telegram-bot
@@ -12,6 +13,7 @@ env:
 
 jobs:
   version:
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     env:
       TAG_PATTERN: v[0-9].*
@@ -42,6 +44,7 @@ jobs:
           echo "with_number=${WITH_NUMBER}" >> $GITHUB_OUTPUT
 
   build:
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -64,6 +67,7 @@ jobs:
           path: ${{ env.ARTEFACT_PATH }}
 
   publish:
+    if: github.event.pull_request.merged == true
     needs: [version, build]
     runs-on: ubuntu-latest
     steps:
@@ -84,6 +88,7 @@ jobs:
           tag_semver: true
 
   repository:
+    if: github.event.pull_request.merged == true
     needs: [version, publish]
     runs-on: ubuntu-latest
     steps:
