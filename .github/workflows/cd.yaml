@@ -55,4 +55,6 @@ jobs:
           docker-compose -p ${{ needs.prepare.outputs.stack_name }} -f ${{ needs.prepare.outputs.docker_compose_path }} down
 
       - name: Deploying via Docker Compose to ${{ needs.prepare.outputs.stage }}
-        run: docker-compose -p ${{ needs.prepare.outputs.stack_name }} -f ${{ needs.prepare.outputs.docker_compose_path }} up -d
+        run: |
+          docker-compose -p ${{ needs.prepare.outputs.stack_name }} -f ${{ needs.prepare.outputs.docker_compose_path }} pull
+          docker-compose -p ${{ needs.prepare.outputs.stack_name }} -f ${{ needs.prepare.outputs.docker_compose_path }} up -d
