@@ -13,6 +13,9 @@ import javax.validation.constraints.NotNull
 data class TelegramBotProperties(
 
     @NotEmpty
+    val version: String,
+
+    @NotEmpty
     val token: String,
 
     @NotEmpty

@@ -13,6 +13,7 @@ jobs:
       stack_name: ${{ steps.environment.outputs.stack_name }}
       liquibase_path: ${{ steps.environment.outputs.liquibase_path }}
       docker_compose_path: ${{ steps.environment.outputs.docker_compose_path }}
+      env_path: ${{ steps.environment.outputs.env_path }}
     steps:
       - id: environment
         run: |
@@ -23,6 +24,7 @@ jobs:
             echo "stack_name=drinking-ponies" >> $GITHUB_OUTPUT
             echo "liquibase_path=/home/illine/drinking-ponies-telegram-bot/prod/liquibase.properties" >> $GITHUB_OUTPUT
             echo "docker_compose_path=/home/illine/drinking-ponies-telegram-bot/prod/docker-compose.yaml" >> $GITHUB_OUTPUT
+            echo "env_path=/home/illine/drinking-ponies-telegram-bot/prod/.env" >> $GITHUB_OUTPUT
           else
             echo "Test environment setting"
           
@@ -30,6 +32,7 @@ jobs:
             echo "stack_name=drinking-ponies-test" >> $GITHUB_OUTPUT
             echo "liquibase_path=/home/illine/drinking-ponies-telegram-bot/test/liquibase.properties" >> $GITHUB_OUTPUT
             echo "docker_compose_path=/home/illine/drinking-ponies-telegram-bot/test/docker-compose.yaml" >> $GITHUB_OUTPUT
+            echo "env_path=/home/illine/drinking-ponies-telegram-bot/test/.env" >> $GITHUB_OUTPUT
           fi
 
   deploy:
@@ -47,6 +50,11 @@ jobs:
           distribution: zulu
           architecture: x64
           java-version: 17
+
+      - name: Creating .env
+        run: |
+          CURRENT_VERSION=$(git describe --tags --abbrev=0 --match "v[0-9].*")
+          echo "CURRENT_VERSION=$CURRENT_VERSION" > ${{ needs.prepare.outputs.env_path }}
 
       - name: Updating a ${{ needs.prepare.outputs.stage }} database via liquibase
         run: ./gradlew update
