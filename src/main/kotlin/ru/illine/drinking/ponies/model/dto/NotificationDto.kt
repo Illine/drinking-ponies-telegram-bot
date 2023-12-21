@@ -3,7 +3,6 @@ package ru.illine.drinking.ponies.model.dto
 import ru.illine.drinking.ponies.model.base.DelayNotificationType
 import ru.illine.drinking.ponies.model.entity.NotificationEntity
 import java.time.OffsetDateTime
-import java.time.ZoneId
 
 data class NotificationDto(
     var id: Long? = null,
@@ -18,7 +17,7 @@ data class NotificationDto(
 
     var notificationAttempts: Int = 0,
 
-    var userTimeZone: String = ZoneId.systemDefault().toString(),
+    var userTimeZone: String,
 
     var previousNotificationMessageId: Int? = null,
 
@@ -52,7 +51,8 @@ data class NotificationDto(
             return NotificationDto(
                 userId = userId,
                 chatId = chatId,
-                delayNotification = delayNotification
+                delayNotification = delayNotification,
+                userTimeZone = "Europe/Moscow"
             )
         }
     }
