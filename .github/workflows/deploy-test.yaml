@@ -1,10 +1,9 @@
-name: "Deploying to stage"
+name: "Deploying to TEST"
 
 on:
   push:
     tags:
       - "v*"
-      - "release*"
 
 jobs:
   prepare:
@@ -18,23 +17,13 @@ jobs:
     steps:
       - id: environment
         run: |
-          if [[ $github.ref == refs/tags/release* ]]; then
-            echo "Production environment setting"
+          echo "Test environment setting"
           
-            echo "stage=prod" >> $GITHUB_OUTPUT
-            echo "stack_name=drinking-ponies" >> $GITHUB_OUTPUT
-            echo "liquibase_path=/home/illine/drinking-ponies-telegram-bot/prod/liquibase.properties" >> $GITHUB_OUTPUT
-            echo "docker_compose_path=/home/illine/drinking-ponies-telegram-bot/prod/docker-compose.yaml" >> $GITHUB_OUTPUT
-            echo "env_path=/home/illine/drinking-ponies-telegram-bot/prod/.env" >> $GITHUB_OUTPUT
-          else
-            echo "Test environment setting"
-          
-            echo "stage=test" >> $GITHUB_OUTPUT
-            echo "stack_name=drinking-ponies-test" >> $GITHUB_OUTPUT
-            echo "liquibase_path=/home/illine/drinking-ponies-telegram-bot/test/liquibase.properties" >> $GITHUB_OUTPUT
-            echo "docker_compose_path=/home/illine/drinking-ponies-telegram-bot/test/docker-compose.yaml" >> $GITHUB_OUTPUT
-            echo "env_path=/home/illine/drinking-ponies-telegram-bot/test/.env" >> $GITHUB_OUTPUT
-          fi
+          echo "stage=test" >> $GITHUB_OUTPUT
+          echo "stack_name=drinking-ponies-test" >> $GITHUB_OUTPUT
+          echo "liquibase_path=/home/illine/drinking-ponies-telegram-bot/test/liquibase.properties" >> $GITHUB_OUTPUT
+          echo "docker_compose_path=/home/illine/drinking-ponies-telegram-bot/test/docker-compose.yaml" >> $GITHUB_OUTPUT
+          echo "env_path=/home/illine/drinking-ponies-telegram-bot/test/.env" >> $GITHUB_OUTPUT
 
   deploy:
     runs-on: self-hosted
