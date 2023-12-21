@@ -3,7 +3,8 @@ name: "Deploying to stage"
 on:
   push:
     tags:
-      - "*"
+      - "v*"
+      - "release*"
 
 jobs:
   prepare:
@@ -17,7 +18,7 @@ jobs:
     steps:
       - id: environment
         run: |
-          if [[ $github.ref == refs/tags/release ]]; then
+          if [[ $github.ref == refs/tags/release* ]]; then
             echo "Production environment setting"
           
             echo "stage=prod" >> $GITHUB_OUTPUT
