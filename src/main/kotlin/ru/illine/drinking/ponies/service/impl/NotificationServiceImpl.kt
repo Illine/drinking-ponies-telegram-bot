@@ -45,7 +45,6 @@ class NotificationServiceImpl(
         SendMessage().apply {
             text = MessageHelper.START_DEFAULT_SETTINGS_MESSAGE.format(notification.delayNotification.displayName)
             setChatId(messageContext.chatId())
-//            replyMarkup = TelegramBotKeyboardHelper.delayTimeButtons()
         }.apply { sender.execute(this) }
     }
 
