@@ -13,37 +13,45 @@ class TelegramBotKeyboardHelper {
     companion object {
 
         fun settingsButtons(): ReplyKeyboard {
-            val rows = EnumSet.allOf(SettingsType::class.java).stream()
-                .map {
-                    InlineKeyboardButton().apply {
-                        text = it.displayName
-                        callbackData = it.queryData.toString()
-                    }.let { listOf(it) }
-                }.toList()
+            val rows =
+                EnumSet.allOf(SettingsType::class.java)
+                    .stream()
+                    .filter { it.visible }
+                    .map {
+                        InlineKeyboardButton().apply {
+                            text = it.displayName
+                            callbackData = it.queryData.toString()
+                        }.let { listOf(it) }
+                    }.toList()
 
             return InlineKeyboardMarkup().apply { keyboard = rows }
         }
 
         fun delayTimeButtons(delayTime: DelayNotificationType? = null): ReplyKeyboard {
-            val rows = EnumSet.allOf(DelayNotificationType::class.java).stream()
-                .filter { it != delayTime }
-                .map {
-                    InlineKeyboardButton().apply {
-                        text = it.displayName
-                        callbackData = it.queryData.toString()
-                    }.let { listOf(it) }
-                }.toList()
+            val rows =
+                EnumSet.allOf(DelayNotificationType::class.java)
+                    .stream()
+                    .filter { it != delayTime }
+                    .map {
+                        InlineKeyboardButton().apply {
+                            text = it.displayName
+                            callbackData = it.queryData.toString()
+                        }.let { listOf(it) }
+                    }.toList()
 
             return InlineKeyboardMarkup().apply { keyboard = rows }
         }
 
         fun notifyButtons(): ReplyKeyboard {
-            val rows = EnumSet.allOf(AnswerNotificationType::class.java).stream().map {
-                InlineKeyboardButton().apply {
-                    text = it.displayName
-                    callbackData = it.queryData.toString()
-                }
-            }.toList()
+            val rows =
+                EnumSet.allOf(AnswerNotificationType::class.java)
+                    .stream()
+                    .map {
+                        InlineKeyboardButton().apply {
+                            text = it.displayName
+                            callbackData = it.queryData.toString()
+                        }
+                    }.toList()
             return InlineKeyboardMarkup()
                 .apply {
                     keyboard = listOf(rows)
