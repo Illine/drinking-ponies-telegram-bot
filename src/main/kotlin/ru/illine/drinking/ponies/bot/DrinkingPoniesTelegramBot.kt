@@ -1,6 +1,5 @@
 package ru.illine.drinking.ponies.bot
 
-import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Lazy
 import org.springframework.stereotype.Component
 import org.telegram.abilitybots.api.bot.AbilityBot
@@ -8,15 +7,12 @@ import org.telegram.abilitybots.api.bot.BaseAbilityBot
 import org.telegram.abilitybots.api.db.MapDBContext.offlineInstance
 import org.telegram.abilitybots.api.objects.*
 import org.telegram.abilitybots.api.toggle.BareboneToggle
-import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands
 import org.telegram.telegrambots.meta.api.objects.Update
-import org.telegram.telegrambots.meta.api.objects.commands.BotCommand
-import org.telegram.telegrambots.meta.api.objects.commands.scope.BotCommandScopeAllPrivateChats
 import ru.illine.drinking.ponies.config.property.TelegramBotProperties
 import ru.illine.drinking.ponies.model.base.TelegramCommandType
+import ru.illine.drinking.ponies.service.CommandService
 import ru.illine.drinking.ponies.service.NotificationService
 import ru.illine.drinking.ponies.service.ReplayButtonFactory
-import java.util.*
 import java.util.function.BiConsumer
 
 
@@ -24,7 +20,8 @@ import java.util.function.BiConsumer
 class DrinkingPoniesTelegramBot(
     private val telegramBotProperties: TelegramBotProperties,
     @Lazy private val notificationService: NotificationService,
-    @Lazy private val replayButtonFactory: ReplayButtonFactory
+    @Lazy private val replayButtonFactory: ReplayButtonFactory,
+    @Lazy private val commandService: CommandService
 ) : AbilityBot(
     telegramBotProperties.token,
     telegramBotProperties.username,
@@ -32,13 +29,11 @@ class DrinkingPoniesTelegramBot(
     BareboneToggle()
 ) {
 
-    private val log = LoggerFactory.getLogger("BOT")
-
     override fun creatorId() = telegramBotProperties.creatorId
 
     override fun onRegister() {
         super.onRegister()
-        registerCommands()
+        commandService.register()
     }
 
     @Suppress("unused")
@@ -92,23 +87,5 @@ class DrinkingPoniesTelegramBot(
         }
 
         return Reply.of(action, Flag.CALLBACK_QUERY)
-    }
-
-    fun registerCommands() {
-        if (telegramBotProperties.autoUpdateCommands) {
-            log.warn("Telegram Commands will be updated!")
-            EnumSet.allOf(TelegramCommandType::class.java)
-                .stream()
-                .filter { it.visible }
-                .map { BotCommand(it.command, it.descriptions) }
-                .toList()
-                .let {
-                    SetMyCommands()
-                        .apply {
-                            commands = it
-                            scope = BotCommandScopeAllPrivateChats()
-                        }
-                }.apply { execute(this) }
-        }
     }
 }
