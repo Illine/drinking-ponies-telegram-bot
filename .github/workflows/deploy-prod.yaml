@@ -31,7 +31,7 @@ jobs:
       - prepare
     env:
       LIQUIBASE_PROPERTIES_PATH: ${{ needs.prepare.outputs.liquibase_path }}
-      DOCKER_IMAGE_LATEST: illine/drinking-ponies-telegram-bot:latest
+      DOCKER_IMAGE: illine/drinking-ponies-telegram-bot
     steps:
       - uses: actions/checkout@v4
 
@@ -45,6 +45,7 @@ jobs:
         run: |
           CURRENT_VERSION=$(git describe --tags --abbrev=0 --match "v[0-9].*")
           echo "CURRENT_VERSION=$CURRENT_VERSION" > ${{ needs.prepare.outputs.env_path }}
+          echo "CURRENT_VERSION=$CURRENT_VERSION" >> $GITHUB_ENV
 
       - name: Updating a ${{ needs.prepare.outputs.stage }} database via liquibase
         run: ./gradlew update
@@ -52,7 +53,7 @@ jobs:
       - name: Stopping and removing images, containers, networks
         run: |
           docker-compose -p ${{ needs.prepare.outputs.stack_name }} -f ${{ needs.prepare.outputs.docker_compose_path }} down
-          docker rmi $DOCKER_IMAGE_LATEST
+          docker rmi $DOCKER_IMAGE:{{ env.CURRENT_VERSION }}
 
       - name: Deploying via Docker Compose to ${{ needs.prepare.outputs.stage }}
         run: |
