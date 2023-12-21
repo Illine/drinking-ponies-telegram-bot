@@ -15,7 +15,6 @@ import ru.illine.drinking.ponies.service.NotificationService
 import ru.illine.drinking.ponies.service.ReplayButtonFactory
 import java.util.function.BiConsumer
 
-
 @Component
 class DrinkingPoniesTelegramBot(
     private val telegramBotProperties: TelegramBotProperties,
@@ -78,6 +77,17 @@ class DrinkingPoniesTelegramBot(
             .locality(Locality.USER)
             .privacy(Privacy.PUBLIC)
             .action { notificationService.settings(it) }
+            .build()
+
+    @Suppress("unused")
+    fun versionCommand() =
+        Ability
+            .builder()
+            .name(TelegramCommandType.VERSION.command)
+            .info(TelegramCommandType.VERSION.info)
+            .locality(Locality.USER)
+            .privacy(Privacy.CREATOR)
+            .action { silent.send(telegramBotProperties.version, it.chatId()) }
             .build()
 
     @Suppress("unused")
