@@ -53,7 +53,7 @@ jobs:
       - name: Stopping and removing images, containers, networks
         run: |
           docker-compose -p ${{ needs.prepare.outputs.stack_name }} -f ${{ needs.prepare.outputs.docker_compose_path }} down
-          docker rmi $DOCKER_IMAGE:{{ env.CURRENT_VERSION }}
+          docker rmi $DOCKER_IMAGE:$CURRENT_VERSION
 
       - name: Deploying via Docker Compose to ${{ needs.prepare.outputs.stage }}
         run: |
