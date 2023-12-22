@@ -9,7 +9,7 @@ import ru.illine.drinking.ponies.model.dto.NotificationDto
 import ru.illine.drinking.ponies.service.AbstractAnswerNotificationReplyButtonStrategy
 import ru.illine.drinking.ponies.service.ButtonEditorService
 import ru.illine.drinking.ponies.util.MessageHelper
-import java.time.OffsetDateTime
+import java.time.LocalDateTime
 
 @Service
 class YesAnswerNotificationReplayButtonStrategy(
@@ -19,7 +19,7 @@ class YesAnswerNotificationReplayButtonStrategy(
 ) : AbstractAnswerNotificationReplyButtonStrategy<NotificationDto>(sender, buttonEditorService) {
 
     override fun updateLastNotificationTime(callbackQuery: CallbackQuery): () -> NotificationDto = {
-        notificationAccessService.updateTimeOfLastNotification(callbackQuery.from.id, OffsetDateTime.now())
+        notificationAccessService.updateTimeOfLastNotification(callbackQuery.from.id, LocalDateTime.now())
     }
 
     override fun getMessageText(): String = MessageHelper.NOTIFICATION_ANSWER_YES_MESSAGE

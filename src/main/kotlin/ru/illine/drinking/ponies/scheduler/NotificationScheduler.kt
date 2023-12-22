@@ -6,7 +6,10 @@ import org.springframework.stereotype.Component
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
 import ru.illine.drinking.ponies.model.dto.NotificationDto
 import ru.illine.drinking.ponies.service.NotificationService
-import java.time.*
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.ZoneId
+import java.time.ZonedDateTime
 import java.util.stream.Collectors
 
 @Component
@@ -16,18 +19,24 @@ class NotificationScheduler(
 ) {
 
     private val MAX_NOTIFICATION_ATTEMPTS = 3
+
     private val FOR_NOTIFICATIONS = false
     private val FOR_CANCEL = true
+
+    private val DEFAULT_TOO_LATE_TIME = LocalTime.of(23, 0)
+    private val DEFAULT_TOO_EARLY_TIME = LocalTime.of(11, 0)
 
     private val log = LoggerFactory.getLogger("SCHEDULER")
 
     @Scheduled(cron = "\${telegram-bot.schedule.notification.cron}")
     fun drinkingNotification() {
         log.info("The Drinking Notification Scheduler is started")
+
+        val now = LocalDateTime.now()
         val notifications = notificationAccessService.findAll()
             .stream()
-            .filter { ifTimeOfNotification(it) }
             .filter { ifNotSilenceTime(it) }
+            .filter { ifTimeOfNotification(it, now) }
             .collect(Collectors.partitioningBy { it.notificationAttempts == MAX_NOTIFICATION_ATTEMPTS })
         notifyAll(notifications)
         cancelAll(notifications)
@@ -35,17 +44,35 @@ class NotificationScheduler(
         log.info("The Drinking Notification Scheduler is finished")
     }
 
-    private fun ifTimeOfNotification(dto: NotificationDto): Boolean {
-        val expectedSentNotificationTime = dto.timeOfLastNotification.plusMinutes(dto.delayNotification.minutes)
-        return expectedSentNotificationTime.isBefore(OffsetDateTime.now())
-    }
-
     private fun ifNotSilenceTime(dto: NotificationDto): Boolean {
+        log.debug("Checking of silence mode for a user with id: [{}]", dto.id)
+
         val userZoneId = ZoneId.of(dto.userTimeZone)
         val userDateTime = ZonedDateTime.now(userZoneId)
 
-        return userDateTime.toLocalTime().isBefore(LocalTime.of(23, 0))
-                && userDateTime.toLocalTime().isAfter(LocalTime.of(11, 0))
+        log.debug("The user has a timezone: [{}] and a current time: [{}]", userZoneId, userDateTime)
+
+        val late = userDateTime.toLocalTime().isBefore(DEFAULT_TOO_LATE_TIME)
+        val early = userDateTime.toLocalTime().isAfter(DEFAULT_TOO_EARLY_TIME)
+
+        log.debug("Now is before [{}]: [{}]", DEFAULT_TOO_LATE_TIME, late)
+        log.debug("Now is after [{}]: [{}]", DEFAULT_TOO_EARLY_TIME, early)
+
+        return late && early
+    }
+
+    private fun ifTimeOfNotification(dto: NotificationDto, timeForComparing: LocalDateTime): Boolean {
+        log.debug("Checking of the last time of a notification for a user with id: [{}]", dto.id)
+        log.debug("Now (UTC) is: [{}]", timeForComparing)
+        log.debug("The last notification was (UTC): [{}]", dto.timeOfLastNotification)
+
+        val expectedSentNotificationTime = dto.timeOfLastNotification.plusMinutes(dto.delayNotification.minutes)
+        log.debug("The next notification should be (UTC) [{}]", expectedSentNotificationTime)
+
+        val sending = expectedSentNotificationTime.isBefore(timeForComparing)
+        log.debug("The notification should be sent: [{}]", sending)
+
+        return sending
     }
 
     private fun notifyAll(notifications: Map<Boolean, List<NotificationDto>>) {

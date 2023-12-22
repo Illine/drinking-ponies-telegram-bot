@@ -12,7 +12,7 @@ import ru.illine.drinking.ponies.service.NotificationService
 import ru.illine.drinking.ponies.util.FunctionHelper.check
 import ru.illine.drinking.ponies.util.MessageHelper
 import ru.illine.drinking.ponies.util.TelegramBotKeyboardHelper
-import java.time.OffsetDateTime
+import java.time.LocalDateTime
 
 @Service
 class NotificationServiceImpl(
@@ -94,7 +94,7 @@ class NotificationServiceImpl(
     override fun suspendNotifications(notifications: Collection<NotificationDto>) {
         deletePreviousNotificationMessages(notifications)
 
-        val now = OffsetDateTime.now()
+        val now = LocalDateTime.now()
         notifications
             .forEach {
                 SendMessage().apply {

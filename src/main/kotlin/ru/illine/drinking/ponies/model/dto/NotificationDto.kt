@@ -2,7 +2,7 @@ package ru.illine.drinking.ponies.model.dto
 
 import ru.illine.drinking.ponies.model.base.DelayNotificationType
 import ru.illine.drinking.ponies.model.entity.NotificationEntity
-import java.time.OffsetDateTime
+import java.time.LocalDateTime
 
 data class NotificationDto(
     var id: Long? = null,
@@ -13,7 +13,7 @@ data class NotificationDto(
 
     val delayNotification: DelayNotificationType,
 
-    var timeOfLastNotification: OffsetDateTime = OffsetDateTime.now(),
+    var timeOfLastNotification: LocalDateTime = LocalDateTime.now(),
 
     var notificationAttempts: Int = 0,
 
@@ -21,9 +21,9 @@ data class NotificationDto(
 
     var previousNotificationMessageId: Int? = null,
 
-    var created: OffsetDateTime? = null,
+    var created: LocalDateTime? = null,
 
-    var updated: OffsetDateTime? = null,
+    var updated: LocalDateTime? = null,
 
     var deleted: Boolean = false
 ) {
