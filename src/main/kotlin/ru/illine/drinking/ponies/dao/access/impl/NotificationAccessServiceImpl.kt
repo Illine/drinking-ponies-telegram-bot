@@ -6,7 +6,7 @@ import org.springframework.transaction.annotation.Transactional
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
 import ru.illine.drinking.ponies.dao.repository.NotificationRepository
 import ru.illine.drinking.ponies.model.dto.NotificationDto
-import java.time.OffsetDateTime
+import java.time.LocalDateTime
 import java.util.stream.Collectors
 
 @Service
@@ -59,7 +59,7 @@ class NotificationAccessServiceImpl(
     }
 
     @Transactional
-    override fun updateTimeOfLastNotification(userId: Long, time: OffsetDateTime): NotificationDto {
+    override fun updateTimeOfLastNotification(userId: Long, time: LocalDateTime): NotificationDto {
         log.info("Updating a time of last notification for a Notification by userId [$userId]")
 
         val foundEntity = requireNotNull(

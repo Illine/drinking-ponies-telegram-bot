@@ -1,7 +1,7 @@
 package ru.illine.drinking.ponies.dao.access
 
 import ru.illine.drinking.ponies.model.dto.NotificationDto
-import java.time.OffsetDateTime
+import java.time.LocalDateTime
 
 interface NotificationAccessService {
 
@@ -13,7 +13,7 @@ interface NotificationAccessService {
 
     fun save(dto: NotificationDto): NotificationDto
 
-    fun updateTimeOfLastNotification(userId: Long, time: OffsetDateTime): NotificationDto
+    fun updateTimeOfLastNotification(userId: Long, time: LocalDateTime): NotificationDto
 
     fun updateNotifications(notifications: Collection<NotificationDto>): Set<NotificationDto>
 

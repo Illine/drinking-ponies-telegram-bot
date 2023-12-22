@@ -6,8 +6,7 @@ import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
 import ru.illine.drinking.ponies.model.base.DelayNotificationType
 import ru.illine.drinking.ponies.model.dto.NotificationDto
-import java.time.OffsetDateTime
-import java.time.ZoneId
+import java.time.LocalDateTime
 
 @Entity
 @Table(
@@ -38,10 +37,10 @@ class NotificationEntity(
     var delayNotification: DelayNotificationType,
 
     @Column(name = "time_of_last_notification", nullable = false)
-    var timeOfLastNotification: OffsetDateTime,
+    var timeOfLastNotification: LocalDateTime,
 
     @Column(name = "user_time_zone", nullable = false)
-    var userTimeZone: String = ZoneId.systemDefault().toString(),
+    var userTimeZone: String,
 
     @Column(name = "notification_attempts", nullable = false)
     var notificationAttempts: Int = 0,
@@ -56,27 +55,27 @@ class NotificationEntity(
 
     @Column(name = "created", nullable = false, updatable = false)
     @JsonIgnore
-    var created: OffsetDateTime? = null
+    var created: LocalDateTime? = null
 
     @Column(name = "updated", nullable = false)
     @JsonIgnore
-    var updated: OffsetDateTime? = null
+    var updated: LocalDateTime? = null
 
     @PrePersist
     private fun onCreate() {
-        val now = OffsetDateTime.now()
+        val now = LocalDateTime.now()
         created = now
         updated = now
     }
 
     @PreUpdate
     private fun onUpdate() {
-        updated = OffsetDateTime.now()
+        updated = LocalDateTime.now()
     }
 
     @PreRemove
     private fun onDelete() {
-        updated = OffsetDateTime.now()
+        updated = LocalDateTime.now()
         deleted = false
     }
 
