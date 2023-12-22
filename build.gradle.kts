@@ -12,6 +12,7 @@ plugins {
 }
 
 group = "ru.illine"
+version = "0.5.0"
 
 java {
     sourceCompatibility = JavaVersion.VERSION_17
