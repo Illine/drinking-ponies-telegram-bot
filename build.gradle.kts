@@ -2,13 +2,12 @@ import java.io.FileInputStream
 import java.util.*
 
 plugins {
-    id("org.springframework.boot") version "3.2.0"
-    id("io.spring.dependency-management") version "1.1.4"
-    id("org.liquibase.gradle") version "2.2.0"
-
-    kotlin("jvm") version "1.8.22"
-    kotlin("plugin.spring") version "1.8.22"
-    kotlin("plugin.jpa") version "1.8.22"
+    alias(libs.plugins.springframework.boot)
+    alias(libs.plugins.spring.dependency.management)
+    alias(libs.plugins.liquibase)
+    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.kotlin.spring)
+    alias(libs.plugins.kotlin.jpa)
 }
 
 group = "ru.illine"
@@ -30,38 +29,37 @@ repositories {
 }
 
 dependencies {
-    implementation("org.springframework.boot:spring-boot-starter-actuator")
-    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-    implementation("org.springframework.boot:spring-boot-starter-validation")
-    implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation(libs.spring.boot.starter.actuator)
+    implementation(libs.spring.boot.starter.data.jpa)
+    implementation(libs.spring.boot.starter.validation)
+    implementation(libs.spring.boot.starter.web)
 
-    implementation("javax.xml.bind:jaxb-api:2.3.0")
-    implementation("org.jetbrains.kotlin:kotlin-reflect")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
-    implementation("javax.validation:validation-api:2.0.1.Final")
-    implementation("org.zalando:logbook-spring-boot-starter:3.6.0")
-    implementation("org.zalando:logbook-httpclient:3.6.0")
-    implementation("org.telegram:telegrambots-abilities:6.8.0")
-    implementation("com.github.gavlyukovskiy:datasource-decorator-spring-boot-autoconfigure:1.9.1")
-    implementation("p6spy:p6spy:3.9.1")
+    implementation(libs.jaxb.api)
+    implementation(libs.kotlin.reflect)
+    implementation(libs.jackson.module.kotlin)
+    implementation(libs.validation.api)
+    implementation(libs.logbook.spring.boot.starter)
+    implementation(libs.logbook.httpclient)
+    implementation(libs.telegrambots.abilities)
+    implementation(libs.datasource.decorator.spring.boot)
+    implementation(libs.p6spy)
 
-    liquibaseRuntime("org.liquibase:liquibase-core:4.20.0")
-    liquibaseRuntime("org.liquibase:liquibase-groovy-dsl:3.0.2")
-    liquibaseRuntime("ch.qos.logback:logback-classic:1.4.5")
-    liquibaseRuntime("ch.qos.logback:logback-classic:1.4.5")
-    liquibaseRuntime("org.postgresql:postgresql:42.5.4")
-    liquibaseRuntime("org.yaml:snakeyaml:2.0")
-    liquibaseRuntime("info.picocli:picocli:4.6.1")
-    liquibaseRuntime("javax.xml.bind:jaxb-api:2.3.1")
+    liquibaseRuntime(libs.liquibase.core)
+    liquibaseRuntime(libs.liquibase.groovy.dsl)
+    liquibaseRuntime(libs.logback)
+    liquibaseRuntime(libs.postgres)
+    liquibaseRuntime(libs.snakeyaml)
+    liquibaseRuntime(libs.picocli)
+    liquibaseRuntime(libs.jaxb.api)
 
-    runtimeOnly("org.postgresql:postgresql")
+    runtimeOnly(libs.postgres)
 
-    annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
+    annotationProcessor(libs.spring.boot.configuration.processor)
 
-    testImplementation("org.springframework.boot:spring-boot-starter-test") {
+    testImplementation(libs.spring.boot.starter.test) {
         exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
     }
-    testImplementation("org.junit.jupiter:junit-jupiter:5.8.2")
+    testImplementation(libs.junit.jupiter)
 }
 
 allOpen {
