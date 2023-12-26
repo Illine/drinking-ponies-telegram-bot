@@ -56,7 +56,16 @@ jobs:
           java-version: 17
 
       - name: Gradle Test
-        run: ./gradlew test
+        run: TELEGRAM_BOT_TOKEN=${{ secrets.INTEGRATION_TEST_TELEGRAM_BOT_TOKEN }} TELEGRAM_BOT_CREATOR_ID=${{ secrets.INTEGRATION_TEST_TELEGRAM_BOT_CREATOR_ID }} ./gradlew test
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: ./build/jacoco/coverage.xml
+          name: codecov-dptb
+          flags: unit
+          fail_ci_if_error: true
 
       - name: Gradle Assemble
         run: ./gradlew clean assemble
