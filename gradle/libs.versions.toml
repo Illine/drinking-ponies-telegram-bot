@@ -10,13 +10,15 @@ logbook = "3.6.0"
 telegram-bot = "6.8.0"
 datasource-decorator-spring-boot="1.9.1"
 p6spy="3.9.1"
-liquibase-core="4.20.0"
+liquibase-core="4.25.1"
 liquibase-dsl="3.0.2"
-logback="1.4.5"
+logback="1.4.12"
 postgres="42.5.4"
 snakeyaml="2.0"
 picocli="4.6.1"
 junit-jupiter="5.8.2"
+testcontainers="1.19.3"
+datafaker="2.0.2"
 
 [libraries]
 spring-boot-starter-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator" }
@@ -42,6 +44,10 @@ postgres = { module = "org.postgresql:postgresql", version.ref = "postgres"}
 snakeyaml = { module = "org.yaml:snakeyaml", version.ref = "snakeyaml"}
 picocli = { module = "info.picocli:picocli", version.ref = "picocli"}
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit-jupiter"}
+testcontainers-core = { module = "org.testcontainers:testcontainers", version.ref = "testcontainers"}
+testcontainers-junit-jupiter = { module = "org.testcontainers:junit-jupiter", version.ref = "testcontainers"}
+testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref = "testcontainers"}
+datafaker = { module = "net.datafaker:datafaker", version.ref = "datafaker"}
 
 [plugins]
 springframework-boot = { id = "org.springframework.boot", version.ref = "spring-boot-plugin" }

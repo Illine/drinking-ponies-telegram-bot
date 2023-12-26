@@ -1,0 +1,38 @@
+name: "Checking of Pull Request"
+
+on:
+  pull_request:
+    branches:
+      - develop
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          architecture: x64
+          java-version: 17
+
+      - name: Gradle Test
+        run: TELEGRAM_BOT_TOKEN=${{ secrets.INTEGRATION_TEST_TELEGRAM_BOT_TOKEN }} TELEGRAM_BOT_CREATOR_ID=${{ secrets.INTEGRATION_TEST_TELEGRAM_BOT_CREATOR_ID }} ./gradlew test
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: ./build/jacoco/coverage.xml
+          name: codecov-dptb
+          flags: unit
+          fail_ci_if_error: true
+
+      - name: AutoMerge
+        if: success()
+        uses: pascalgn/automerge-action@v0.15.6
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT }}
+          MERGE_DELETE_BRANCH: true
+          MERGE_METHOD: "squash"
