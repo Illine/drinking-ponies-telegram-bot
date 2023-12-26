@@ -2,6 +2,8 @@ import java.io.FileInputStream
 import java.util.*
 
 plugins {
+    jacoco
+
     alias(libs.plugins.springframework.boot)
     alias(libs.plugins.spring.dependency.management)
     alias(libs.plugins.liquibase)
@@ -59,7 +61,12 @@ dependencies {
     testImplementation(libs.spring.boot.starter.test) {
         exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
     }
+    testImplementation(libs.liquibase.core)
     testImplementation(libs.junit.jupiter)
+    testImplementation(libs.testcontainers.core)
+    testImplementation(libs.testcontainers.junit.jupiter)
+    testImplementation(libs.testcontainers.postgresql)
+    testImplementation(libs.datafaker)
 }
 
 allOpen {
@@ -101,7 +108,45 @@ tasks {
     }
 
     test {
-        useJUnitPlatform()
+        useJUnitPlatform {
+            includeTags("unit", "spring-integration")
+        }
+
+        finalizedBy(jacocoTestReport, jacocoTestCoverageVerification)
+    }
+
+    jacocoTestCoverageVerification {
+        violationRules {
+            rule {
+                element = "CLASS"
+                excludes = listOf("ru.illine.drinking.ponies.DrinkingPoniesApplication")
+            }
+            rule {
+                element = "PACKAGE"
+                includes = listOf(
+                    "ru.illine.drinking.ponies.bot",
+                    "ru.illine.drinking.ponies.config",
+                    "ru.illine.drinking.ponies.dao",
+                    "ru.illine.drinking.ponies.scheduler",
+                    "ru.illine.drinking.ponies.service",
+                    "ru.illine.drinking.ponies.util"
+                )
+                limit {
+                    counter = "LINE"
+                    value = "COVEREDRATIO"
+                    minimum = BigDecimal("0.0")
+                }
+            }
+        }
+    }
+
+    jacocoTestReport {
+        reports {
+            println(layout.buildDirectory.dir("/jacoco/coverage.xml"))
+            html.required = false
+            xml.required = true
+            xml.outputLocation = layout.buildDirectory.file("jacoco/coverage.xml")
+        }
     }
 
     compileKotlin {

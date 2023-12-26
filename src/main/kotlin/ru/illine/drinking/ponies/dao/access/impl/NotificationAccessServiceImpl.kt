@@ -45,7 +45,7 @@ class NotificationAccessServiceImpl(
     override fun save(dto: NotificationDto): NotificationDto {
         log.info("Saving a Notification by userId [${dto.userId}]")
 
-        val foundEntity = repository.findAnyByUserId(dto.userId)
+        val foundEntity = repository.findByUserId(dto.userId)
         if (foundEntity == null) {
             log.info("The Notification will be saved as a new record")
             val entity = dto.toEntity()
@@ -94,12 +94,12 @@ class NotificationAccessServiceImpl(
     @Transactional
     override fun enableByUserId(userId: Long) {
         log.info("A notification will be enabled (deleted = false) by userId [$userId]")
-        repository.enableByUserId(userId)
+        repository.switchDeleted(userId, false)
     }
 
     @Transactional
     override fun disableByUserId(userId: Long) {
-        log.info("Deleting (deleted = true) of a notification by userId: $userId")
-        repository.deleteByUserId(userId)
+        log.info("A notification will be disabled (deleted = true) by userId [$userId]")
+        repository.switchDeleted(userId, true)
     }
 }

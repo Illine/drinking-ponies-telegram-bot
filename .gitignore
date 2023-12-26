@@ -5,6 +5,7 @@ build/
 !**/src/test/**/build/
 .liquibase
 .jpb
+.env
 
 ### IntelliJ IDEA ###
 .idea
