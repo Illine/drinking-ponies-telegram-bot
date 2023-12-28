@@ -1,12 +1,12 @@
-name: "Checking of Pull Request"
+name: "Updating CodeCov"
 
 on:
-  pull_request:
+  push:
     branches:
       - develop
 
 jobs:
-  test:
+  codecov:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -25,14 +25,6 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           file: ./build/jacoco/coverage.xml
-          name: codecov-dptb-pr
+          name: codecov-dptb-develop
           flags: unit
           fail_ci_if_error: true
-
-      - name: AutoMerge
-        if: success()
-        uses: pascalgn/automerge-action@v0.15.6
-        env:
-          GITHUB_TOKEN: ${{ secrets.PAT }}
-          MERGE_DELETE_BRANCH: true
-          MERGE_METHOD: "squash"

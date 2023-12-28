@@ -3,6 +3,7 @@ package ru.illine.drinking.ponies.model.entity
 import com.fasterxml.jackson.annotation.JsonIgnore
 import jakarta.persistence.*
 import org.hibernate.annotations.SQLDelete
+import org.hibernate.annotations.SQLRestriction
 import ru.illine.drinking.ponies.model.base.DelayNotificationType
 import ru.illine.drinking.ponies.model.dto.NotificationDto
 import java.time.LocalDateTime
@@ -14,6 +15,7 @@ import java.time.LocalDateTime
     indexes = [Index(name = "notifications_user_id_unique_index", columnList = "user_id", unique = true)]
 )
 @SQLDelete(sql = "update notifications set deleted = true where id = ?")
+@SQLRestriction(value = "deleted = false")
 class NotificationEntity(
 
     @Id
