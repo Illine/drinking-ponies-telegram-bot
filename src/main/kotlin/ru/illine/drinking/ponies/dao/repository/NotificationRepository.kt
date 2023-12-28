@@ -8,9 +8,17 @@ import ru.illine.drinking.ponies.model.entity.NotificationEntity
 
 interface NotificationRepository : JpaRepository<NotificationEntity, Long> {
 
-    fun findByUserId(userId: Long): NotificationEntity?
+    @Query(
+        value = "select * from drinking_ponies.notifications where user_id = :userId",
+        nativeQuery = true
+    )
+    fun findByUserId(@Param("userId") userId: Long): NotificationEntity?
 
-    fun existsByUserId(userId: Long): Boolean
+    @Query(
+        value = "select count(n.id) > 0 from drinking_ponies.notifications n where n.user_id = :userId",
+        nativeQuery = true
+    )
+    fun existsByUserId(@Param("userId") userId: Long): Boolean
 
     @Modifying
     @Query(
