@@ -6,6 +6,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import ru.illine.drinking.ponies.model.base.AnswerNotificationType
 import ru.illine.drinking.ponies.model.base.DelayNotificationType
 import ru.illine.drinking.ponies.model.base.SettingsType
+import ru.illine.drinking.ponies.model.base.SnoozeNotificationType
 import java.util.*
 
 class TelegramBotKeyboardHelper {
@@ -32,6 +33,21 @@ class TelegramBotKeyboardHelper {
                 EnumSet.allOf(DelayNotificationType::class.java)
                     .stream()
                     .filter { it != delayTime }
+                    .map {
+                        InlineKeyboardButton().apply {
+                            text = it.displayName
+                            callbackData = it.queryData.toString()
+                        }.let { listOf(it) }
+                    }.toList()
+
+            return InlineKeyboardMarkup().apply { keyboard = rows }
+        }
+
+        fun snoozeTimeButtons(currentDelayTime: DelayNotificationType): ReplyKeyboard {
+            val rows =
+                EnumSet.allOf(SnoozeNotificationType::class.java)
+                    .stream()
+                    .filter { it.minutes > currentDelayTime.minutes }
                     .map {
                         InlineKeyboardButton().apply {
                             text = it.displayName

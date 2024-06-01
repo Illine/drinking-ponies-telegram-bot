@@ -69,6 +69,17 @@ class DrinkingPoniesTelegramBot(
             .build()
 
     @Suppress("unused")
+    fun snoozeCommand() =
+        Ability
+            .builder()
+            .name(TelegramCommandType.SNOOZE.command)
+            .info(TelegramCommandType.SNOOZE.info)
+            .locality(Locality.USER)
+            .privacy(Privacy.PUBLIC)
+            .action { notificationService.snooze(it) }
+            .build()
+
+    @Suppress("unused")
     fun settingsCommand() =
         Ability
             .builder()
