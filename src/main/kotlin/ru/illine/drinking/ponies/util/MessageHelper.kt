@@ -20,10 +20,15 @@ class MessageHelper {
             """.trimIndent()
 
         val RESUME_GREETING_MESSAGE =
-        """
-            Поняшки снова в деле!
-            Котик, тебе снова будут приходить уведомления.
-        """.trimIndent()
+            """
+                Поняшки снова в деле!
+                Котик, тебе снова будут приходить уведомления.
+            """.trimIndent()
+
+        val SNOOZE_GREETING_MESSAGE =
+            """
+                Выбери, пожалуйста, сколько времени тебя не будут беспокоить поняшки.
+            """.trimIndent()
 
         val STOP_GREETING_MESSAGE = "Поняшки больше не будут напоминать тебе попить :("
 
@@ -31,12 +36,14 @@ class MessageHelper {
 
         val SETTINGS_DELAY_NOTIFICATION_GREETING_MESSAGE = "Сейчас периодичность отправки уведомлений: *%s*"
         val SETTINGS_DELAY_NOTIFICATION_BUTTON_MESSAGE =
-        """
-            Помните, что пить - это очень важно и если ты забываешь, то я всегда напомню! 
-            Теперь выбери периодичность отправки напоминаний.
-        """.trimIndent()
+            """
+                Помните, что пить - это очень важно и если ты забываешь, то я всегда напомню! 
+                Теперь выбери периодичность отправки напоминаний.
+            """.trimIndent()
 
         val TIME_BUTTON_RESULT_MESSAGE = "Тебе будут приходить напоминая, что нужно водицы напиться раз в %s!"
+
+        val SNOOZE_BUTTON_RESULT_MESSAGE = "Поняшки не будут тебя беспокоить следующие %s!"
 
         val NOTIFICATION_QUESTION_MESSAGE = "Водица выпита?"
 
@@ -57,6 +64,15 @@ class MessageHelper {
             """.trimIndent()
 
         val NOTIFICATION_ANSWER_CANCEL_MESSAGE = "Милый зайчик, пожалуйста, напейся в следующий раз!"
+
+        val HALF_HOUR = "30 минут"
+        val HOUR = "1 час"
+        val HOUR_AND_HALF = "1 час 30 минут"
+        val TWO_HOURS = "2 часа"
+        val THREE_HOURS = "3 часа"
+        val FOUR_HOURS = "4 часа"
+        val FIVE_HOURS = "5 часов"
+
     }
 
 }

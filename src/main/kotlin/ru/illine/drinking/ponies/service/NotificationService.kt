@@ -11,6 +11,8 @@ interface NotificationService {
 
     fun resume(messageContext: MessageContext)
 
+    fun snooze(messageContext: MessageContext)
+
     fun settings(messageContext: MessageContext)
 
     fun sendNotifications(notifications: Collection<NotificationDto>)
