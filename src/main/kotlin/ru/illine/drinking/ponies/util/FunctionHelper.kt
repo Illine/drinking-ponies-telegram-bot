@@ -12,8 +12,8 @@ object FunctionHelper {
 
     inline fun catchAny(
         action: () -> Unit,
-        ifException: (Exception) -> Unit? = {},
-        errorLogging: (Exception) -> Unit?
+        ifException: (Exception) -> Unit = {},
+        errorLogging: (Exception) -> Unit = {}
     ) {
         try {
             action()
@@ -26,7 +26,7 @@ object FunctionHelper {
     inline fun <T> catchAnyWithReturn(
         action: () -> T,
         noinline ifException: ((Exception) -> T?)? = null,
-        errorLogging: (Exception) -> Unit?
+        errorLogging: (Exception) -> Unit = {}
     ): T? {
         return try {
             action()

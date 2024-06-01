@@ -1,3 +1,2 @@
 [![Build](https://github.com/Illine/drinking-ponies-telegram-bot/actions/workflows/build.yaml/badge.svg)](https://github.com/Illine/drinking-ponies-telegram-bot/actions/workflows/build.yaml)
-[![Deploy](https://github.com/Illine/drinking-ponies-telegram-bot/actions/workflows/deploy-prod.yaml/badge.svg)](https://github.com/Illine/drinking-ponies-telegram-bot/actions/workflows/deploy-prod.yaml)
-[![CodeCov](https://codecov.io/gh/Illine/drinking-ponies-telegram-bot/graph/badge.svg?token=ulVJODyqYZ)](https://codecov.io/gh/Illine/drinking-ponies-telegram-bot)
+[![codecov](https://codecov.io/github/Illine/drinking-ponies-telegram-bot/graph/badge.svg?token=ulVJODyqYZ)](https://codecov.io/github/Illine/drinking-ponies-telegram-bot)

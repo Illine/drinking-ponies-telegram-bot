@@ -19,6 +19,7 @@ picocli="4.6.1"
 junit-jupiter="5.8.2"
 testcontainers="1.19.3"
 datafaker="2.0.2"
+mockito-kotlin="5.2.1"
 
 [libraries]
 spring-boot-starter-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator" }
@@ -48,6 +49,7 @@ testcontainers-core = { module = "org.testcontainers:testcontainers", version.re
 testcontainers-junit-jupiter = { module = "org.testcontainers:junit-jupiter", version.ref = "testcontainers"}
 testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref = "testcontainers"}
 datafaker = { module = "net.datafaker:datafaker", version.ref = "datafaker"}
+mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "mockito-kotlin"}
 
 [plugins]
 springframework-boot = { id = "org.springframework.boot", version.ref = "spring-boot-plugin" }

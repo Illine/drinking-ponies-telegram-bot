@@ -67,6 +67,7 @@ dependencies {
     testImplementation(libs.testcontainers.junit.jupiter)
     testImplementation(libs.testcontainers.postgresql)
     testImplementation(libs.datafaker)
+    testImplementation(libs.mockito.kotlin)
 }
 
 allOpen {
@@ -112,32 +113,7 @@ tasks {
             includeTags("unit", "spring-integration")
         }
 
-        finalizedBy(jacocoTestReport, jacocoTestCoverageVerification)
-    }
-
-    jacocoTestCoverageVerification {
-        violationRules {
-            rule {
-                element = "CLASS"
-                excludes = listOf("ru.illine.drinking.ponies.DrinkingPoniesApplication")
-            }
-            rule {
-                element = "PACKAGE"
-                includes = listOf(
-                    "ru.illine.drinking.ponies.bot",
-                    "ru.illine.drinking.ponies.config",
-                    "ru.illine.drinking.ponies.dao",
-                    "ru.illine.drinking.ponies.scheduler",
-                    "ru.illine.drinking.ponies.service",
-                    "ru.illine.drinking.ponies.util"
-                )
-                limit {
-                    counter = "LINE"
-                    value = "COVEREDRATIO"
-                    minimum = BigDecimal("0.0")
-                }
-            }
-        }
+        finalizedBy(jacocoTestReport)
     }
 
     jacocoTestReport {
