@@ -69,14 +69,14 @@ class DrinkingPoniesTelegramBot(
             .build()
 
     @Suppress("unused")
-    fun snoozeCommand() =
+    fun pauseCommand() =
         Ability
             .builder()
-            .name(TelegramCommandType.SNOOZE.command)
-            .info(TelegramCommandType.SNOOZE.info)
+            .name(TelegramCommandType.PAUSE.command)
+            .info(TelegramCommandType.PAUSE.info)
             .locality(Locality.USER)
             .privacy(Privacy.PUBLIC)
-            .action { notificationService.snooze(it) }
+            .action { notificationService.pause(it) }
             .build()
 
     @Suppress("unused")

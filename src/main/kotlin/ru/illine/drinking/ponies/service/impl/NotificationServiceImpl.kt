@@ -66,16 +66,16 @@ class NotificationServiceImpl(
         }.apply { sender.execute(this) }
     }
 
-    override fun snooze(messageContext: MessageContext) {
+    override fun pause(messageContext: MessageContext) {
         val userId = messageContext.user().id
         val chantId = messageContext.chatId()
         val delayNotification = notificationAccessService.findByUserId(userId).delayNotification
 
         val sendMessageFunction: () -> Unit = {
             SendMessage().apply {
-                text = MessageHelper.SNOOZE_GREETING_MESSAGE
+                text = MessageHelper.PAUSE_GREETING_MESSAGE
                 setChatId(chantId)
-                replyMarkup = TelegramBotKeyboardHelper.snoozeTimeButtons(delayNotification)
+                replyMarkup = TelegramBotKeyboardHelper.pauseTimeButtons(delayNotification)
             }.apply { sender.execute(this) }
         }
 
