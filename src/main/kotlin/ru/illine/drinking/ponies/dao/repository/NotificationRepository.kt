@@ -9,7 +9,7 @@ import ru.illine.drinking.ponies.model.entity.NotificationEntity
 interface NotificationRepository : JpaRepository<NotificationEntity, Long> {
 
     @Query(
-        value = "select * from drinking_ponies.notifications where user_id = :userId",
+        value = "select n.* from drinking_ponies.notifications n where n.user_id = :userId",
         nativeQuery = true
     )
     fun findByUserId(@Param("userId") userId: Long): NotificationEntity?
@@ -19,6 +19,12 @@ interface NotificationRepository : JpaRepository<NotificationEntity, Long> {
         nativeQuery = true
     )
     fun existsByUserId(@Param("userId") userId: Long): Boolean
+
+    @Query(
+        value = "select n.deleted from drinking_ponies.notifications n where n.user_id = :userId",
+        nativeQuery = true
+    )
+    fun isDeletedByUserId(@Param("userId") userId: Long): Boolean
 
     @Modifying
     @Query(

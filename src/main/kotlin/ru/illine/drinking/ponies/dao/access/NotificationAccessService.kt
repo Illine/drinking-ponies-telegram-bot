@@ -21,4 +21,6 @@ interface NotificationAccessService {
 
     fun disableByUserId(userId: Long)
 
+    fun isActiveNotification(userId: Long): Boolean
+
 }
