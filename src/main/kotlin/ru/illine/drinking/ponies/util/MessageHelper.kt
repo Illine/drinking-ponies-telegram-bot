@@ -25,7 +25,7 @@ class MessageHelper {
                 Котик, тебе снова будут приходить уведомления.
             """.trimIndent()
 
-        val SNOOZE_GREETING_MESSAGE =
+        val PAUSE_GREETING_MESSAGE =
             """
                 Выбери, пожалуйста, сколько времени тебя не будут беспокоить поняшки.
             """.trimIndent()
@@ -43,7 +43,13 @@ class MessageHelper {
 
         val TIME_BUTTON_RESULT_MESSAGE = "Тебе будут приходить напоминая, что нужно водицы напиться раз в %s!"
 
-        val SNOOZE_BUTTON_RESULT_MESSAGE = "Поняшки не будут тебя беспокоить следующие %s!"
+        val PAUSE_BUTTON_RESULT_MESSAGE = "Поняшки не будут тебя беспокоить следующие %s!"
+
+        val PAUSE_RESET_BUTTON_RESULT_MESSAGE =
+            """
+                Теперь тебе снова будут приходить напоминая, что нужно водицы напиться раз в %s!
+                Ориентировочно следующий раз поняшка с уведомлением вернётся в %s.
+            """.trimIndent()
 
         val NOTIFICATION_QUESTION_MESSAGE = "Водица выпита?"
 
@@ -65,7 +71,12 @@ class MessageHelper {
 
         val NOTIFICATION_ANSWER_CANCEL_MESSAGE = "Милый зайчик, пожалуйста, напейся в следующий раз!"
 
-        val NOTIFICATION_NOT_ACTIVE_MESSAGE  =  "К сожалению, уведомления тебе отключены. Чтобы использовать эту функцию тебе нужно включить их обратно."
+        val NOTIFICATION_NOT_ACTIVE_MESSAGE =
+            """
+                К сожалению, уведомления тебе отключены. Чтобы использовать эту функцию тебе нужно включить их обратно.
+            """.trimIndent()
+
+        val PAUSE_RESET_TO_DEFAULT_MESSAGE = "Вернуть как было!"
 
         val HALF_HOUR = "30 минут"
         val HOUR = "1 час"

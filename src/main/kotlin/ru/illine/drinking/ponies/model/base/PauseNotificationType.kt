@@ -4,11 +4,12 @@ import ru.illine.drinking.ponies.util.MessageHelper
 import java.util.*
 
 @Suppress("unused")
-enum class SnoozeNotificationType(
+enum class PauseNotificationType(
     val displayName: String,
     val minutes: Long,
     val queryData: UUID
 ) {
+    RESET(MessageHelper.PAUSE_RESET_TO_DEFAULT_MESSAGE, 0, UUID.fromString("806c7780-3c82-445f-835d-b65dd3232688")),
     HOUR(MessageHelper.HOUR, 60, UUID.fromString("568df560-f242-4dd0-bb44-a0773b27d75d")),
     HOUR_AND_HALF(MessageHelper.HOUR_AND_HALF, 90, UUID.fromString("757f013a-d9fd-463c-974d-27e8f52f8d36")),
     TWO_HOURS(MessageHelper.TWO_HOURS, 120, UUID.fromString("3bcf42ec-e44c-4f29-b410-e65d5293c786")),
@@ -18,8 +19,8 @@ enum class SnoozeNotificationType(
 
     companion object {
 
-        fun typeOf(queryData: String): SnoozeNotificationType? {
-            return EnumSet.allOf(SnoozeNotificationType::class.java)
+        fun typeOf(queryData: String): PauseNotificationType? {
+            return EnumSet.allOf(PauseNotificationType::class.java)
                 .find { Objects.equals(queryData, it.queryData.toString()) }
         }
 
