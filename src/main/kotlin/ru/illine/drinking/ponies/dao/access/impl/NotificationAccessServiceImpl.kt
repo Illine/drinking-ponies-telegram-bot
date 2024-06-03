@@ -102,4 +102,10 @@ class NotificationAccessServiceImpl(
         log.info("A notification will be disabled (deleted = true) by userId [$userId]")
         repository.switchDeleted(userId, true)
     }
+
+    @Transactional
+    override fun isActiveNotification(userId: Long): Boolean  {
+        log.info("Checking if notifications are active by userId: [{}]", userId)
+        return repository.isDeletedByUserId(userId)
+    }
 }

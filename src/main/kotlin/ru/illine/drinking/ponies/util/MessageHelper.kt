@@ -65,6 +65,8 @@ class MessageHelper {
 
         val NOTIFICATION_ANSWER_CANCEL_MESSAGE = "Милый зайчик, пожалуйста, напейся в следующий раз!"
 
+        val NOTIFICATION_NOT_ACTIVE_MESSAGE  =  "К сожалению, уведомления тебе отключены. Чтобы использовать эту функцию тебе нужно включить их обратно."
+
         val HALF_HOUR = "30 минут"
         val HOUR = "1 час"
         val HOUR_AND_HALF = "1 час 30 минут"

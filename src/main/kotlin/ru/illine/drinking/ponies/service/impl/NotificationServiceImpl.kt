@@ -68,21 +68,35 @@ class NotificationServiceImpl(
 
     override fun snooze(messageContext: MessageContext) {
         val userId = messageContext.user().id
+        val chantId = messageContext.chatId()
         val delayNotification = notificationAccessService.findByUserId(userId).delayNotification
 
-        SendMessage().apply {
-            text = MessageHelper.SNOOZE_GREETING_MESSAGE
-            setChatId(messageContext.chatId())
-            replyMarkup = TelegramBotKeyboardHelper.snoozeTimeButtons(delayNotification)
-        }.apply { sender.execute(this) }
+        val sendMessageFunction: () -> Unit = {
+            SendMessage().apply {
+                text = MessageHelper.SNOOZE_GREETING_MESSAGE
+                setChatId(chantId)
+                replyMarkup = TelegramBotKeyboardHelper.snoozeTimeButtons(delayNotification)
+            }.apply { sender.execute(this) }
+        }
+
+        sendIfNotificationActive(
+            userId, chantId, sendMessageFunction
+        )
     }
 
     override fun settings(messageContext: MessageContext) {
-        SendMessage().apply {
-            text = MessageHelper.SETTINGS_GREETING_MESSAGE
-            setChatId(messageContext.chatId())
-            replyMarkup = TelegramBotKeyboardHelper.settingsButtons()
-        }.apply { sender.execute(this) }
+        val chantId = messageContext.chatId()
+        val sendMessageFunction: () -> Unit = {
+            SendMessage().apply {
+                text = MessageHelper.SETTINGS_GREETING_MESSAGE
+                setChatId(chantId)
+                replyMarkup = TelegramBotKeyboardHelper.settingsButtons()
+            }.apply { sender.execute(this) }
+        }
+
+        sendIfNotificationActive(
+            messageContext.user().id, messageContext.chatId(), sendMessageFunction
+        )
     }
 
     override fun sendNotifications(notifications: Collection<NotificationDto>) {
@@ -90,7 +104,7 @@ class NotificationServiceImpl(
 
         notifications
             .forEach {
-                it.notificationAttempts += 1
+                ++it.notificationAttempts
                 it.previousNotificationMessageId =
                     SendMessage().apply {
                         text = MessageHelper.NOTIFICATION_QUESTION_MESSAGE
@@ -135,5 +149,22 @@ class NotificationServiceImpl(
         log.debug("The old messages: \n{}", messageInfo)
 
         buttonEditorService.deleteMessages(messageInfo)
+    }
+
+    fun sendIfNotificationActive(userId: Long, chatId: Long, sendMessage: () -> Unit) {
+        notificationAccessService.isActiveNotification(userId)
+            .check(
+                ifTrue = {
+                    log.debug("A notification is disabled for user (userId: [$userId]), send a disabled message")
+                    SendMessage().apply {
+                        text = MessageHelper.NOTIFICATION_NOT_ACTIVE_MESSAGE
+                        setChatId(chatId)
+                    }.apply { sender.execute(this) }
+                },
+                ifFalse = {
+                    log.debug("A notification is enabled for user (userId: [$userId]), send a standard message")
+                    sendMessage()
+                }
+            )
     }
 }
