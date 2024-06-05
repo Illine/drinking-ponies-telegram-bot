@@ -20,7 +20,7 @@ enum class PauseNotificationType(
     companion object {
 
         fun typeOf(queryData: String): PauseNotificationType? {
-            return EnumSet.allOf(PauseNotificationType::class.java)
+            return PauseNotificationType.values()
                 .find { Objects.equals(queryData, it.queryData.toString()) }
         }
 

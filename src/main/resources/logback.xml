@@ -14,7 +14,7 @@
     <root level="INFO">
         <appender-ref ref="CONSOLE"/>
     </root>
-    <logger name="org.telegram.abilitybots.api.bot" level="WARN">
+    <logger name="org.telegram.telegrambots.abilitybots.api.bot" level="WARN">
         <appender-ref ref="CONSOLE"/>
     </logger>
 </configuration>

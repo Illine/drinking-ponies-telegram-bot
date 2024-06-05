@@ -6,20 +6,11 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.zalando.logbook.Correlation
 import org.zalando.logbook.HttpLogWriter
-import org.zalando.logbook.Logbook
 import org.zalando.logbook.Precorrelation
-import org.zalando.logbook.httpclient.LogbookHttpRequestInterceptor
-import org.zalando.logbook.httpclient.LogbookHttpResponseInterceptor
 import ru.illine.drinking.ponies.config.property.LogbookProperties
 
 @Configuration
 class LogbookConfig {
-
-    @Bean
-    fun telegramLogbookRequestInterceptor(logbook: Logbook) = LogbookHttpRequestInterceptor(logbook)
-
-    @Bean
-    fun telegramLogbookResponseInterceptor() = LogbookHttpResponseInterceptor()
 
     @Bean
     fun writer(properties: LogbookProperties) = DefaultHttpLogWriter(properties)

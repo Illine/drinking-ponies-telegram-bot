@@ -41,7 +41,9 @@ dependencies {
     implementation(libs.jackson.module.kotlin)
     implementation(libs.validation.api)
     implementation(libs.logbook.spring.boot.starter)
-    implementation(libs.logbook.httpclient)
+    implementation(libs.logbook.okhttp)
+    implementation(libs.telegrambots.client)
+    implementation(libs.telegrambots.longpolling)
     implementation(libs.telegrambots.abilities)
     implementation(libs.datasource.decorator.spring.boot)
     implementation(libs.p6spy)
@@ -118,7 +120,6 @@ tasks {
 
     jacocoTestReport {
         reports {
-            println(layout.buildDirectory.dir("/jacoco/coverage.xml"))
             html.required = false
             xml.required = true
             xml.outputLocation = layout.buildDirectory.file("jacoco/coverage.xml")

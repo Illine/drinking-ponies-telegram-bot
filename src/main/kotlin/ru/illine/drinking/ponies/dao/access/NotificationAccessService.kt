@@ -23,4 +23,6 @@ interface NotificationAccessService {
 
     fun isActiveNotification(userId: Long): Boolean
 
+    fun disableQuietMode(userId: Long)
+
 }

@@ -1,9 +1,9 @@
 package ru.illine.drinking.ponies.service.impl.strategy
 
 import org.springframework.stereotype.Service
-import org.telegram.abilitybots.api.sender.MessageSender
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery
+import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
 import ru.illine.drinking.ponies.model.base.SettingsType
 import ru.illine.drinking.ponies.service.ButtonEditorService
@@ -14,7 +14,7 @@ import java.util.*
 
 @Service
 class DelaySettingsReplayButtonStrategy(
-    private val sender: MessageSender,
+    private val sender: TelegramClient,
     private val notificationAccessService: NotificationAccessService,
     private val buttonEditorService: ButtonEditorService
 ) : ReplyButtonStrategy {
@@ -28,15 +28,17 @@ class DelaySettingsReplayButtonStrategy(
         val currentNotification =
             notificationAccessService.findByUserId(callbackQuery.from.id).delayNotification
 
-        SendMessage().apply {
-            text = MessageHelper.SETTINGS_DELAY_NOTIFICATION_GREETING_MESSAGE.format(currentNotification.displayName)
-            setChatId(chatId)
+        SendMessage(
+            chatId.toString(),
+            MessageHelper.SETTINGS_DELAY_NOTIFICATION_GREETING_MESSAGE.format(currentNotification.displayName)
+        ).apply {
             enableMarkdown(true)
         }.apply { sender.execute(this) }
 
-        SendMessage().apply {
-            text = MessageHelper.SETTINGS_DELAY_NOTIFICATION_BUTTON_MESSAGE
-            setChatId(chatId)
+        SendMessage(
+            chatId.toString(),
+            MessageHelper.SETTINGS_DELAY_NOTIFICATION_BUTTON_MESSAGE
+        ).apply {
             replyMarkup = TelegramBotKeyboardHelper.delayTimeButtons(currentNotification)
         }.apply { sender.execute(this) }
     }
