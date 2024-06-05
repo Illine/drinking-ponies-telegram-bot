@@ -2,16 +2,16 @@ package ru.illine.drinking.ponies.service.impl
 
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
-import org.telegram.abilitybots.api.sender.MessageSender
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageReplyMarkup
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText
+import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.illine.drinking.ponies.service.ButtonEditorService
 import ru.illine.drinking.ponies.util.FunctionHelper
 
 @Service
 class ButtonEditorServiceImpl(
-    private val sender: MessageSender
+    private val sender: TelegramClient
 ) : ButtonEditorService {
 
     private val log = LoggerFactory.getLogger("SERVICE")
@@ -28,14 +28,13 @@ class ButtonEditorServiceImpl(
     override fun editReplyMarkup(newText: String, chatId: Long, messageId: Int, enableMarkDown: Boolean) {
         deleteReplyMarkup(chatId, messageId)
 
-        EditMessageText()
-            .apply {
+        EditMessageText(
+            newText
+        ).apply {
                 setChatId(chatId)
                 setMessageId(messageId)
-                text = newText
                 enableMarkdown(enableMarkDown)
-            }
-            .apply { sender.execute(this) }
+        }.apply { sender.execute(this) }
     }
 
     override fun deleteMessage(chatId: Long, messageId: Int) {
@@ -43,11 +42,10 @@ class ButtonEditorServiceImpl(
     }
 
     override fun deleteMessage(messageInfo: Pair<Long, Int>) {
-        DeleteMessage()
-            .apply {
-                setChatId(messageInfo.first)
-                messageId = messageInfo.second
-            }.apply {
+        DeleteMessage(
+            messageInfo.first.toString(),
+            messageInfo.second
+        ).apply {
                 FunctionHelper.catchAny(
                     action = { sender.execute(this) },
                     errorLogging = {

@@ -7,6 +7,7 @@ import org.hibernate.annotations.SQLRestriction
 import ru.illine.drinking.ponies.model.base.DelayNotificationType
 import ru.illine.drinking.ponies.model.dto.NotificationDto
 import java.time.LocalDateTime
+import java.time.LocalTime
 
 @Entity
 @Table(
@@ -49,9 +50,16 @@ class NotificationEntity(
     @Column(name = "previous_notification_message_id")
     var previousNotificationMessageId: Int? = null,
 
+    @Column(name = "quiet_mode_start", nullable = false)
+    @JsonIgnore
+    var quietModeStart: LocalTime? = null,
+
+    @Column(name = "quiet_mode_end", nullable = false)
+    @JsonIgnore
+    var quietModeEnd: LocalTime? = null,
+
     @Column(name = "deleted", nullable = false)
     var deleted: Boolean = false
-
 ) {
 
     @Column(name = "created", nullable = false, updatable = false)
@@ -112,6 +120,8 @@ class NotificationEntity(
             notificationAttempts = notificationAttempts,
             userTimeZone = userTimeZone,
             previousNotificationMessageId = previousNotificationMessageId,
+            quietModeStart = quietModeStart,
+            quietModeEnd = quietModeEnd,
             created = created,
             updated = updated,
             deleted = deleted

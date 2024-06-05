@@ -18,7 +18,7 @@ enum class DelayNotificationType(
     companion object {
 
         fun typeOf(queryData: String): DelayNotificationType? {
-            return EnumSet.allOf(DelayNotificationType::class.java)
+            return DelayNotificationType.values()
                 .find { Objects.equals(queryData, it.queryData.toString()) }
         }
 

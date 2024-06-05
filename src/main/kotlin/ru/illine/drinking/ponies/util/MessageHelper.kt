@@ -9,6 +9,7 @@ class MessageHelper {
                 Здравствуй, %s! 
                 Я бот Пьющие Поняшки. Я полностью понимающий и знаю, что всем нужно пить!
             """.trimIndent()
+
         val START_DEFAULT_SETTINGS_MESSAGE =
             """
                Установлены настройки по-умолчанию:
@@ -35,10 +36,28 @@ class MessageHelper {
         val SETTINGS_GREETING_MESSAGE = "Выбери, какие настройки ты хочешь изменить"
 
         val SETTINGS_DELAY_NOTIFICATION_GREETING_MESSAGE = "Сейчас периодичность отправки уведомлений: *%s*"
+
         val SETTINGS_DELAY_NOTIFICATION_BUTTON_MESSAGE =
             """
                 Помните, что пить - это очень важно и если ты забываешь, то я всегда напомню! 
                 Теперь выбери периодичность отправки напоминаний.
+            """.trimIndent()
+
+        val SETTINGS_QUIET_MODE_TIME_NOTIFICATION_GREETING_ON_MESSAGE =
+            """
+                Твой тихий режим начинается в *%s* и заканчивается в *%s*
+            """.trimIndent()
+
+        val SETTINGS_QUIET_MODE_TIME_NOTIFICATION_GREETING_OFF_MESSAGE = "У тебя не установлен тихий режим"
+
+        val SETTINGS_QUIET_MODE_TIME_NOTIFICATION_START_BUTTON_MESSAGE =
+            """
+                Выбери, пожалуйста, удобное время начала тихого режима
+            """.trimIndent()
+
+        val SETTINGS_QUIET_MODE_TIME_NOTIFICATION_END_BUTTON_MESSAGE =
+            """
+                А теперь, когда он должен оканчиваться
             """.trimIndent()
 
         val TIME_BUTTON_RESULT_MESSAGE = "Тебе будут приходить напоминая, что нужно водицы напиться раз в %s!"

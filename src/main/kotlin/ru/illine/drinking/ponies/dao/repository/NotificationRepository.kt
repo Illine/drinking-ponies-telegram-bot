@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import ru.illine.drinking.ponies.model.entity.NotificationEntity
+import java.time.LocalTime
 
 interface NotificationRepository : JpaRepository<NotificationEntity, Long> {
 
@@ -32,4 +33,17 @@ interface NotificationRepository : JpaRepository<NotificationEntity, Long> {
         nativeQuery = true
     )
     fun switchDeleted(@Param("userId") userId: Long, @Param("deleted") deleted: Boolean)
+
+    @Modifying
+    @Query(
+        value = "update drinking_ponies.notifications " +
+                "set quiet_mode_start = :start, quiet_mode_end = :end " +
+                "where user_id = :userId",
+        nativeQuery = true
+    )
+    fun updateQuietMode(
+        @Param("userId") userId: Long,
+        @Param("start") start: LocalTime? = null,
+        @Param("end") end: LocalTime? = null
+    )
 }

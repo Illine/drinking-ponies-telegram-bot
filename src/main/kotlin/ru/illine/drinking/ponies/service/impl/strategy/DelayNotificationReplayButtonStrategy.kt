@@ -2,9 +2,9 @@ package ru.illine.drinking.ponies.service.impl.strategy
 
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
-import org.telegram.abilitybots.api.sender.MessageSender
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery
+import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
 import ru.illine.drinking.ponies.model.base.DelayNotificationType
 import ru.illine.drinking.ponies.model.dto.NotificationDto
@@ -14,7 +14,7 @@ import ru.illine.drinking.ponies.util.MessageHelper
 
 @Service
 class DelayNotificationReplayButtonStrategy(
-    private val sender: MessageSender,
+    private val sender: TelegramClient,
     private val notificationAccessService: NotificationAccessService,
     private val buttonEditorService: ButtonEditorService
 ) : ReplyButtonStrategy {
@@ -42,10 +42,10 @@ class DelayNotificationReplayButtonStrategy(
         val savedNotification = notificationAccessService.save(notification)
         log.info("The notification (id: [{}]) has saved", savedNotification.id)
 
-        SendMessage().apply {
-            text = MessageHelper.TIME_BUTTON_RESULT_MESSAGE.format(delayNotification.displayName)
-            setChatId(chatId)
-        }.apply { sender.execute(this) }
+        SendMessage(
+            chatId.toString(),
+            MessageHelper.TIME_BUTTON_RESULT_MESSAGE.format(delayNotification.displayName)
+        ).apply { sender.execute(this) }
     }
 
     override fun isQueryData(queryData: String): Boolean = DelayNotificationType.typeOf(queryData) != null

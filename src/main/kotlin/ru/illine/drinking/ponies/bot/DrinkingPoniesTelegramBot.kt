@@ -1,13 +1,12 @@
 package ru.illine.drinking.ponies.bot
 
-import org.springframework.context.annotation.Lazy
-import org.springframework.stereotype.Component
-import org.telegram.abilitybots.api.bot.AbilityBot
-import org.telegram.abilitybots.api.bot.BaseAbilityBot
-import org.telegram.abilitybots.api.db.MapDBContext.offlineInstance
-import org.telegram.abilitybots.api.objects.*
-import org.telegram.abilitybots.api.toggle.BareboneToggle
+import org.telegram.telegrambots.abilitybots.api.bot.AbilityBot
+import org.telegram.telegrambots.abilitybots.api.bot.BaseAbilityBot
+import org.telegram.telegrambots.abilitybots.api.db.MapDBContext.offlineInstance
+import org.telegram.telegrambots.abilitybots.api.objects.*
+import org.telegram.telegrambots.abilitybots.api.toggle.BareboneToggle
 import org.telegram.telegrambots.meta.api.objects.Update
+import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.illine.drinking.ponies.config.property.TelegramBotProperties
 import ru.illine.drinking.ponies.model.base.TelegramCommandType
 import ru.illine.drinking.ponies.service.CommandService
@@ -15,14 +14,14 @@ import ru.illine.drinking.ponies.service.NotificationService
 import ru.illine.drinking.ponies.service.ReplayButtonFactory
 import java.util.function.BiConsumer
 
-@Component
 class DrinkingPoniesTelegramBot(
+    telegramClient: TelegramClient,
     private val telegramBotProperties: TelegramBotProperties,
-    @Lazy private val notificationService: NotificationService,
-    @Lazy private val replayButtonFactory: ReplayButtonFactory,
-    @Lazy private val commandService: CommandService
+    private val notificationService: NotificationService,
+    private val replayButtonFactory: ReplayButtonFactory,
+    private val commandService: CommandService
 ) : AbilityBot(
-    telegramBotProperties.token,
+    telegramClient,
     telegramBotProperties.username,
     offlineInstance(telegramBotProperties.username),
     BareboneToggle()

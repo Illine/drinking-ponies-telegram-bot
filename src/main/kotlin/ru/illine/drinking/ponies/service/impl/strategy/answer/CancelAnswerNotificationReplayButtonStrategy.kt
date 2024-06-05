@@ -1,8 +1,8 @@
-package ru.illine.drinking.ponies.service.impl.strategy
+package ru.illine.drinking.ponies.service.impl.strategy.answer
 
 import org.springframework.stereotype.Service
-import org.telegram.abilitybots.api.sender.MessageSender
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery
+import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
 import ru.illine.drinking.ponies.model.base.AnswerNotificationType
 import ru.illine.drinking.ponies.model.dto.NotificationDto
@@ -13,7 +13,7 @@ import java.time.LocalDateTime
 
 @Service
 class CancelAnswerNotificationReplayButtonStrategy(
-    sender: MessageSender,
+    sender: TelegramClient,
     buttonEditorService: ButtonEditorService,
     private val notificationAccessService: NotificationAccessService
 ) : AbstractAnswerNotificationReplyButtonStrategy<NotificationDto>(sender, buttonEditorService) {

@@ -23,11 +23,9 @@ class TelegramBotKeyboardHelperTest {
     fun `successful settingsButtons`() {
         val expectedButtonsSize = 1
         val expectedRowsSize =
-            EnumSet.allOf(SettingsType::class.java)
-                .stream()
+            SettingsType.values()
                 .filter { it.visible }
                 .count()
-                .toInt()
 
         val actual =
             TelegramBotKeyboardHelper.settingsButtons() as InlineKeyboardMarkup
@@ -45,8 +43,7 @@ class TelegramBotKeyboardHelperTest {
     @DisplayName("delayTimeButtons(): returns valid keyboard")
     fun `successful delayTimeButtons`(delayNotificationType: DelayNotificationType) {
         val expectedButtonsSize = 1
-        val expectedRowsSize =
-            EnumSet.allOf(DelayNotificationType::class.java).size - 1
+        val expectedRowsSize = DelayNotificationType.values().size - 1
 
         val actual =
             TelegramBotKeyboardHelper.delayTimeButtons(delayNotificationType) as InlineKeyboardMarkup
@@ -61,7 +58,7 @@ class TelegramBotKeyboardHelperTest {
     @DisplayName("delayTimeButtons(): returns valid keyboard")
     fun `successful delayTimeButtons default arg`() {
         val expectedButtonsSize = 1
-        val expectedRowsSize = EnumSet.allOf(DelayNotificationType::class.java).size
+        val expectedRowsSize = DelayNotificationType.values().size
 
         val actual =
             TelegramBotKeyboardHelper.delayTimeButtons() as InlineKeyboardMarkup
@@ -78,7 +75,7 @@ class TelegramBotKeyboardHelperTest {
     @DisplayName("notifyButtons(): returns valid keyboard")
     fun `successful notifyButtons`() {
         val expectedRowsSize = 1
-        val expectedButtonsSize = EnumSet.allOf(AnswerNotificationType::class.java).size
+        val expectedButtonsSize = AnswerNotificationType.values().size
 
 
         val actual =

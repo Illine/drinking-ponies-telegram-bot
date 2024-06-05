@@ -15,7 +15,7 @@ enum class AnswerNotificationType(
     companion object {
 
         fun typeOf(queryData: String): AnswerNotificationType? {
-            return EnumSet.allOf(AnswerNotificationType::class.java)
+            return AnswerNotificationType.values()
                 .find { Objects.equals(queryData, it.queryData.toString()) }
         }
 

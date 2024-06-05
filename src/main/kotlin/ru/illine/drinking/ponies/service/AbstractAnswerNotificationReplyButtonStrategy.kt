@@ -1,14 +1,14 @@
 package ru.illine.drinking.ponies.service
 
-import org.telegram.abilitybots.api.sender.MessageSender
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery
+import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.illine.drinking.ponies.model.base.AnswerNotificationType
 import ru.illine.drinking.ponies.util.MessageHelper
 import java.util.*
 
 abstract class AbstractAnswerNotificationReplyButtonStrategy<T>(
-    private val messageSender: MessageSender,
+    private val messageSender: TelegramClient,
     private val buttonEditorService: ButtonEditorService
 ) : ReplyButtonStrategy {
 
@@ -19,10 +19,9 @@ abstract class AbstractAnswerNotificationReplyButtonStrategy<T>(
 
         updateLastNotificationTime(callbackQuery).invoke()
 
-        SendMessage().apply {
-            text = getMessageText()
-            setChatId(callbackQuery.message.chatId)
-        }.apply { messageSender.execute(this) }
+        SendMessage(
+            callbackQuery.message.chatId.toString(), getMessageText()
+        ).apply { messageSender.execute(this) }
     }
 
     override fun isQueryData(queryData: String): Boolean {

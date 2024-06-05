@@ -1,6 +1,6 @@
 package ru.illine.drinking.ponies.service
 
-import org.telegram.abilitybots.api.objects.MessageContext
+import org.telegram.telegrambots.abilitybots.api.objects.MessageContext
 import ru.illine.drinking.ponies.model.dto.NotificationDto
 
 interface NotificationService {

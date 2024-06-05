@@ -7,7 +7,6 @@ import ru.illine.drinking.ponies.dao.access.NotificationAccessService
 import ru.illine.drinking.ponies.dao.repository.NotificationRepository
 import ru.illine.drinking.ponies.model.dto.NotificationDto
 import java.time.LocalDateTime
-import java.util.stream.Collectors
 
 @Service
 class NotificationAccessServiceImpl(
@@ -81,14 +80,12 @@ class NotificationAccessServiceImpl(
 
         val updatedEntities =
             notifications
-                .stream()
                 .map { it.toEntity() }
                 .toList()
 
         return repository.saveAll(updatedEntities)
-            .stream()
             .map { it.toDto() }
-            .collect(Collectors.toSet())
+            .toSet()
     }
 
     @Transactional
@@ -105,7 +102,13 @@ class NotificationAccessServiceImpl(
 
     @Transactional
     override fun isActiveNotification(userId: Long): Boolean  {
-        log.info("Checking if notifications are active by userId: [{}]", userId)
+        log.info("Checking if notifications are active by userId: [$userId]")
         return repository.isDeletedByUserId(userId)
+    }
+
+    @Transactional
+    override fun disableQuietMode(userId: Long) {
+        log.info("The quiet mod will be disabled for a user [$userId]")
+        repository.updateQuietMode(userId)
     }
 }

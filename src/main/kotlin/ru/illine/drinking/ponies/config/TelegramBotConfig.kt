@@ -1,54 +1,77 @@
 package ru.illine.drinking.ponies.config
 
-import org.apache.http.HttpRequestInterceptor
-import org.apache.http.HttpResponseInterceptor
-import org.apache.http.conn.ssl.NoopHostnameVerifier
-import org.apache.http.impl.client.CloseableHttpClient
-import org.apache.http.impl.client.HttpClientBuilder
+import okhttp3.ConnectionPool
+import okhttp3.OkHttpClient
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.telegram.abilitybots.api.sender.MessageSender
-import org.telegram.telegrambots.meta.TelegramBotsApi
-import org.telegram.telegrambots.meta.generics.BotSession
-import org.telegram.telegrambots.updatesreceivers.DefaultBotSession
+import org.telegram.telegrambots.abilitybots.api.bot.BaseAbilityBot
+import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient
+import org.telegram.telegrambots.longpolling.TelegramBotsLongPollingApplication
+import org.telegram.telegrambots.meta.generics.TelegramClient
+import org.zalando.logbook.Logbook
+import org.zalando.logbook.okhttp.LogbookInterceptor
 import ru.illine.drinking.ponies.bot.DrinkingPoniesTelegramBot
 import ru.illine.drinking.ponies.config.property.TelegramBotProperties
-import ru.illine.drinking.ponies.util.TelegramBotHelper
+import ru.illine.drinking.ponies.service.CommandService
+import ru.illine.drinking.ponies.service.NotificationService
+import ru.illine.drinking.ponies.service.ReplayButtonFactory
 import java.util.concurrent.TimeUnit
 
 @Configuration
 class TelegramBotConfig {
 
-    @Bean
-    fun telegramHttpClient(
+    @Bean(destroyMethod = "stop")
+    fun telegramBotsApplication(
+        abilityBot: BaseAbilityBot,
         telegramBotProperties: TelegramBotProperties,
-        telegramLogbookRequestInterceptor: HttpRequestInterceptor,
-        telegramLogbookResponseInterceptor: HttpResponseInterceptor,
-    ): CloseableHttpClient {
-        return HttpClientBuilder.create()
-            .setSSLHostnameVerifier(NoopHostnameVerifier())
-            .setConnectionTimeToLive(telegramBotProperties.http.connectionTimeToLiveInSec, TimeUnit.SECONDS)
-            .setMaxConnTotal(telegramBotProperties.http.maxConnectionTotal)
-            .addInterceptorFirst(telegramLogbookRequestInterceptor)
-            .addInterceptorLast(telegramLogbookResponseInterceptor)
+    ): TelegramBotsLongPollingApplication {
+        val telegramBosApplications = TelegramBotsLongPollingApplication()
+        telegramBosApplications.registerBot(telegramBotProperties.token, abilityBot)
+        return telegramBosApplications
+    }
+
+    @Bean(initMethod = "onRegister")
+    fun abilityBot(
+        telegramClient: TelegramClient,
+        telegramBotProperties: TelegramBotProperties,
+        notificationService: NotificationService,
+        replayButtonFactory: ReplayButtonFactory,
+        commandService: CommandService
+    ): BaseAbilityBot {
+        return DrinkingPoniesTelegramBot(
+            telegramClient,
+            telegramBotProperties,
+            notificationService,
+            replayButtonFactory,
+            commandService
+        )
+    }
+
+    @Bean
+    fun telegramClient(
+        telegramBotProperties: TelegramBotProperties,
+        okHttpClient: OkHttpClient
+    ): TelegramClient {
+        return OkHttpTelegramClient(okHttpClient, telegramBotProperties.token)
+    }
+
+    @Bean
+    fun okHttpClient(
+        connectionPool: ConnectionPool,
+        logbook: Logbook
+    ): OkHttpClient {
+        return OkHttpClient.Builder()
+            .addNetworkInterceptor(LogbookInterceptor(logbook))
+            .connectionPool(connectionPool)
             .build()
     }
 
     @Bean
-    fun telegramBotApi() = TelegramBotsApi(DefaultBotSession::class.java)
-
-    @Bean(destroyMethod = "stop")
-    fun drinkingPoniesTelegramBotSession(
-        telegramBotsApi: TelegramBotsApi,
-        drinkingPoniesTelegramBot: DrinkingPoniesTelegramBot,
-        telegramHttpClient: CloseableHttpClient
-    ): BotSession {
-        return telegramBotsApi.registerBot(drinkingPoniesTelegramBot)
-            .apply { TelegramBotHelper.replaceBotSessionHttpClient(this, telegramHttpClient) }
-    }
-
-    @Bean
-    fun defaultMessageSender(drinkingPoniesTelegramBot: DrinkingPoniesTelegramBot): MessageSender {
-        return drinkingPoniesTelegramBot.sender()
-    }
+    fun connectionPool(
+        telegramBotProperties: TelegramBotProperties
+    ) = ConnectionPool(
+        telegramBotProperties.http.maxConnectionTotal,
+        telegramBotProperties.http.connectionTimeToLiveInSec,
+        TimeUnit.SECONDS
+    )
 }

@@ -3,6 +3,7 @@ package ru.illine.drinking.ponies.model.dto
 import ru.illine.drinking.ponies.model.base.DelayNotificationType
 import ru.illine.drinking.ponies.model.entity.NotificationEntity
 import java.time.LocalDateTime
+import java.time.LocalTime
 
 data class NotificationDto(
     var id: Long? = null,
@@ -21,6 +22,10 @@ data class NotificationDto(
 
     var previousNotificationMessageId: Int? = null,
 
+    var quietModeStart: LocalTime? = null,
+
+    var quietModeEnd: LocalTime? = null,
+
     var created: LocalDateTime? = null,
 
     var updated: LocalDateTime? = null,
@@ -38,6 +43,8 @@ data class NotificationDto(
             notificationAttempts = notificationAttempts,
             userTimeZone = userTimeZone,
             previousNotificationMessageId = previousNotificationMessageId,
+            quietModeStart = quietModeStart,
+            quietModeEnd = quietModeEnd,
             deleted = deleted
         )
     }
@@ -52,7 +59,9 @@ data class NotificationDto(
                 userId = userId,
                 chatId = chatId,
                 delayNotification = delayNotification,
-                userTimeZone = "Europe/Moscow"
+                userTimeZone = "Europe/Moscow",
+                quietModeStart = LocalTime.of(23, 0),
+                quietModeEnd = LocalTime.of(11, 0)
             )
         }
     }

@@ -35,7 +35,7 @@ class NotificationScheduler(
         val now = LocalDateTime.now()
         val notifications = notificationAccessService.findAll()
             .stream()
-            .filter { ifNotSilenceTime(it) }
+            .filter { ifNotQuietModeTime(it) }
             .filter { ifTimeOfNotification(it, now) }
             .collect(Collectors.partitioningBy { it.notificationAttempts == MAX_NOTIFICATION_ATTEMPTS })
         notifyAll(notifications)
@@ -44,19 +44,27 @@ class NotificationScheduler(
         log.info("The Drinking Notification Scheduler is finished")
     }
 
-    private fun ifNotSilenceTime(dto: NotificationDto): Boolean {
+    private fun ifNotQuietModeTime(dto: NotificationDto): Boolean {
         log.debug("Checking of silence mode for a user with id: [{}]", dto.id)
+
+        val quietModeStart = dto.quietModeStart
+        val quietModeEnd = dto.quietModeEnd
+
+        if (quietModeStart == null || quietModeEnd == null) {
+            log.info("A user doesn't have a quiet mode, return true")
+            return true
+        }
 
         val userZoneId = ZoneId.of(dto.userTimeZone)
         val userDateTime = ZonedDateTime.now(userZoneId)
 
         log.debug("The user has a timezone: [{}] and a current time: [{}]", userZoneId, userDateTime)
 
-        val late = userDateTime.toLocalTime().isBefore(DEFAULT_TOO_LATE_TIME)
-        val early = userDateTime.toLocalTime().isAfter(DEFAULT_TOO_EARLY_TIME)
+        val late = userDateTime.toLocalTime().isBefore(quietModeStart)
+        val early = userDateTime.toLocalTime().isAfter(quietModeEnd)
 
-        log.debug("Now is before [{}]: [{}]", DEFAULT_TOO_LATE_TIME, late)
-        log.debug("Now is after [{}]: [{}]", DEFAULT_TOO_EARLY_TIME, early)
+        log.debug("Now is before [{}]: [{}]", quietModeStart, late)
+        log.debug("Now is after [{}]: [{}]", quietModeEnd, early)
 
         return late && early
     }

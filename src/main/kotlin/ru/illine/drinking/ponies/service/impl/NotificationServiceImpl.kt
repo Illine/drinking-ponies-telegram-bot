@@ -2,9 +2,9 @@ package ru.illine.drinking.ponies.service.impl
 
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
-import org.telegram.abilitybots.api.objects.MessageContext
-import org.telegram.abilitybots.api.sender.MessageSender
+import org.telegram.telegrambots.abilitybots.api.objects.MessageContext
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
+import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
 import ru.illine.drinking.ponies.model.dto.NotificationDto
 import ru.illine.drinking.ponies.service.ButtonEditorService
@@ -16,7 +16,7 @@ import java.time.LocalDateTime
 
 @Service
 class NotificationServiceImpl(
-    private val sender: MessageSender,
+    private val sender: TelegramClient,
     private val buttonEditorService: ButtonEditorService,
     private val notificationAccessService: NotificationAccessService
 ) : NotificationService {
@@ -24,10 +24,10 @@ class NotificationServiceImpl(
     private val log = LoggerFactory.getLogger("SERVICE")
 
     override fun start(messageContext: MessageContext) {
-        SendMessage().apply {
-            text = MessageHelper.START_GREETING_MESSAGE.format(messageContext.user().userName)
-            setChatId(messageContext.chatId())
-        }.apply { sender.execute(this) }
+        SendMessage(
+            messageContext.chatId().toString(),
+            MessageHelper.START_GREETING_MESSAGE.format(messageContext.user().userName)
+        ).apply { sender.execute(this) }
 
         val userId = messageContext.user().id
         val chatId = messageContext.chatId()
@@ -42,28 +42,28 @@ class NotificationServiceImpl(
             }
         )
 
-        SendMessage().apply {
-            text = MessageHelper.START_DEFAULT_SETTINGS_MESSAGE.format(notification.delayNotification.displayName)
-            setChatId(messageContext.chatId())
-        }.apply { sender.execute(this) }
+        SendMessage(
+            messageContext.chatId().toString(),
+            MessageHelper.START_DEFAULT_SETTINGS_MESSAGE.format(notification.delayNotification.displayName)
+        ).apply { sender.execute(this) }
     }
 
     override fun stop(messageContext: MessageContext) {
         notificationAccessService.disableByUserId(messageContext.user().id)
 
-        SendMessage().apply {
-            text = MessageHelper.STOP_GREETING_MESSAGE.format(messageContext.user().userName)
-            setChatId(messageContext.chatId())
-        }.apply { sender.execute(this) }
+        SendMessage(
+            messageContext.chatId().toString(),
+            MessageHelper.STOP_GREETING_MESSAGE.format(messageContext.user().userName)
+        ).apply { sender.execute(this) }
     }
 
     override fun resume(messageContext: MessageContext) {
         notificationAccessService.enableByUserId(messageContext.user().id)
 
-        SendMessage().apply {
-            text = MessageHelper.RESUME_GREETING_MESSAGE.format(messageContext.user().userName)
-            setChatId(messageContext.chatId())
-        }.apply { sender.execute(this) }
+        SendMessage(
+            messageContext.chatId().toString(),
+            MessageHelper.RESUME_GREETING_MESSAGE.format(messageContext.user().userName)
+        ).apply { sender.execute(this) }
     }
 
     override fun pause(messageContext: MessageContext) {
@@ -72,9 +72,10 @@ class NotificationServiceImpl(
         val delayNotification = notificationAccessService.findByUserId(userId).delayNotification
 
         val sendMessageFunction: () -> Unit = {
-            SendMessage().apply {
-                text = MessageHelper.PAUSE_GREETING_MESSAGE
-                setChatId(chantId)
+            SendMessage(
+                chantId.toString(),
+                MessageHelper.PAUSE_GREETING_MESSAGE
+            ).apply {
                 replyMarkup = TelegramBotKeyboardHelper.pauseTimeButtons(delayNotification)
             }.apply { sender.execute(this) }
         }
@@ -87,9 +88,10 @@ class NotificationServiceImpl(
     override fun settings(messageContext: MessageContext) {
         val chantId = messageContext.chatId()
         val sendMessageFunction: () -> Unit = {
-            SendMessage().apply {
-                text = MessageHelper.SETTINGS_GREETING_MESSAGE
-                setChatId(chantId)
+            SendMessage(
+                chantId.toString(),
+                MessageHelper.SETTINGS_GREETING_MESSAGE
+            ).apply {
                 replyMarkup = TelegramBotKeyboardHelper.settingsButtons()
             }.apply { sender.execute(this) }
         }
@@ -106,9 +108,10 @@ class NotificationServiceImpl(
             .forEach {
                 ++it.notificationAttempts
                 it.previousNotificationMessageId =
-                    SendMessage().apply {
-                        text = MessageHelper.NOTIFICATION_QUESTION_MESSAGE
-                        setChatId(it.chatId)
+                    SendMessage(
+                        it.chatId.toString(),
+                        MessageHelper.NOTIFICATION_QUESTION_MESSAGE
+                    ).apply {
                         replyMarkup = TelegramBotKeyboardHelper.notifyButtons()
                     }.let { sender.execute(it) }.messageId
             }
@@ -122,16 +125,16 @@ class NotificationServiceImpl(
         val now = LocalDateTime.now()
         notifications
             .forEach {
-                SendMessage().apply {
-                    text = MessageHelper.NOTIFICATION_SUSPEND_MESSAGE.format(it.delayNotification.displayName)
-                    setChatId(it.chatId)
+                SendMessage(
+                    it.chatId.toString(),
+                    MessageHelper.NOTIFICATION_SUSPEND_MESSAGE.format(it.delayNotification.displayName)
+                ).apply {
                     disableNotification = true
                 }.apply { sender.execute(this) }
 
                 it.notificationAttempts = 0
                 it.timeOfLastNotification = now
                 it.previousNotificationMessageId = null
-
             }
 
         notificationAccessService.updateNotifications(notifications)
@@ -156,10 +159,10 @@ class NotificationServiceImpl(
             .check(
                 ifTrue = {
                     log.debug("A notification is disabled for user (userId: [$userId]), send a disabled message")
-                    SendMessage().apply {
-                        text = MessageHelper.NOTIFICATION_NOT_ACTIVE_MESSAGE
-                        setChatId(chatId)
-                    }.apply { sender.execute(this) }
+                    SendMessage(
+                        chatId.toString(),
+                        MessageHelper.NOTIFICATION_NOT_ACTIVE_MESSAGE
+                    ).apply { sender.execute(this) }
                 },
                 ifFalse = {
                     log.debug("A notification is enabled for user (userId: [$userId]), send a standard message")

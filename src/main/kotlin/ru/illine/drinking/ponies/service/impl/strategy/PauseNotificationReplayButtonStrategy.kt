@@ -2,29 +2,26 @@ package ru.illine.drinking.ponies.service.impl.strategy
 
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
-import org.telegram.abilitybots.api.sender.MessageSender
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery
+import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
 import ru.illine.drinking.ponies.model.base.PauseNotificationType
 import ru.illine.drinking.ponies.model.dto.NotificationDto
 import ru.illine.drinking.ponies.service.ButtonEditorService
 import ru.illine.drinking.ponies.service.ReplyButtonStrategy
 import ru.illine.drinking.ponies.util.MessageHelper
+import ru.illine.drinking.ponies.util.TimeMessageHelper
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
 
 @Service
 class PauseNotificationReplayButtonStrategy(
-    private val sender: MessageSender,
+    private val sender: TelegramClient,
     private val notificationAccessService: NotificationAccessService,
     private val buttonEditorService: ButtonEditorService
 ) : ReplyButtonStrategy {
-
-    private val DEFAULT_TIME_PATTERN = "HH:mm"
-    private val DEFAULT_TIME_FORMATTER = DateTimeFormatter.ofPattern(DEFAULT_TIME_PATTERN)
 
     private val log = LoggerFactory.getLogger("REPLAY-STRATEGY")
 
@@ -60,10 +57,10 @@ class PauseNotificationReplayButtonStrategy(
 
         notificationAccessService.updateTimeOfLastNotification(userId, delayedNotificationTime)
 
-        SendMessage().apply {
-            text = MessageHelper.PAUSE_BUTTON_RESULT_MESSAGE.format(pauseNotification.displayName)
-            setChatId(chatId)
-        }.apply { sender.execute(this) }
+        SendMessage(
+            chatId.toString(),
+            MessageHelper.PAUSE_BUTTON_RESULT_MESSAGE.format(pauseNotification.displayName)
+        ).apply { sender.execute(this) }
     }
 
     private fun cancelPause(
@@ -80,17 +77,17 @@ class PauseNotificationReplayButtonStrategy(
 
         notificationAccessService.updateTimeOfLastNotification(userId, delayedNotificationTime)
 
-        val timeNextNotification = delayedNotificationTime.format(DEFAULT_TIME_FORMATTER)
+        val timeNextNotification = TimeMessageHelper.timeToString(delayedNotificationTime)
         val message =
             MessageHelper.PAUSE_RESET_BUTTON_RESULT_MESSAGE.format(
                 delayNotification.displayName,
                 timeNextNotification
             )
 
-        SendMessage().apply {
-            text = message
-            setChatId(chatId)
-        }.apply { sender.execute(this) }
+        SendMessage(
+            chatId.toString(),
+            message
+        ).apply { sender.execute(this) }
     }
 
     private fun getDelayedNotificationTime(
