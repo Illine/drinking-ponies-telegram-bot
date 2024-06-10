@@ -47,6 +47,8 @@ dependencies {
     implementation(libs.telegrambots.abilities)
     implementation(libs.datasource.decorator.spring.boot)
     implementation(libs.p6spy)
+    implementation(libs.micrometer.registry.prometheus)
+    implementation(libs.hibernate.micrometer)
 
     liquibaseRuntime(libs.liquibase.core)
     liquibaseRuntime(libs.liquibase.groovy.dsl)
