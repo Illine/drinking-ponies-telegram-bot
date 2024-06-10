@@ -9,6 +9,7 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         temp.use_jdbc_metadata_defaults: false
         default_schema: drinking_ponies
+        generate_statistics: true
     open-in-view: false
   data:
     jpa:
@@ -31,6 +32,30 @@ spring:
       idle-timeout: ${HIKARI_IDLE_TIMEOUT:200000}
       minimum-idle: ${HIKARI_MINIMUM_IDLE:2}
       schema: ${spring.jpa.properties.hibernate.default_schema}
+
+management:
+  server:
+    port: ${MANAGEMENT_PORT:7000}
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+      group:
+        liveness:
+          include: livenessState
+        readiness:
+          include: readinessState, db
+    metrics:
+      enabled: true
+    prometheus:
+      enabled: true
+  endpoints:
+    web:
+      exposure:
+        include:
+          - health
+          - prometheus
 
 telegram-bot:
   version: ${CURRENT_VERSION:unknown}
