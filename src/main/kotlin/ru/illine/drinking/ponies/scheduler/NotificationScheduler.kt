@@ -7,7 +7,6 @@ import ru.illine.drinking.ponies.dao.access.NotificationAccessService
 import ru.illine.drinking.ponies.model.dto.NotificationDto
 import ru.illine.drinking.ponies.service.NotificationService
 import java.time.LocalDateTime
-import java.time.LocalTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.util.stream.Collectors
@@ -22,9 +21,6 @@ class NotificationScheduler(
 
     private val FOR_NOTIFICATIONS = false
     private val FOR_CANCEL = true
-
-    private val DEFAULT_TOO_LATE_TIME = LocalTime.of(23, 0)
-    private val DEFAULT_TOO_EARLY_TIME = LocalTime.of(11, 0)
 
     private val log = LoggerFactory.getLogger("SCHEDULER")
 

@@ -22,6 +22,7 @@ datafaker = "2.0.2"
 mockito-kotlin = "5.2.1"
 micrometer = "1.13.0"
 hibernate-micrometer = "6.5.2.Final"
+logstash = "7.0.1"
 
 [libraries]
 spring-boot-starter-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator" }
@@ -56,6 +57,7 @@ datafaker = { module = "net.datafaker:datafaker", version.ref = "datafaker" }
 mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "mockito-kotlin" }
 micrometer-registry-prometheus = { module = "io.micrometer:micrometer-registry-prometheus", version.ref = "micrometer" }
 hibernate-micrometer = { module = "org.hibernate.orm:hibernate-micrometer", version.ref = "hibernate-micrometer" }
+logstash = { module = "net.logstash.logback:logstash-logback-encoder", version.ref = "logstash" }
 
 [plugins]
 springframework-boot = { id = "org.springframework.boot", version.ref = "spring-boot-plugin" }
