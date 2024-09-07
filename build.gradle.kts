@@ -49,6 +49,7 @@ dependencies {
     implementation(libs.p6spy)
     implementation(libs.micrometer.registry.prometheus)
     implementation(libs.hibernate.micrometer)
+    implementation(libs.logstash)
 
     liquibaseRuntime(libs.liquibase.core)
     liquibaseRuntime(libs.liquibase.groovy.dsl)

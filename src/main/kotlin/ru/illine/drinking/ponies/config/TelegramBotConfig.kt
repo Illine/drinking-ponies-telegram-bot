@@ -25,9 +25,10 @@ class TelegramBotConfig {
         abilityBot: BaseAbilityBot,
         telegramBotProperties: TelegramBotProperties,
     ): TelegramBotsLongPollingApplication {
-        val telegramBosApplications = TelegramBotsLongPollingApplication()
-        telegramBosApplications.registerBot(telegramBotProperties.token, abilityBot)
-        return telegramBosApplications
+        return TelegramBotsLongPollingApplication()
+            .apply {
+                this.registerBot(telegramBotProperties.token, abilityBot)
+            }
     }
 
     @Bean(initMethod = "onRegister")
