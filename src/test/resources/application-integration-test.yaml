@@ -32,6 +32,11 @@ spring:
     change-log: liquibase/changelog.yaml
     contexts: integration-test
     enabled: true
+  config:
+    import:
+      - ${BUTTONS_CONFIG_PATH:classpath:buttons.yaml}
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:}
 
 telegram-bot:
   version: integration-test

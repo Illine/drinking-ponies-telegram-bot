@@ -7,7 +7,7 @@ kotlin-plugin = "1.8.22"
 jaxb-api = "2.3.0"
 validation-api = "2.0.1.Final"
 logbook = "3.9.0"
-telegram-bot = "7.2.1"
+telegram-bot = "7.9.1"
 datasource-decorator-spring-boot = "1.9.1"
 p6spy = "3.9.1"
 liquibase-core = "4.27.0"
@@ -17,12 +17,13 @@ postgres = "42.7.3"
 snakeyaml = "2.0"
 picocli = "4.6.1"
 junit-jupiter = "5.8.2"
-testcontainers = "1.19.8"
+testcontainers = "1.20.1"
 datafaker = "2.0.2"
 mockito-kotlin = "5.2.1"
 micrometer = "1.13.0"
 hibernate-micrometer = "6.5.2.Final"
 logstash = "7.0.1"
+commons-codec = "1.17.1"
 
 [libraries]
 spring-boot-starter-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator" }
@@ -58,6 +59,7 @@ mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "
 micrometer-registry-prometheus = { module = "io.micrometer:micrometer-registry-prometheus", version.ref = "micrometer" }
 hibernate-micrometer = { module = "org.hibernate.orm:hibernate-micrometer", version.ref = "hibernate-micrometer" }
 logstash = { module = "net.logstash.logback:logstash-logback-encoder", version.ref = "logstash" }
+commons-codec = { module = "commons-codec:commons-codec", version.ref = "commons-codec" }
 
 [plugins]
 springframework-boot = { id = "org.springframework.boot", version.ref = "spring-boot-plugin" }

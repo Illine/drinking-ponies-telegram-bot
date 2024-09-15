@@ -5,14 +5,15 @@ import org.springframework.stereotype.Service
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageReplyMarkup
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup
 import org.telegram.telegrambots.meta.generics.TelegramClient
-import ru.illine.drinking.ponies.service.ButtonEditorService
+import ru.illine.drinking.ponies.service.MessageEditorService
 import ru.illine.drinking.ponies.util.FunctionHelper
 
 @Service
-class ButtonEditorServiceImpl(
+class MessageEditorServiceImpl(
     private val sender: TelegramClient
-) : ButtonEditorService {
+) : MessageEditorService {
 
     private val log = LoggerFactory.getLogger("SERVICE")
 
@@ -25,7 +26,13 @@ class ButtonEditorServiceImpl(
             .apply { sender.execute(this) }
     }
 
-    override fun editReplyMarkup(newText: String, chatId: Long, messageId: Int, enableMarkDown: Boolean) {
+    override fun editReplyMarkup(
+        newText: String,
+        chatId: Long,
+        messageId: Int,
+        enableMarkDown: Boolean,
+        replayKeyboard: InlineKeyboardMarkup?
+    ) {
         deleteReplyMarkup(chatId, messageId)
 
         EditMessageText(
@@ -34,7 +41,9 @@ class ButtonEditorServiceImpl(
                 setChatId(chatId)
                 setMessageId(messageId)
                 enableMarkdown(enableMarkDown)
+                setReplyMarkup(replayKeyboard)
         }.apply { sender.execute(this) }
+
     }
 
     override fun deleteMessage(chatId: Long, messageId: Int) {

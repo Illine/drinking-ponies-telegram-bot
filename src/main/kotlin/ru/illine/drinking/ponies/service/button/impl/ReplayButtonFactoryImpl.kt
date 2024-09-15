@@ -1,8 +1,8 @@
-package ru.illine.drinking.ponies.service.impl
+package ru.illine.drinking.ponies.service.button.impl
 
 import org.springframework.stereotype.Service
-import ru.illine.drinking.ponies.service.ReplayButtonFactory
-import ru.illine.drinking.ponies.service.ReplyButtonStrategy
+import ru.illine.drinking.ponies.service.button.ReplayButtonFactory
+import ru.illine.drinking.ponies.service.button.ReplyButtonStrategy
 
 @Service
 class ReplayButtonFactoryImpl(

@@ -1,0 +1,5 @@
+buttons:
+  data:
+    delay-notification: "fd789961-0706-47fa-869d-a17a5ecc871b"
+    quietModeTime: ${QUITE_MODE_TIME_WEB_APP_URL:}
+    timezone: "f99bf271-8e39-4a62-87d7-13fbcbc85355"

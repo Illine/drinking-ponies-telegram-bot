@@ -11,8 +11,9 @@ import ru.illine.drinking.ponies.config.property.TelegramBotProperties
 import ru.illine.drinking.ponies.model.base.TelegramCommandType
 import ru.illine.drinking.ponies.service.CommandService
 import ru.illine.drinking.ponies.service.NotificationService
-import ru.illine.drinking.ponies.service.ReplayButtonFactory
+import ru.illine.drinking.ponies.service.button.ReplayButtonFactory
 import java.util.function.BiConsumer
+
 
 class DrinkingPoniesTelegramBot(
     telegramClient: TelegramClient,
@@ -105,7 +106,6 @@ class DrinkingPoniesTelegramBot(
         val action = BiConsumer<BaseAbilityBot, Update> { _, update ->
             replayButtonFactory.getStrategy(update.callbackQuery.data).reply(update.callbackQuery)
         }
-
         return Reply.of(action, Flag.CALLBACK_QUERY)
     }
 }

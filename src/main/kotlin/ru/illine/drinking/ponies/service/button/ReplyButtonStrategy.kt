@@ -1,4 +1,4 @@
-package ru.illine.drinking.ponies.service
+package ru.illine.drinking.ponies.service.button
 
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 

@@ -50,6 +50,7 @@ dependencies {
     implementation(libs.micrometer.registry.prometheus)
     implementation(libs.hibernate.micrometer)
     implementation(libs.logstash)
+    implementation(libs.commons.codec)
 
     liquibaseRuntime(libs.liquibase.core)
     liquibaseRuntime(libs.liquibase.groovy.dsl)
