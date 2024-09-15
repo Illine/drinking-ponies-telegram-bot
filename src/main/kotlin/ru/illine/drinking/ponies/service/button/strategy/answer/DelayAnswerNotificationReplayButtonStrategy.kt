@@ -1,4 +1,4 @@
-package ru.illine.drinking.ponies.service.impl.strategy.answer
+package ru.illine.drinking.ponies.service.button.strategy.answer
 
 import org.springframework.stereotype.Service
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery
@@ -6,16 +6,16 @@ import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
 import ru.illine.drinking.ponies.model.base.AnswerNotificationType
 import ru.illine.drinking.ponies.model.dto.NotificationDto
-import ru.illine.drinking.ponies.service.AbstractAnswerNotificationReplyButtonStrategy
-import ru.illine.drinking.ponies.service.ButtonEditorService
-import ru.illine.drinking.ponies.util.MessageHelper
+import ru.illine.drinking.ponies.service.MessageEditorService
+import ru.illine.drinking.ponies.service.button.strategy.AbstractAnswerNotificationReplyButtonStrategy
+import ru.illine.drinking.ponies.util.TelegramConstants
 
 @Service
 class DelayAnswerNotificationReplayButtonStrategy(
     sender: TelegramClient,
-    buttonEditorService: ButtonEditorService,
+    messageEditorService: MessageEditorService,
     private val notificationAccessService: NotificationAccessService
-) : AbstractAnswerNotificationReplyButtonStrategy<NotificationDto>(sender, buttonEditorService) {
+) : AbstractAnswerNotificationReplyButtonStrategy<NotificationDto>(sender, messageEditorService) {
 
     override fun updateLastNotificationTime(callbackQuery: CallbackQuery): () -> NotificationDto = {
         val userId = callbackQuery.from.id
@@ -26,7 +26,7 @@ class DelayAnswerNotificationReplayButtonStrategy(
         )
     }
 
-    override fun getMessageText(): String = MessageHelper.NOTIFICATION_ANSWER_DELAY_MESSAGE
+    override fun getMessageText(): String = TelegramConstants.NOTIFICATION_ANSWER_DELAY_MESSAGE
 
     override fun getAnswerType(): AnswerNotificationType = AnswerNotificationType.DELAY
 }

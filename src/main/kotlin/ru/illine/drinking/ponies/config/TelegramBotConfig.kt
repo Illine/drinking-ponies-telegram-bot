@@ -14,7 +14,7 @@ import ru.illine.drinking.ponies.bot.DrinkingPoniesTelegramBot
 import ru.illine.drinking.ponies.config.property.TelegramBotProperties
 import ru.illine.drinking.ponies.service.CommandService
 import ru.illine.drinking.ponies.service.NotificationService
-import ru.illine.drinking.ponies.service.ReplayButtonFactory
+import ru.illine.drinking.ponies.service.button.ReplayButtonFactory
 import java.util.concurrent.TimeUnit
 
 @Configuration

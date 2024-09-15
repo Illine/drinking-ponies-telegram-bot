@@ -1,4 +1,4 @@
-package ru.illine.drinking.ponies.service.impl.strategy
+package ru.illine.drinking.ponies.service.button.strategy
 
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -8,15 +8,15 @@ import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
 import ru.illine.drinking.ponies.model.base.DelayNotificationType
 import ru.illine.drinking.ponies.model.dto.NotificationDto
-import ru.illine.drinking.ponies.service.ButtonEditorService
-import ru.illine.drinking.ponies.service.ReplyButtonStrategy
-import ru.illine.drinking.ponies.util.MessageHelper
+import ru.illine.drinking.ponies.service.MessageEditorService
+import ru.illine.drinking.ponies.service.button.ReplyButtonStrategy
+import ru.illine.drinking.ponies.util.TelegramConstants
 
 @Service
 class DelayNotificationReplayButtonStrategy(
     private val sender: TelegramClient,
     private val notificationAccessService: NotificationAccessService,
-    private val buttonEditorService: ButtonEditorService
+    private val messageEditorService: MessageEditorService
 ) : ReplyButtonStrategy {
 
     private val log = LoggerFactory.getLogger("REPLAY-STRATEGY")
@@ -44,14 +44,14 @@ class DelayNotificationReplayButtonStrategy(
 
         SendMessage(
             chatId.toString(),
-            MessageHelper.TIME_BUTTON_RESULT_MESSAGE.format(delayNotification.displayName)
+            TelegramConstants.TIME_BUTTON_RESULT_MESSAGE.format(delayNotification.displayName)
         ).apply { sender.execute(this) }
     }
 
     override fun isQueryData(queryData: String): Boolean = DelayNotificationType.typeOf(queryData) != null
 
     private fun deleteOldReplayMarkup(callbackQuery: CallbackQuery) {
-        buttonEditorService.deleteReplyMarkup(
+        messageEditorService.deleteReplyMarkup(
             callbackQuery.message.chatId,
             callbackQuery.message.messageId,
         )

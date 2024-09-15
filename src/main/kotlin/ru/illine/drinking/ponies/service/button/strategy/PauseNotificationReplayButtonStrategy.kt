@@ -1,4 +1,4 @@
-package ru.illine.drinking.ponies.service.impl.strategy
+package ru.illine.drinking.ponies.service.button.strategy
 
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -8,9 +8,9 @@ import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
 import ru.illine.drinking.ponies.model.base.PauseNotificationType
 import ru.illine.drinking.ponies.model.dto.NotificationDto
-import ru.illine.drinking.ponies.service.ButtonEditorService
-import ru.illine.drinking.ponies.service.ReplyButtonStrategy
-import ru.illine.drinking.ponies.util.MessageHelper
+import ru.illine.drinking.ponies.service.MessageEditorService
+import ru.illine.drinking.ponies.service.button.ReplyButtonStrategy
+import ru.illine.drinking.ponies.util.TelegramConstants
 import ru.illine.drinking.ponies.util.TimeMessageHelper
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -20,7 +20,7 @@ import java.time.ZonedDateTime
 class PauseNotificationReplayButtonStrategy(
     private val sender: TelegramClient,
     private val notificationAccessService: NotificationAccessService,
-    private val buttonEditorService: ButtonEditorService
+    private val messageEditorService: MessageEditorService
 ) : ReplyButtonStrategy {
 
     private val log = LoggerFactory.getLogger("REPLAY-STRATEGY")
@@ -59,7 +59,7 @@ class PauseNotificationReplayButtonStrategy(
 
         SendMessage(
             chatId.toString(),
-            MessageHelper.PAUSE_BUTTON_RESULT_MESSAGE.format(pauseNotification.displayName)
+            TelegramConstants.PAUSE_BUTTON_RESULT_MESSAGE.format(pauseNotification.displayName)
         ).apply { sender.execute(this) }
     }
 
@@ -79,7 +79,7 @@ class PauseNotificationReplayButtonStrategy(
 
         val timeNextNotification = TimeMessageHelper.timeToString(delayedNotificationTime)
         val message =
-            MessageHelper.PAUSE_RESET_BUTTON_RESULT_MESSAGE.format(
+            TelegramConstants.PAUSE_RESET_BUTTON_RESULT_MESSAGE.format(
                 delayNotification.displayName,
                 timeNextNotification
             )
@@ -107,7 +107,7 @@ class PauseNotificationReplayButtonStrategy(
     override fun isQueryData(queryData: String): Boolean = PauseNotificationType.typeOf(queryData) != null
 
     private fun deleteOldReplayMarkup(callbackQuery: CallbackQuery) {
-        buttonEditorService.deleteReplyMarkup(
+        messageEditorService.deleteReplyMarkup(
             callbackQuery.message.chatId,
             callbackQuery.message.messageId,
         )

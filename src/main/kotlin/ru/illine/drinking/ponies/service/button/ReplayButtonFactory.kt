@@ -1,4 +1,4 @@
-package ru.illine.drinking.ponies.service
+package ru.illine.drinking.ponies.service.button
 
 fun interface ReplayButtonFactory {
 

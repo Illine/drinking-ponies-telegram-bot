@@ -2,6 +2,7 @@ package ru.illine.drinking.ponies.dao.access
 
 import ru.illine.drinking.ponies.model.dto.NotificationDto
 import java.time.LocalDateTime
+import java.time.LocalTime
 
 interface NotificationAccessService {
 
@@ -22,6 +23,8 @@ interface NotificationAccessService {
     fun disableByUserId(userId: Long)
 
     fun isActiveNotification(userId: Long): Boolean
+
+    fun changeQuiteMode(userId: Long, start: LocalTime, end: LocalTime)
 
     fun disableQuietMode(userId: Long)
 

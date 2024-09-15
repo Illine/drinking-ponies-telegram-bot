@@ -7,6 +7,7 @@ import ru.illine.drinking.ponies.dao.access.NotificationAccessService
 import ru.illine.drinking.ponies.dao.repository.NotificationRepository
 import ru.illine.drinking.ponies.model.dto.NotificationDto
 import java.time.LocalDateTime
+import java.time.LocalTime
 
 @Service
 class NotificationAccessServiceImpl(
@@ -104,6 +105,12 @@ class NotificationAccessServiceImpl(
     override fun isActiveNotification(userId: Long): Boolean  {
         log.info("Checking if notifications are active by userId: [$userId]")
         return repository.isDeletedByUserId(userId)
+    }
+
+    @Transactional
+    override fun changeQuiteMode(userId: Long, start: LocalTime, end: LocalTime) {
+        log.info("The quiet mod will be updated for a user [$userId], start time: [$start], end time: [$end]")
+        repository.updateQuietMode(userId, start, end)
     }
 
     @Transactional

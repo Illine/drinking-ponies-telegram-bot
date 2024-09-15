@@ -10,7 +10,7 @@ import ru.illine.drinking.ponies.util.FunctionHelper.check
 
 @UnitTest
 @DisplayName("FunctionHelper Unit Test")
-class FunctionHelperTest {
+class FunctionHelperTestController {
 
 
     // check
