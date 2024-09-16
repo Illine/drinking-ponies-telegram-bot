@@ -16,27 +16,33 @@ class DefaultExceptionHandler {
     private val logger = LoggerFactory.getLogger("EXCEPTION-HANDLER")
 
     @ExceptionHandler(value = [MissingServletRequestParameterException::class])
-    fun handleMissingParams(e: MissingServletRequestParameterException): ResponseEntity<ErrorResponse> {
+    fun handleMissingParamsException(e: MissingServletRequestParameterException): ResponseEntity<ErrorResponse> {
         logger.error("Missing required parameter: ${e.parameterName}", e)
         val response = ErrorResponse("missing required parameter")
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response)
     }
 
-    @ExceptionHandler(value = [MethodArgumentNotValidException::class])
-    fun handleValidationExceptions(e: MethodArgumentNotValidException): ResponseEntity<ErrorResponse> {
-        val errors = e.bindingResult.allErrors
-        val errorMessages = errors.joinToString(", ") {
-            val fieldError = it as FieldError
-            "${fieldError.field}: ${fieldError.defaultMessage}"
+    @ExceptionHandler(value = [
+        MethodArgumentNotValidException::class,
+        IllegalArgumentException::class
+    ])
+    fun handleValidationException(e: Exception): ResponseEntity<ErrorResponse> {
+        if (e is MethodArgumentNotValidException) {
+            val errors = e.bindingResult.allErrors
+            val errorMessages = errors.joinToString(", ") {
+                val fieldError = it as FieldError
+                "${fieldError.field}: ${fieldError.defaultMessage}"
+            }
+            logger.error("Validation failed: $errorMessages", e)
+        } else  {
+            logger.error("Illegal argument", e)
         }
-        logger.error("Validation failed: $errorMessages", e)
-
         val response = ErrorResponse("validation failed")
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response)
     }
 
     @ExceptionHandler(value = [Exception::class])
-    fun exception(e: Exception): ResponseEntity<ErrorResponse> {
+    fun unknownException(e: Exception): ResponseEntity<ErrorResponse> {
         logger.error("Unknown error: {}", e.message, e)
         val response = ErrorResponse("unknown server error")
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response)
