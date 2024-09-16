@@ -21,7 +21,8 @@ class NotificationSettingsServiceImpl(
 
     override fun changeQuiteMode(userId: Long, messageId: Int, start: LocalTime, end: LocalTime) {
         logger.info("Change time of quite mode for user [$userId], start: [$start], end: [$end]")
-        validateTime(start, end)
+        require(start != end) { "Start must be before end" }
+
 
         notificationAccessService.findByUserId(userId)
             .apply {
@@ -39,12 +40,5 @@ class NotificationSettingsServiceImpl(
     override fun disableQuiteMode(userId: Long) {
         logger.info("Disabling quite mode for user [$userId]")
         notificationAccessService.disableQuietMode(userId)
-    }
-
-    private fun validateTime(start: LocalTime, end: LocalTime) {
-        logger.debug("Validating start and end times")
-        logger.debug("Start [{}] must be after [{}]", start, end)
-
-        require(start.isBefore(end) || start == end) { "Start must be before end" }
     }
 }
