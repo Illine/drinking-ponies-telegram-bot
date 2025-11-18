@@ -1,2 +1,0 @@
-[![Build](https://github.com/Illine/drinking-ponies-telegram-bot/actions/workflows/build.yaml/badge.svg)](https://github.com/Illine/drinking-ponies-telegram-bot/actions/workflows/build.yaml)
-[![codecov](https://codecov.io/github/Illine/drinking-ponies-telegram-bot/graph/badge.svg?token=ulVJODyqYZ)](https://codecov.io/github/Illine/drinking-ponies-telegram-bot)
