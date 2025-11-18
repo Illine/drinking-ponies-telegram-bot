@@ -16,9 +16,12 @@ group = "ru.illine"
 version = "0.6.1"
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_17
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(17))
+    }
 }
 
+@Suppress("UnstableApiUsage")
 configurations {
     compileOnly {
         extendsFrom(configurations.annotationProcessor.get())
@@ -51,6 +54,7 @@ dependencies {
     implementation(libs.hibernate.micrometer)
     implementation(libs.logstash)
     implementation(libs.commons.codec)
+    implementation(libs.commons.lang3)
 
     liquibaseRuntime(libs.liquibase.core)
     liquibaseRuntime(libs.liquibase.groovy.dsl)
@@ -61,6 +65,7 @@ dependencies {
     liquibaseRuntime(libs.jaxb.api)
 
     runtimeOnly(libs.postgres)
+    runtimeOnly(libs.micrometer.exposition.formats)
 
     annotationProcessor(libs.spring.boot.configuration.processor)
 
@@ -70,10 +75,11 @@ dependencies {
     testImplementation(libs.liquibase.core)
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.testcontainers.core)
-    testImplementation(libs.testcontainers.junit.jupiter)
     testImplementation(libs.testcontainers.postgresql)
+    testImplementation(libs.testcontainers.junit.jupiter)
     testImplementation(libs.datafaker)
     testImplementation(libs.mockito.kotlin)
+    testImplementation(libs.xmlunit)
 }
 
 allOpen {
@@ -133,7 +139,6 @@ tasks {
     compileKotlin {
         kotlinOptions {
             freeCompilerArgs += "-Xjsr305=strict"
-            jvmTarget = "17"
         }
     }
 }
