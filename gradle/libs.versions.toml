@@ -1,5 +1,5 @@
 [versions]
-spring-boot-plugin = "3.3.0"
+spring-boot-plugin = "3.3.13"
 spring-dependency-management-plugin = "1.1.5"
 liquibase-plugin = "2.2.1"
 kotlin-plugin = "1.8.22"
@@ -7,23 +7,27 @@ kotlin-plugin = "1.8.22"
 jaxb-api = "2.3.0"
 validation-api = "2.0.1.Final"
 logbook = "3.9.0"
-telegram-bot = "7.9.1"
+telegram-bot = "9.2.0"
 datasource-decorator-spring-boot = "1.9.1"
 p6spy = "3.9.1"
 liquibase-core = "4.27.0"
 liquibase-dsl = "3.0.3"
-logback = "1.4.12"
+logback = "1.5.19"
 postgres = "42.7.3"
 snakeyaml = "2.0"
 picocli = "4.6.1"
 junit-jupiter = "5.8.2"
-testcontainers = "1.20.1"
+testcontainers-core = "2.0.2"
+testcontainers-all = "1.21.3"
 datafaker = "2.0.2"
 mockito-kotlin = "5.2.1"
 micrometer = "1.13.0"
+micrometer-formats = "1.2.1"
 hibernate-micrometer = "6.5.2.Final"
 logstash = "7.0.1"
 commons-codec = "1.17.1"
+commons-lang3 = "3.20.0"
+xmlunit = "2.10.0"
 
 [libraries]
 spring-boot-starter-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator" }
@@ -40,8 +44,8 @@ validation-api = { module = "javax.validation:validation-api", version.ref = "va
 logbook-spring-boot-starter = { module = "org.zalando:logbook-spring-boot-starter", version.ref = "logbook" }
 logbook-okhttp = { module = "org.zalando:logbook-okhttp", version.ref = "logbook" }
 telegrambots-abilities = { module = "org.telegram:telegrambots-abilities", version.ref = "telegram-bot" }
-telegrambots-client = { module = "org.telegram:telegrambots-longpolling", version.ref = "telegram-bot" }
-telegrambots-longpolling = { module = "org.telegram:telegrambots-client", version.ref = "telegram-bot" }
+telegrambots-client = { module = "org.telegram:telegrambots-client", version.ref = "telegram-bot" }
+telegrambots-longpolling = { module = "org.telegram:telegrambots-longpolling", version.ref = "telegram-bot" }
 datasource-decorator-spring-boot = { module = "com.github.gavlyukovskiy:datasource-decorator-spring-boot-autoconfigure", version.ref = "datasource-decorator-spring-boot" }
 p6spy = { module = "p6spy:p6spy", version.ref = "p6spy" }
 liquibase-core = { module = "org.liquibase:liquibase-core", version.ref = "liquibase-core" }
@@ -51,15 +55,18 @@ postgres = { module = "org.postgresql:postgresql", version.ref = "postgres" }
 snakeyaml = { module = "org.yaml:snakeyaml", version.ref = "snakeyaml" }
 picocli = { module = "info.picocli:picocli", version.ref = "picocli" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit-jupiter" }
-testcontainers-core = { module = "org.testcontainers:testcontainers", version.ref = "testcontainers" }
-testcontainers-junit-jupiter = { module = "org.testcontainers:junit-jupiter", version.ref = "testcontainers" }
-testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
+testcontainers-core = { module = "org.testcontainers:testcontainers", version.ref = "testcontainers-core" }
+testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref = "testcontainers-all" }
+testcontainers-junit-jupiter = { module = "org.testcontainers:junit-jupiter", version.ref = "testcontainers-all" }
 datafaker = { module = "net.datafaker:datafaker", version.ref = "datafaker" }
 mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "mockito-kotlin" }
 micrometer-registry-prometheus = { module = "io.micrometer:micrometer-registry-prometheus", version.ref = "micrometer" }
+micrometer-exposition-formats = { module = "io.prometheus:prometheus-metrics-exposition-formats", version.ref = "micrometer-formats" }
 hibernate-micrometer = { module = "org.hibernate.orm:hibernate-micrometer", version.ref = "hibernate-micrometer" }
 logstash = { module = "net.logstash.logback:logstash-logback-encoder", version.ref = "logstash" }
 commons-codec = { module = "commons-codec:commons-codec", version.ref = "commons-codec" }
+commons-lang3 = { module = "org.apache.commons:commons-lang3", version.ref = "commons-lang3" }
+xmlunit = { module = "org.xmlunit:xmlunit-core", version.ref = "xmlunit" }
 
 [plugins]
 springframework-boot = { id = "org.springframework.boot", version.ref = "spring-boot-plugin" }
