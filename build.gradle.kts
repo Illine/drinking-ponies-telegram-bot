@@ -142,3 +142,25 @@ tasks {
         }
     }
 }
+
+tasks.register<Test>("integrationTest") {
+    description = "Runs integration tests"
+    group = "verification"
+
+    useJUnitPlatform {
+        includeTags("spring-integration")
+    }
+
+    finalizedBy(tasks.jacocoTestReport)
+}
+
+tasks.register<Test>("unitTest") {
+    description = "Runs unit tests"
+    group = "verification"
+
+    useJUnitPlatform {
+        includeTags("unit")
+    }
+
+    finalizedBy(tasks.jacocoTestReport)
+}

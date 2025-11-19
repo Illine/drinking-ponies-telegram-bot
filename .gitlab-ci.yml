@@ -3,10 +3,24 @@ stages:
   - test
   - build
 
+workflow:
+  rules:
+    - if: '$CI_COMMIT_TAG'
+      when: never
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH'
+      when: always
+    - when: never
+
+.develop_push_only:
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "develop"'
+      when: on_success
+    - when: never
+
 generate-version:
   stage: pre
   variables:
-    GIT_DEPTH: 50
+    GIT_DEPTH: 0
   image:
     name: gittools/gitversion:6.5.0
     entrypoint: [""]
@@ -22,3 +36,53 @@ generate-version:
     paths:
       - gitversion.properties
 
+gradle:
+  stage: test
+  image: gradle:8.4-jdk17
+  variables:
+    GRADLE_USER_HOME: ".gradle"
+    DOCKER_HOST: "tcp://docker:2375"
+    DOCKER_TLS_CERTDIR: ""
+  services:
+    - name: docker:dind
+      command: ["--tls=false"]
+  cache:
+    key: "gradle-${CI_PROJECT_ID}"
+    paths:
+      - .gradle
+  script:
+    - gradle unitTest
+  artifacts:
+    when: always
+    paths:
+      - build/jacoco/coverage.xml
+      - build/test-results/test
+    reports:
+      junit: "build/test-results/*/*.xml"
+      coverage_report:
+        coverage_format: jacoco
+        path: "build/jacoco/coverage.xml"
+
+codecov:
+  extends: .develop_push_only
+  stage: test
+  image: gradle:8.4-jdk17
+  needs:
+    - job: gradle
+      artifacts: true
+  script:
+    - test -f build/jacoco/coverage.xml
+    - | 
+      curl -Os https://cli.codecov.io/latest/linux/codecov
+      chmod +x codecov
+      ./codecov \
+        --token "${CODECOV_TOKEN}" \
+        --file "build/jacoco/coverage.xml" \
+        --flag "unit" \
+        --name "codecov-dptb-${CI_COMMIT_REF_NAME}" \
+        --disable-search \
+        --fail-on-error
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "develop"'
+      when: on_success
+    - when: never
