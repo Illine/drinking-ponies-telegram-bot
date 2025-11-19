@@ -1,0 +1,62 @@
+tag-prefix: '[vV]?'
+
+strategies:
+  - VersionInBranchName
+  - TaggedCommit
+  - TrackReleaseBranches
+  - Fallback
+
+branches:
+  master:
+    regex: '^master$'
+    mode: ContinuousDeployment
+    increment: None
+    label: ''
+    is-main-branch: true
+    is-release-branch: true
+
+  main: ### Не удалять, без этого не работает, потому что BLM!
+    regex: '^main$'
+    mode: ContinuousDeployment
+    increment: None
+    label: ''
+    is-main-branch: true
+    is-release-branch: true
+
+  develop:
+    mode: ContinuousDelivery
+    regex: ^develop$
+    increment: None
+
+  feature:
+    mode: ContinuousDelivery
+    regex: '^feature[/-](?<BranchName>.+)$'
+    increment: Inherit
+    label: '{BranchName}'
+    source-branches:
+      - develop
+      - release
+      - hotfix
+
+  bugfix:
+    mode: ContinuousDelivery
+    regex: '^bugfix[/-](?<BranchName>.+)$'
+    increment: Inherit
+    label: '{BranchName}'
+    source-branches:
+      - develop
+      - release
+      - hotfix
+
+  release:
+    regex: '^release/(?<version>\d+\.\d+\.\d+)$'
+    mode: ContinuousDelivery
+    increment: None
+    is-release-branch: true
+
+  hotfix:
+    regex: '^hotfix/(?<version>\d+\.\d+\.\d+)$'
+    mode: ContinuousDeployment
+    label: ''
+    increment: None
+    is-release-branch: true
