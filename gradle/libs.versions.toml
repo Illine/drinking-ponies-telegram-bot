@@ -17,8 +17,7 @@ postgres = "42.7.3"
 snakeyaml = "2.0"
 picocli = "4.6.1"
 junit-jupiter = "5.8.2"
-testcontainers-core = "2.0.2"
-testcontainers-all = "1.21.3"
+testcontainers = "1.21.3"
 datafaker = "2.0.2"
 mockito-kotlin = "5.2.1"
 micrometer = "1.13.0"
@@ -55,9 +54,9 @@ postgres = { module = "org.postgresql:postgresql", version.ref = "postgres" }
 snakeyaml = { module = "org.yaml:snakeyaml", version.ref = "snakeyaml" }
 picocli = { module = "info.picocli:picocli", version.ref = "picocli" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit-jupiter" }
-testcontainers-core = { module = "org.testcontainers:testcontainers", version.ref = "testcontainers-core" }
-testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref = "testcontainers-all" }
-testcontainers-junit-jupiter = { module = "org.testcontainers:junit-jupiter", version.ref = "testcontainers-all" }
+testcontainers-core = { module = "org.testcontainers:testcontainers", version.ref = "testcontainers" }
+testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
+testcontainers-junit-jupiter = { module = "org.testcontainers:junit-jupiter", version.ref = "testcontainers" }
 datafaker = { module = "net.datafaker:datafaker", version.ref = "datafaker" }
 mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "mockito-kotlin" }
 micrometer-registry-prometheus = { module = "io.micrometer:micrometer-registry-prometheus", version.ref = "micrometer" }
