@@ -1,0 +1,24 @@
+stages:
+  - pre
+  - test
+  - build
+
+generate-version:
+  stage: pre
+  variables:
+    GIT_DEPTH: 50
+  image:
+    name: gittools/gitversion:6.5.0
+    entrypoint: [""]
+  before_script:
+    - git fetch --tags
+  script:
+    - /tools/dotnet-gitversion /showconfig
+    - /tools/dotnet-gitversion /diag /verbosity Diagnostic
+    - /tools/dotnet-gitversion /output buildserver
+  artifacts:
+    reports:
+      dotenv: gitversion.properties
+    paths:
+      - gitversion.properties
+
