@@ -2,6 +2,13 @@ stages:
   - pre
   - test
   - build
+  - publish
+  - post
+
+.default-tags: &default-tags
+  tags:
+    - self-hosted
+    - docker
 
 workflow:
   rules:
@@ -11,15 +18,14 @@ workflow:
       when: always
     - when: never
 
-.develop_push_only:
+.protected-branches-only: &protected-branches-only
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH == "develop"'
+    - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
       when: on_success
     - when: never
 
 generate-version:
-  tags:
-    - self
+  <<: *default-tags
   stage: pre
   variables:
     GIT_DEPTH: 0
@@ -33,15 +39,14 @@ generate-version:
     - /tools/dotnet-gitversion /diag /verbosity Diagnostic
     - /tools/dotnet-gitversion /output buildserver
   artifacts:
+    expire_in: 1 week
     reports:
       dotenv: gitversion.properties
     paths:
       - gitversion.properties
 
 test:
-  tags:
-    - self
-    - docker
+  <<: *default-tags
   stage: test
   image: gradle:8.4-jdk17
   variables:
@@ -67,6 +72,7 @@ test:
       ./codecov create-report
       ./codecov do-upload -Z -n "codecov-${CI_PROJECT_ID}-${CI_COMMIT_REF_NAME}"
   artifacts:
+    expire_in: 2 days
     when: always
     paths:
       - build/jacoco/coverage.xml
@@ -76,3 +82,93 @@ test:
       coverage_report:
         coverage_format: jacoco
         path: "build/jacoco/coverage.xml"
+
+build-jar:
+  <<: *default-tags
+  stage: build
+  image: gradle:8.4-jdk17
+  needs:
+    - test
+  variables:
+    GRADLE_USER_HOME: ".gradle"
+  cache:
+    - key: gradle-cache-${CI_PROJECT_ID}
+      paths:
+        - .gradle
+  script:
+    - gradle assemble
+  artifacts:
+    expire_in: 1 week
+    paths:
+      - build/libs/drinking-ponies.jar
+
+build-image:
+  <<: *default-tags
+  stage: build
+  image: docker:27
+  needs:
+    - job: generate-version
+      artifacts: true
+    - job: build-jar
+      artifacts: true
+  script:
+    - echo "image tag=$GitVersion_SemVer"
+    - docker build -t "$CI_REGISTRY_IMAGE:$GitVersion_SemVer" .
+    - docker save "$CI_REGISTRY_IMAGE:$GitVersion_SemVer" -o drinking-ponies.tar
+
+  artifacts:
+    expire_in: 1 week
+    paths:
+      - drinking-ponies.tar
+
+push-image:
+  <<: *default-tags
+  stage: publish
+  image: docker:27
+  needs:
+    - job: generate-version
+      artifacts: true
+    - job: build-image
+      artifacts: true
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
+  script:
+    - docker load -i drinking-ponies.tar
+
+    - |
+      docker push "$CI_REGISTRY_IMAGE:$GitVersion_SemVer"
+      
+      if [ "$CI_COMMIT_BRANCH" = "master" ]; then
+        docker tag "$CI_REGISTRY_IMAGE:$GitVersion_SemVer" "$CI_REGISTRY_IMAGE:latest"
+        docker push "$CI_REGISTRY_IMAGE:latest"
+      fi  
+
+tag-git:
+  <<: *default-tags
+  <<: *protected-branches-only
+  stage: post
+  needs:
+    - job: generate-version
+      artifacts: true
+    - job: push-image
+  before_script:
+    - |
+      git config user.name "Deploy Bot"
+      git config user.email "deploy-bot@local"
+
+      if git remote get-url github >/dev/null 2>&1; then
+        git remote set-url github "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+      else
+        git remote add github "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+      fi
+  script:
+    - |
+      GIT_TAG="$GitVersion_SemVer"
+
+      if git rev-parse "$GIT_TAG" >/dev/null 2>&1; then
+        echo "Tag $GIT_TAG already exists locally"
+      else
+        git tag "$GIT_TAG"
+      fi
+
+      git push github "refs/tags/$GIT_TAG"
