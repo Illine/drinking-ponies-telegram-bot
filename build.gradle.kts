@@ -128,8 +128,7 @@ tasks {
 
     test {
         useJUnitPlatform {
-            includeTags("unit")
-            excludeTags("spring-integration")
+            includeTags("unit", "spring-integration")
         }
 
         finalizedBy(jacocoTestReport)
