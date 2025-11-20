@@ -144,8 +144,7 @@ push-image:
       fi  
 
 tag-build:
-  <<: *default-tags
-  <<: *protected-branches-only
+  <<: [*default-tags, *protected-branches-only]
   stage: post
   image:
     name: alpine/git:2.49.1
