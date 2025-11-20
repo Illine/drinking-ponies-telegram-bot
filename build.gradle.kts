@@ -120,9 +120,16 @@ tasks {
         enabled = false
     }
 
+    compileKotlin {
+        kotlinOptions {
+            freeCompilerArgs += "-Xjsr305=strict"
+        }
+    }
+
     test {
         useJUnitPlatform {
-            includeTags("unit", "spring-integration")
+            includeTags("unit")
+            excludeTags("spring-integration")
         }
 
         finalizedBy(jacocoTestReport)
@@ -135,32 +142,4 @@ tasks {
             xml.outputLocation = layout.buildDirectory.file("jacoco/coverage.xml")
         }
     }
-
-    compileKotlin {
-        kotlinOptions {
-            freeCompilerArgs += "-Xjsr305=strict"
-        }
-    }
-}
-
-tasks.register<Test>("integrationTest") {
-    description = "Runs integration tests"
-    group = "verification"
-
-    useJUnitPlatform {
-        includeTags("spring-integration")
-    }
-
-    finalizedBy(tasks.jacocoTestReport)
-}
-
-tasks.register<Test>("unitTest") {
-    description = "Runs unit tests"
-    group = "verification"
-
-    useJUnitPlatform {
-        includeTags("unit")
-    }
-
-    finalizedBy(tasks.jacocoTestReport)
 }
