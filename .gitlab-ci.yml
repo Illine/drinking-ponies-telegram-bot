@@ -18,6 +18,8 @@ workflow:
     - when: never
 
 generate-version:
+  tags:
+    - self
   stage: pre
   variables:
     GIT_DEPTH: 0
@@ -37,15 +39,13 @@ generate-version:
       - gitversion.properties
 
 test:
+  tags:
+    - self
+    - docker
   stage: test
   image: gradle:8.4-jdk17
   variables:
     GRADLE_USER_HOME: ".gradle"
-    DOCKER_HOST: "tcp://docker:2375"
-    DOCKER_TLS_CERTDIR: ""
-  services:
-    - name: docker:dind
-      command: ["--tls=false"]
   cache:
     - key: gradle-cache-${CI_PROJECT_ID}
       paths:
