@@ -147,7 +147,9 @@ tag-git:
   <<: *default-tags
   <<: *protected-branches-only
   stage: post
-  image: alpine/git:2.49.1
+  image:
+    name: alpine/git:2.49.1
+    entrypoint: [""]
   needs:
     - job: generate-version
       artifacts: true
