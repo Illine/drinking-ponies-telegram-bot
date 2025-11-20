@@ -15,7 +15,7 @@ branches:
     is-main-branch: true
     is-release-branch: true
 
-  main: ### Не удалять, без этого не работает, потому что BLM!
+  main: ### Keep this. Because Black Lives Matter.
     regex: '^main$'
     mode: ContinuousDeployment
     increment: None
@@ -23,10 +23,29 @@ branches:
     is-main-branch: true
     is-release-branch: true
 
+  release:
+    regex: '^release/(?<version>\d+\.\d+\.\d+)$'
+    mode: ContinuousDelivery
+    increment: None
+    is-release-branch: true
+    label: ''
+    source-branches:
+      - develop
+
+  hotfix:
+    regex: '^hotfix/(?<version>\d+\.\d+\.\d+)$'
+    mode: ContinuousDeployment
+    label: ''
+    increment: None
+    is-release-branch: true
+    source-branches:
+      - master
+
   develop:
     mode: ContinuousDelivery
     regex: ^develop$
     increment: None
+    label: beta
 
   feature:
     mode: ContinuousDelivery
@@ -47,16 +66,3 @@ branches:
       - develop
       - release
       - hotfix
-
-  release:
-    regex: '^release/(?<version>\d+\.\d+\.\d+)$'
-    mode: ContinuousDelivery
-    increment: None
-    is-release-branch: true
-
-  hotfix:
-    regex: '^hotfix/(?<version>\d+\.\d+\.\d+)$'
-    mode: ContinuousDeployment
-    label: ''
-    increment: None
-    is-release-branch: true
