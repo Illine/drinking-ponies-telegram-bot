@@ -24,14 +24,29 @@ workflow:
       when: on_success
     - when: never
 
+prepare-ansible-image:
+  <<: *default-tags
+  stage: pre
+  allow_failure: true
+  image: docker:27
+  when: manual
+  variables:
+    IMAGE_NAME: ansible
+    IMAGE_TAG: 1.0.0
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
+  script:
+    - docker build -f .ansible/Dockerfile -t "$CI_REGISTRY_IMAGE/$IMAGE_NAME:$IMAGE_TAG" .
+    - docker push "$CI_REGISTRY_IMAGE/$IMAGE_NAME:$IMAGE_TAG"
+
 generate-version:
   <<: *default-tags
   stage: pre
-  variables:
-    GIT_DEPTH: 0
   image:
     name: gittools/gitversion:6.5.0
     entrypoint: [""]
+  variables:
+    GIT_DEPTH: 0
   before_script:
     - git fetch --tags
   script:
@@ -70,7 +85,7 @@ test:
     - |
       ./codecov create-commit
       ./codecov create-report
-      ./codecov do-upload -Z -n "codecov-${CI_PROJECT_ID}-${CI_COMMIT_REF_NAME}"
+      ./codecov do-upload -Z -n "codecov-$CI_PROJECT_ID-$CI_COMMIT_REF_NAME"
   artifacts:
     expire_in: 2 days
     when: always
@@ -159,18 +174,18 @@ tag-build:
       git config user.email "deploy-bot@local"
 
       if git remote get-url github >/dev/null 2>&1; then
-        git remote set-url github "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+        git remote set-url github "https://x-access-token:$GITHUB_TOKEN@github.com/$GITHUB_REPOSITORY.git"
       else
-        git remote add github "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+        git remote add github "https://x-access-token:$GITHUB_TOKEN@github.com/$GITHUB_REPOSITORY.git"
       fi
   script:
     - |
-      GIT_TAG="build-$GitVersion_SemVer"
+      GIT_TAG="$GitVersion_SemVer"
 
       if git rev-parse "$GIT_TAG" >/dev/null 2>&1; then
         echo "Tag $GIT_TAG already exists locally"
       else
-        git tag "$GIT_TAG"
+        git tag "build-$GIT_TAG"
       fi
 
       git push github "refs/tags/$GIT_TAG"
