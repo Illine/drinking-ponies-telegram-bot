@@ -12,7 +12,6 @@ import java.time.LocalTime
 @Entity
 @Table(
     name = "notifications",
-    schema = "drinking_ponies",
     indexes = [Index(name = "notifications_user_id_unique_index", columnList = "user_id", unique = true)]
 )
 @SQLDelete(sql = "update notifications set deleted = true where id = ?")
