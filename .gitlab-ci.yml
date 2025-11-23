@@ -212,12 +212,17 @@ tag-build:
       fi
   script:
     - |
-      GIT_TAG="$GitVersion_SemVer"
-
+      PREFIX=build
+      if [ "$CI_COMMIT_BRANCH" = "master" ]; then
+        PREFIX=release
+      fi
+      
+      GIT_TAG="$PREFIX-$GitVersion_SemVer"
+      
       if git rev-parse "$GIT_TAG" >/dev/null 2>&1; then
         echo "Tag $GIT_TAG already exists locally"
       else
-        git tag "build-$GIT_TAG"
+        git tag "$GIT_TAG"
       fi
 
       git push github "refs/tags/$GIT_TAG"
