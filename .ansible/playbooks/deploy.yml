@@ -1,0 +1,6 @@
+- name: Deploy Service
+  hosts: all
+
+  tasks:
+    - name: Docker Compose
+      import_tasks: ../tasks/docker.yml

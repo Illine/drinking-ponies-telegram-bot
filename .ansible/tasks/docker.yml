@@ -1,0 +1,45 @@
+- name: Check if docker is installed
+  ansible.builtin.shell: >
+    which docker
+  register: docker_check
+  failed_when:
+    - docker_check.stdout == ""
+
+- name: Check if docker compose is installed
+  ansible.builtin.shell: >
+    which docker compose
+  register: docker_compose_check
+  failed_when:
+    - docker_compose_check.stdout == ""
+
+- name: Ensure all necessary directories exist
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - "/{{ dptb_root_dir}}/{{ dptb_main_dir }}"
+    - "/{{ dptb_root_dir}}/{{ dptb_main_dir }}/{{ dptb_config_dir }}"
+  become: true
+
+- name: Docker Login
+  ansible.builtin.shell: >
+    docker login -u {{ gitlab_registry_username }} -p {{ gitlab_registry_token }} {{ gitlab_registry }}
+
+- name: Update docker-compose.yaml
+  template:
+    src: "docker-compose.yaml.j2"
+    dest: "//{{ dptb_root_dir}}/{{ dptb_main_dir }}/docker-compose.yaml"
+  become: true
+
+- name: Update env's
+  template:
+    src: "dptb-env.j2"
+    dest: "/{{ dptb_root_dir}}/{{ dptb_main_dir }}/.dptb-env"
+  become: true
+
+- name: Start Service
+  ansible.builtin.shell: >
+    docker compose up -d
+  args:
+    chdir: "/{{ dptb_root_dir}}/{{ dptb_main_dir }}"

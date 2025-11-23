@@ -1,0 +1,23 @@
+name: drinking-ponies-{{ dptb_stand }}
+
+services:
+  {{ dptb_name }}:
+    image: {{ dptb_image }}:{{ dptb_version }}
+    container_name: {{ dptb_name }}-{{ dptb_stand }}
+    pull_policy: "{{ dptb_pull_policy | default('always') }}"
+    env_file:
+      - ./.dptb-env
+    ports:
+      - {{ dptb_target_web_port }}:{{ dptb_docker_web_port }}
+      - {{ dptb_target_actuator_port }}:{{ dptb_target_actuator_port | default('7000') }}
+    restart: {{ dbtb_restart_policy | default('always') }}
+    volumes:
+      - "/{{ dptb_root_dir}}/{{ dptb_main_dir }}/{{ dptb_config_dir }}:/{{ dptb_root_dir}}/{{ dptb_main_dir }}/{{ dptb_config_dir }}"
+    labels:
+      - service={{ dptb_name }}
+      - zone={{ dptb_zone }}
+      - stand={{ dptb_stand }}
+    logging:
+      driver: json-file
+      options:
+        labels: "service,zone,stand"

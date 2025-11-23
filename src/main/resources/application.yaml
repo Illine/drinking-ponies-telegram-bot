@@ -1,3 +1,6 @@
+server:
+  port: ${SERVER_PORT:8080}
+
 spring:
   main:
     allow-bean-definition-overriding: true
@@ -30,7 +33,6 @@ spring:
       maximum-pool-size: ${HIKARI_MAXIMUM_POOL_SIZE:5}
       idle-timeout: ${HIKARI_IDLE_TIMEOUT:200000}
       minimum-idle: ${HIKARI_MINIMUM_IDLE:2}
-      schema: ${spring.jpa.properties.hibernate.default_schema}
   config:
     import:
       - ${BUTTONS_CONFIG_PATH:classpath:buttons.yaml}
