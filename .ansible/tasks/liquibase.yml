@@ -12,7 +12,7 @@
     chdir: "{{ liquibase_chdir }}"
   delegate_to: localhost
   when:
-    - lookup('env', 'LIQUIBASE_COMMAND') == 'update'
+    - liquibase_command is defined and liquibase_command == 'update'
 
 - name: Run Liquibase Rollback to Tag
   ansible.builtin.shell: >
@@ -21,6 +21,6 @@
     chdir: "{{ liquibase_chdir }}"
   delegate_to: localhost
   when:
-    - lookup('env', 'LIQUIBASE_COMMAND') == 'rollback'
+    - liquibase_command is defined and liquibase_command == 'rollback'
     - liquibase_rollback_tag is defined
     - liquibase_rollback_tag | string | trim | length > 0

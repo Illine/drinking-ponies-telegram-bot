@@ -1,1 +1,7 @@
 liquibase_url: "{{ lookup('env', 'DATABASE_DPTB_PROD_URL') }}"
+
+dptb_database_url: "{{ lookup('env', 'DATABASE_DPTB_PROD_URL') }}"
+dptb_telegram_bot_token: "{{ lookup('env', 'TELEGRAM_BOT_PROD_TOKEN') }}"
+dptb_stand: "prod"
+dptb_target_web_port: "{{ lookup('env', 'DPTB_DOCKER_WEB_PROD_PORT') | default(8200, true) }}"
+dptb_target_actuator_port: "{{ lookup('env', 'DPTB_TARGET_ACTUATOR_PROD_PORT') | default(42451, true) }}"
