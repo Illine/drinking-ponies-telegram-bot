@@ -2,7 +2,7 @@ databaseChangeLog:
   - changeSet:
       id: 0.3.0
       author: illine
-      comment: Database Initial
+      comment: Release 0.3.0
       changes:
         - tagDatabase:
             tag: 0.3.0
