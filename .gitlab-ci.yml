@@ -32,8 +32,12 @@ default:
 
 .protected-branches-auto-deploy: &protected-branches-auto-deploy
   rules:
-    - if: '$CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "master"'
+    - if: '$CI_COMMIT_BRANCH == "develop"'
       when: on_success
+    - if: '$CI_COMMIT_BRANCH == "master"'
+      when: on_success
+      variables:
+        ANSIBLE_LIMIT: "prod"
     - when: manual
 
 build-ansible-image:
@@ -173,28 +177,6 @@ build-image:
         ${ANSIBLE_LIMIT:+--limit=$ANSIBLE_LIMIT} \
         -v
 
-.set-ansible-limit-prod:
-  before_script:
-    - |
-      if [ "$CI_COMMIT_BRANCH" = "master" ]; then
-        export ANSIBLE_LIMIT=prod
-      fi
-
-deploy-service:
-  <<: *protected-branches-auto-deploy
-  extends:
-    - .run-ansible
-  needs:
-    - job: generate-version
-      artifacts: true
-    - job: build-image
-  variables:
-    ANSIBLE_PLAYBOOK: .ansible/playbooks/deploy.yml
-    DPTB_VERSION: ${GitVersion_SemVer}
-  before_script:
-    - !reference [.run-ansible, before_script]
-    - !reference [.set-ansible-limit-prod, before_script]
-
 update-database:
   <<: *protected-branches-auto-deploy
   extends:
@@ -204,7 +186,6 @@ update-database:
     LIQUIBASE_COMMAND: update
   before_script:
     - !reference [.run-ansible, before_script]
-    - !reference [.set-ansible-limit-prod, before_script]
 
 rollback-database:
   extends:
@@ -215,7 +196,21 @@ rollback-database:
     LIQUIBASE_ROLLBACK_TAG: "" # must be overridden when the job will be run
   before_script:
     - !reference [.run-ansible, before_script]
-    - !reference [.set-ansible-limit-prod, before_script]
+
+deploy-service:
+  <<: *protected-branches-auto-deploy
+  extends:
+    - .run-ansible
+  needs:
+    - job: generate-version
+      artifacts: true
+    - job: build-image
+    - job: update-database
+  variables:
+    ANSIBLE_PLAYBOOK: .ansible/playbooks/deploy.yml
+    DPTB_VERSION: ${GitVersion_SemVer}
+  before_script:
+    - !reference [.run-ansible, before_script]
 
 tag-build:
   <<: [*default-tags, *protected-branches-only]
