@@ -1,0 +1,26 @@
+- name: Create Liquibase Config
+  template:
+    src: "liquibase.properties.j2"
+    dest: "/tmp/liquibase.properties"
+    mode: "0755"
+  delegate_to: localhost
+
+- name: Run Liquibase Update
+  ansible.builtin.shell: >
+    liquibase --defaultsFile=/tmp/liquibase.properties update
+  args:
+    chdir: "{{ liquibase_chdir }}"
+  delegate_to: localhost
+  when:
+    - lookup('env', 'LIQUIBASE_COMMAND') == 'update'
+
+- name: Run Liquibase Rollback to Tag
+  ansible.builtin.shell: >
+    liquibase --defaultsFile=/tmp/liquibase.properties rollback {{ liquibase_rollback_tag }}
+  args:
+    chdir: "{{ liquibase_chdir }}"
+  delegate_to: localhost
+  when:
+    - lookup('env', 'LIQUIBASE_COMMAND') == 'rollback'
+    - liquibase_rollback_tag is defined
+    - liquibase_rollback_tag | string | trim | length > 0

@@ -1,0 +1,6 @@
+all:
+  children:
+    default:
+      hosts:
+        test:
+        prod:

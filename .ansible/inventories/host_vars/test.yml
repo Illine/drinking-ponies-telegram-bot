@@ -1,0 +1,1 @@
+liquibase_url: "{{ lookup('env', 'DATABASE_DPTB_TEST_URL') }}"

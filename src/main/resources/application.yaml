@@ -8,7 +8,6 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         temp.use_jdbc_metadata_defaults: false
-        default_schema: drinking_ponies
         generate_statistics: true
     open-in-view: false
   data:

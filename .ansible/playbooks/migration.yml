@@ -1,0 +1,6 @@
+- name: Migration Database
+  hosts: all
+
+  tasks:
+    - name: Liquibase
+      import_tasks: ../tasks/liquibase.yml
