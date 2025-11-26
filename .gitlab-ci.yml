@@ -2,6 +2,7 @@ stages:
   - pre
   - test
   - build
+  - migration
   - deploy
   - post
 
@@ -15,6 +16,7 @@ variables:
   SERVICE_NAME: "dptb"
   IMAGE_ANSIBLE_NAME: ansible
   IMAGE_ANSIBLE_TAG: 1.1.0
+  ANSIBLE_LIMIT: "test"
 
 default:
   interruptible: true
@@ -23,22 +25,6 @@ default:
   tags:
     - self-hosted
     - docker
-
-.protected-branches-only: &protected-branches-only
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
-      when: on_success
-    - when: never
-
-.protected-branches-auto-deploy: &protected-branches-auto-deploy
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "develop"'
-      when: on_success
-    - if: '$CI_COMMIT_BRANCH == "master"'
-      when: on_success
-      variables:
-        ANSIBLE_LIMIT: "prod"
-    - when: manual
 
 build-ansible-image:
   <<: *default-tags
@@ -166,7 +152,6 @@ build-image:
   variables:
     ANSIBLE_PLAYBOOK: .ansible/playbooks/deploy.yml
     ANSIBLE_INVENTORIES: .ansible/inventories/all.yml
-    ANSIBLE_LIMIT: test
   before_script:
     - chmod 600 $ANSIBLE_SSH_PRIVATE_KEY || true
   script:
@@ -178,34 +163,57 @@ build-image:
         -v
 
 update-database:
-  <<: *protected-branches-auto-deploy
   extends:
     - .run-ansible
+  stage: migration
   variables:
     ANSIBLE_PLAYBOOK: .ansible/playbooks/migration.yml
     LIQUIBASE_COMMAND: update
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "develop"'
+      when: on_success
+    - if: '$CI_COMMIT_BRANCH == "master"'
+      when: on_success
+      variables:
+        ANSIBLE_LIMIT: "prod"
+    - if: '$CI_COMMIT_BRANCH'
+      when: manual
+      allow_failure: true
   before_script:
     - !reference [.run-ansible, before_script]
 
 rollback-database:
   extends:
     - .run-ansible
+  stage: migration
   variables:
     ANSIBLE_PLAYBOOK: .ansible/playbooks/migration.yml
     LIQUIBASE_COMMAND: rollback
     LIQUIBASE_ROLLBACK_TAG: "" # must be overridden when the job will be run
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master"'
+      when: manual
+      variables:
+        ANSIBLE_LIMIT: "prod"
+    - when: manual
   before_script:
     - !reference [.run-ansible, before_script]
 
 deploy-service:
-  <<: *protected-branches-auto-deploy
   extends:
     - .run-ansible
-  needs:
-    - job: generate-version
-      artifacts: true
-    - job: build-image
-    - job: update-database
+  dependencies:
+    - generate-version
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "develop"'
+      when: on_success
+    - if: '$CI_COMMIT_BRANCH == "master"'
+      when: on_success
+      variables:
+        ANSIBLE_LIMIT: "prod"
+    - if: '$CI_COMMIT_BRANCH'
+      when: manual
+      allow_failure: true
   variables:
     ANSIBLE_PLAYBOOK: .ansible/playbooks/deploy.yml
     DPTB_VERSION: ${GitVersion_SemVer}
@@ -213,15 +221,17 @@ deploy-service:
     - !reference [.run-ansible, before_script]
 
 tag-build:
-  <<: [*default-tags, *protected-branches-only]
+  <<: *default-tags
   stage: post
   image:
     name: alpine/git:2.49.1
     entrypoint: [""]
-  needs:
-    - job: generate-version
-      artifacts: true
-    - job: build-image
+  dependencies:
+    - generate-version
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master" || $CI_COMMIT_BRANCH == "develop"'
+      when: on_success
+    - when: never
   before_script:
     - |
       git config user.name "Deploy Bot"
