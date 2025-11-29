@@ -8,8 +8,8 @@ services:
     env_file:
       - ./.dptb-env
     ports:
-      - {{ dptb_target_web_port }}:{{ dptb_docker_web_port }}
-      - {{ dptb_target_actuator_port }}:{{ dptb_target_actuator_port | default('7000') }}
+      - 127.0.0.1:{{ dptb_target_web_port }}:{{ dptb_docker_web_port }}
+      - 127.0.0.1:{{ dptb_target_actuator_port }}:{{ dptb_docker_actuator_port }}
     restart: {{ dbtb_restart_policy | default('always') }}
     volumes:
       - "/{{ dptb_root_dir}}/{{ dptb_main_dir }}/{{ dptb_config_dir }}:/{{ dptb_root_dir}}/{{ dptb_main_dir }}/{{ dptb_config_dir }}"
