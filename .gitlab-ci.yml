@@ -13,6 +13,8 @@ workflow:
     - when: never
 
 variables:
+  GRADLE_JVM_OPTS: "-Xmx4096m"
+  GRADLE_OPTS: "-Dorg.gradle.workers.max=4"
   SERVICE_NAME: "dptb"
   IMAGE_ANSIBLE_NAME: ansible
   IMAGE_ANSIBLE_TAG: 1.1.0
@@ -69,10 +71,10 @@ test:
     GRADLE_USER_HOME: ".gradle"
     TELEGRAM_BOT_TOKEN: $TELEGRAM_BOT_TEST_TOKEN
   cache:
-    - key: gradle-cache-$CI_PROJECT_ID
+    - key: gradle-cache-${CI_PROJECT_ID}
       paths:
         - .gradle
-    - key: gradle-build-$CI_PROJECT_ID-$CI_COMMIT_REF_NAME
+    - key: gradle-build-${CI_PROJECT_ID-$CI_COMMIT_REF_NAME}
       paths:
         - build/
   before_script:
