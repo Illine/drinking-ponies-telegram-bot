@@ -80,6 +80,6 @@ logbook:
   strategy: body-only-if-status-at-least
   minimum-status: ${LOGBOOK_MINIMUM_STATUS:200}
   format:
-    style: http
+    style: json
   logger:
     name: API
