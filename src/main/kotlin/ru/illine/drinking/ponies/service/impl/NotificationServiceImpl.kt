@@ -117,6 +117,11 @@ class NotificationServiceImpl(
     }
 
     override fun sendNotifications(notifications: Collection<NotificationDto>) {
+        if (notifications.isEmpty()) {
+            log.debug("There are no notifications to send")
+            return
+        }
+
         deletePreviousNotificationMessages(notifications)
 
         notifications
@@ -135,6 +140,11 @@ class NotificationServiceImpl(
     }
 
     override fun suspendNotifications(notifications: Collection<NotificationDto>) {
+        if (notifications.isEmpty()) {
+            log.debug("There are no notifications to send")
+            return
+        }
+
         deletePreviousNotificationMessages(notifications)
 
         val now = LocalDateTime.now()

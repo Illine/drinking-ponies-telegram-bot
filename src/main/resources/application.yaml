@@ -8,17 +8,6 @@ spring:
   servlet:
     multipart:
       enabled: false
-  autoconfigure:
-    exclude:
-      - org.springframework.boot.autoconfigure.websocket.servlet.WebSocketServletAutoConfiguration
-      - org.springframework.boot.autoconfigure.jmx.JmxAutoConfiguration
-      - org.springframework.boot.actuate.autoconfigure.endpoint.jmx.JmxEndpointAutoConfiguration
-      - org.springframework.boot.actuate.autoconfigure.info.InfoEndpointAutoConfiguration
-      - org.springframework.boot.actuate.autoconfigure.management.HeapDumpWebEndpointAutoConfiguration
-      - org.springframework.boot.actuate.autoconfigure.env.EnvironmentEndpointAutoConfiguration
-      - org.springframework.boot.actuate.autoconfigure.web.mappings.MappingsEndpointAutoConfiguration
-      - org.springframework.boot.actuate.autoconfigure.scheduling.ScheduledTasksEndpointAutoConfiguration
-      - org.springframework.boot.actuate.autoconfigure.sbom.SbomEndpointAutoConfiguration
   main:
     allow-bean-definition-overriding: true
   jpa:

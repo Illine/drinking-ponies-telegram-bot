@@ -8,6 +8,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.MissingServletRequestParameterException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
+import org.springframework.web.servlet.resource.NoResourceFoundException
 import ru.illine.drinking.ponies.model.dto.response.ErrorResponse
 
 @RestControllerAdvice
@@ -28,7 +29,7 @@ class DefaultExceptionHandler {
     ])
     fun handleValidationException(e: Exception): ResponseEntity<ErrorResponse> {
         if (e is MethodArgumentNotValidException) {
-            val errors = e.bindingResult.allErrors
+            val errors = listOf(e.bindingResult.allErrors)
             val errorMessages = errors.joinToString(", ") {
                 val fieldError = it as FieldError
                 "${fieldError.field}: ${fieldError.defaultMessage}"
@@ -41,8 +42,15 @@ class DefaultExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response)
     }
 
-    @ExceptionHandler(value = [Exception::class])
-    fun unknownException(e: Exception): ResponseEntity<ErrorResponse> {
+    @ExceptionHandler(NoResourceFoundException::class)
+    fun handleNoResourceFound(e: NoResourceFoundException): ResponseEntity<ErrorResponse> {
+        logger.warn("No static resource for path: [{}]", e.resourcePath)
+        val response = ErrorResponse("resource not found")
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response)
+    }
+
+    @ExceptionHandler(Exception::class)
+    fun handleUnknownException(e: Exception): ResponseEntity<ErrorResponse> {
         logger.error("Unknown error: {}", e.message, e)
         val response = ErrorResponse("unknown server error")
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response)
