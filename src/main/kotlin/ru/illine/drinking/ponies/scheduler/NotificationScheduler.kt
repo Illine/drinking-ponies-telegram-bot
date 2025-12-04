@@ -9,7 +9,6 @@ import ru.illine.drinking.ponies.service.NotificationService
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
-import java.util.stream.Collectors
 
 @Component
 class NotificationScheduler(
@@ -17,81 +16,85 @@ class NotificationScheduler(
     private val notificationService: NotificationService
 ) {
 
-    private val MAX_NOTIFICATION_ATTEMPTS = 3
-
-    private val FOR_NOTIFICATIONS = false
-    private val FOR_CANCEL = true
+    private val MAX_REMINDED_NOTIFICATION_ATTEMPTS = 3
 
     private val log = LoggerFactory.getLogger("SCHEDULER")
 
     @Scheduled(cron = "\${telegram-bot.schedule.notification.cron}")
-    fun drinkingNotification() {
-        log.info("The Drinking Notification Scheduler is started")
+    fun sendDrinkingReminders() {
+        log.info("Starting drinking notification scheduler")
 
         val now = LocalDateTime.now()
-        val notifications = notificationAccessService.findAll()
-            .stream()
-            .filter { ifNotQuietModeTime(it) }
-            .filter { ifTimeOfNotification(it, now) }
-            .collect(Collectors.partitioningBy { it.notificationAttempts == MAX_NOTIFICATION_ATTEMPTS })
-        notifyAll(notifications)
-        cancelAll(notifications)
+        val (exhaustedNotifications, activeNotifications) = notificationAccessService.findAll()
+            .filter(::isOutsideQuietTime)
+            .filter { isNotificationDue(it, now) }
+            .partition { it.notificationAttempts == MAX_REMINDED_NOTIFICATION_ATTEMPTS }
 
-        log.info("The Drinking Notification Scheduler is finished")
+        cancelAll(exhaustedNotifications)
+        notifyAll(activeNotifications)
+
+        log.info("Drinking notification scheduler finished")
     }
 
-    private fun ifNotQuietModeTime(dto: NotificationDto): Boolean {
-        log.debug("Checking of silence mode for a user with id: [{}]", dto.id)
+    /**
+     * Checks if the user can receive notifications right now (not in Quiet Mode).
+     */
+    private fun isOutsideQuietTime(dto: NotificationDto): Boolean {
+        log.debug("Checking quiet mode for user id: [{}]", dto.id)
 
-        val quietModeStart = dto.quietModeStart
-        val quietModeEnd = dto.quietModeEnd
+        val quietStart = dto.quietModeStart
+        val quietEnd = dto.quietModeEnd
 
-        if (quietModeStart == null || quietModeEnd == null) {
-            log.info("A user doesn't have a quiet mode, return true")
+        if (quietStart == null || quietEnd == null) {
+            log.debug("User has no quiet mode set, allowing notification")
             return true
         }
 
         val userZoneId = ZoneId.of(dto.userTimeZone)
         val userDateTime = ZonedDateTime.now(userZoneId)
+        val userTime = userDateTime.toLocalTime()
 
-        log.debug("The user has a timezone: [{}] and a current time: [{}]", userZoneId, userDateTime)
+        log.debug("User timezone: [{}], current user time: [{}]", userZoneId, userTime)
 
-        val late = userDateTime.toLocalTime().isBefore(quietModeStart)
-        val early = userDateTime.toLocalTime().isAfter(quietModeEnd)
+        val late = userTime.isBefore(quietStart)
+        val early = userTime.isAfter(quietEnd)
 
-        log.debug("Now is before [{}]: [{}]", quietModeStart, late)
-        log.debug("Now is after [{}]: [{}]", quietModeEnd, early)
+        log.debug("Time is before quiet start [{}]: [{}]", quietStart, late)
+        log.debug("Time is after quiet end [{}]: [{}]", quietEnd, early)
 
         return late && early
     }
 
-    private fun ifTimeOfNotification(dto: NotificationDto, timeForComparing: LocalDateTime): Boolean {
-        log.debug("Checking of the last time of a notification for a user with id: [{}]", dto.id)
-        log.debug("Now (UTC) is: [{}]", timeForComparing)
-        log.debug("The last notification was (UTC): [{}]", dto.timeOfLastNotification)
+    private fun isNotificationDue(dto: NotificationDto, comparisonTime: LocalDateTime): Boolean {
+        log.debug("Checking notification due time for user id: [{}]", dto.id)
 
-        val expectedSentNotificationTime = dto.timeOfLastNotification.plusMinutes(dto.delayNotification.minutes)
-        log.debug("The next notification should be (UTC) [{}]", expectedSentNotificationTime)
+        log.debug("Current UTC time: [{}]", comparisonTime)
+        log.debug("Last notification time (UTC): [{}]", dto.timeOfLastNotification)
 
-        val sending = expectedSentNotificationTime.isBefore(timeForComparing)
-        log.debug("The notification should be sent: [{}]", sending)
+        val nextNotificationTime = dto.timeOfLastNotification.plusMinutes(dto.delayNotification.minutes)
+        log.debug("Next scheduled notification (UTC): [{}]", nextNotificationTime)
 
-        return sending
+        val isDue = nextNotificationTime.isBefore(comparisonTime)
+        log.debug("Notification due: [{}]", isDue)
+
+        return isDue
     }
 
-    private fun notifyAll(notifications: Map<Boolean, List<NotificationDto>>) {
-        log.info("Sending notifications all users")
-        val forNotifying = notifications.getValue(FOR_NOTIFICATIONS)
-        log.info("The notifications will be sent [{}] users", forNotifying.size)
+    private fun notifyAll(notifications: List<NotificationDto>) {
+        if (notifications.isEmpty()) {
+            return
+        }
 
-        notificationService.sendNotifications(forNotifying)
+        log.info("Sending notifications to [{}] users", notifications.size)
+        notificationService.sendNotifications(notifications)
     }
 
-    private fun cancelAll(notifications: Map<Boolean, List<NotificationDto>>) {
-        log.info("Cancel (suspend) notification")
-        val forSuspending = notifications.getValue(FOR_CANCEL)
-        log.info("The notifications will be suspended for [{}] users", forSuspending.size)
+    private fun cancelAll(notifications: List<NotificationDto>) {
+        if (notifications.isEmpty()) {
+            return
+        }
 
-        notificationService.suspendNotifications(forSuspending)
+        log.info("Suspending notifications for [{}] users (max attempts reached)", notifications.size)
+        notificationService.suspendNotifications(notifications)
     }
 }
