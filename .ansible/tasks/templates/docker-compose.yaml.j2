@@ -22,3 +22,14 @@ services:
       driver: json-file
       options:
         labels: "service,zone,stand"
+    deploy:
+      resources:
+        limits:
+          memory: {{ dptb_limits_memory | default('512m') }}
+          cpus: {{ dptb_limits_cpu | default('0.5') }}
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:{{ dptb_docker_actuator_port }}/actuator/health"]
+      interval: {{ dptb_healthcheck_interval | default('5s') }}
+      timeout: {{ dptb_healthcheck_timeout | default('1s') }}
+      retries: {{ dptb_healthcheck_retries | default(5) }}
+      start_period: {{ dptb_healthcheck_start_period | default('20s') }}
