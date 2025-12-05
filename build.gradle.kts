@@ -77,7 +77,6 @@ dependencies {
     testImplementation(libs.testcontainers.core)
     testImplementation(libs.testcontainers.postgresql)
     testImplementation(libs.testcontainers.junit.jupiter)
-    testImplementation(libs.datafaker)
     testImplementation(libs.mockito.kotlin)
     testImplementation(libs.xmlunit)
 }

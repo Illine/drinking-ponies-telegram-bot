@@ -1,16 +1,14 @@
 package ru.illine.drinking.ponies.test.generator
 
-import net.datafaker.Faker
 import ru.illine.drinking.ponies.model.base.DelayNotificationType
 import ru.illine.drinking.ponies.model.dto.NotificationDto
 import java.time.LocalDateTime
+import java.time.LocalTime
 import kotlin.random.Random
 
 class DtoGenerator {
 
     companion object {
-
-        private val faker = Faker()
 
         fun generateNotificationDto(
             userId: Long = Random.nextLong(),
@@ -19,7 +17,9 @@ class DtoGenerator {
             timeOfLastNotification: LocalDateTime = LocalDateTime.now(),
             notificationAttempts: Int = 0,
             userTimeZone: String = "Europe/Moscow",
-            previousNotificationMessageId: Int? = null
+            previousNotificationMessageId: Int? = null,
+            quietModeStart: LocalTime? = null,
+            quietModeEnd: LocalTime? = null,
         ): NotificationDto {
             return NotificationDto(
                 userId = userId,
@@ -28,7 +28,9 @@ class DtoGenerator {
                 timeOfLastNotification = timeOfLastNotification,
                 notificationAttempts = notificationAttempts,
                 userTimeZone = userTimeZone,
-                previousNotificationMessageId = previousNotificationMessageId
+                previousNotificationMessageId = previousNotificationMessageId,
+                quietModeStart = quietModeStart,
+                quietModeEnd = quietModeEnd
             )
         }
     }
