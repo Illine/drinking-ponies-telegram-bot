@@ -2,8 +2,8 @@ package ru.illine.drinking.ponies.config.web
 
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
+import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
-import org.springframework.validation.FieldError
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.MissingServletRequestParameterException
 import org.springframework.web.bind.annotation.ExceptionHandler
@@ -20,7 +20,10 @@ class DefaultExceptionHandler {
     fun handleMissingParamsException(e: MissingServletRequestParameterException): ResponseEntity<ErrorResponse> {
         logger.error("Missing required parameter: ${e.parameterName}", e)
         val response = ErrorResponse("missing required parameter")
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response)
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(response)
     }
 
     @ExceptionHandler(value = [
@@ -29,30 +32,37 @@ class DefaultExceptionHandler {
     ])
     fun handleValidationException(e: Exception): ResponseEntity<ErrorResponse> {
         if (e is MethodArgumentNotValidException) {
-            val errors = listOf(e.bindingResult.allErrors)
-            val errorMessages = errors.joinToString(", ") {
-                val fieldError = it as FieldError
-                "${fieldError.field}: ${fieldError.defaultMessage}"
+            val errorMessages = e.bindingResult.fieldErrors.joinToString(", ") {
+                "${it.field}: ${it.defaultMessage}"
             }
             logger.error("Validation failed: $errorMessages", e)
         } else  {
             logger.error("Illegal argument", e)
         }
         val response = ErrorResponse("validation failed")
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response)
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(response)
     }
 
     @ExceptionHandler(NoResourceFoundException::class)
     fun handleNoResourceFound(e: NoResourceFoundException): ResponseEntity<ErrorResponse> {
         logger.warn("No static resource for path: [{}]", e.resourcePath)
         val response = ErrorResponse("resource not found")
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response)
+        return ResponseEntity
+            .status(HttpStatus.NOT_FOUND)
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(response)
     }
 
     @ExceptionHandler(Exception::class)
     fun handleUnknownException(e: Exception): ResponseEntity<ErrorResponse> {
         logger.error("Unknown error: {}", e.message, e)
         val response = ErrorResponse("unknown server error")
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response)
+        return ResponseEntity
+            .status(HttpStatus.INTERNAL_SERVER_ERROR)
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(response)
     }
 }

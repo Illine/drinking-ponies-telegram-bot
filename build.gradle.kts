@@ -13,7 +13,7 @@ plugins {
 }
 
 group = "ru.illine"
-version = "7.2.0"
+version = "7.3.0"
 
 java {
     toolchain {
@@ -77,7 +77,6 @@ dependencies {
     testImplementation(libs.testcontainers.core)
     testImplementation(libs.testcontainers.postgresql)
     testImplementation(libs.testcontainers.junit.jupiter)
-    testImplementation(libs.datafaker)
     testImplementation(libs.mockito.kotlin)
     testImplementation(libs.xmlunit)
 }
