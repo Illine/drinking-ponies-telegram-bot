@@ -47,8 +47,9 @@ class NotificationTimeServiceImpl(private val clock: Clock) : NotificationTimeSe
         val nextNotificationTime = dto.timeOfLastNotification.plusMinutes(dto.delayNotification.minutes)
         log.debug("Next scheduled notification (UTC): [{}]", nextNotificationTime)
 
-        val isDue = nextNotificationTime.isBefore(now)
+        val isDue =  nextNotificationTime <= now
         log.debug("Notification due: [{}]", isDue)
+        nextNotificationTime.coerceAtLeast(now)
 
         return isDue
     }

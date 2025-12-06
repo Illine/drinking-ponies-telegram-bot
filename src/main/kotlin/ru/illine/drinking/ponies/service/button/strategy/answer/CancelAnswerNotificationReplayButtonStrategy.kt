@@ -9,17 +9,19 @@ import ru.illine.drinking.ponies.model.dto.NotificationDto
 import ru.illine.drinking.ponies.service.MessageEditorService
 import ru.illine.drinking.ponies.service.button.strategy.AbstractAnswerNotificationReplyButtonStrategy
 import ru.illine.drinking.ponies.util.TelegramConstants
+import java.time.Clock
 import java.time.LocalDateTime
 
 @Service
 class CancelAnswerNotificationReplayButtonStrategy(
     sender: TelegramClient,
     messageEditorService: MessageEditorService,
-    private val notificationAccessService: NotificationAccessService
+    private val notificationAccessService: NotificationAccessService,
+    private val clock: Clock
 ) : AbstractAnswerNotificationReplyButtonStrategy<NotificationDto>(sender, messageEditorService) {
 
     override fun updateLastNotificationTime(callbackQuery: CallbackQuery): () -> NotificationDto = {
-        notificationAccessService.updateTimeOfLastNotification(callbackQuery.from.id, LocalDateTime.now())
+        notificationAccessService.updateTimeOfLastNotification(callbackQuery.from.id, LocalDateTime.now(clock))
     }
 
     override fun getMessageText(): String = TelegramConstants.NOTIFICATION_ANSWER_CANCEL_MESSAGE
