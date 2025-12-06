@@ -14,6 +14,7 @@ import ru.illine.drinking.ponies.service.button.ButtonDataService
 import ru.illine.drinking.ponies.util.FunctionHelper.check
 import ru.illine.drinking.ponies.util.TelegramBotKeyboardHelper
 import ru.illine.drinking.ponies.util.TelegramConstants
+import java.time.Clock
 import java.time.LocalDateTime
 
 @Service
@@ -21,7 +22,8 @@ class NotificationServiceImpl(
     private val sender: TelegramClient,
     private val messageEditorService: MessageEditorService,
     private val notificationAccessService: NotificationAccessService,
-    private val settingsButtonDataService: ButtonDataService<SettingsType>
+    private val settingsButtonDataService: ButtonDataService<SettingsType>,
+    private val clock: Clock
 ) : NotificationService {
 
     private val log = LoggerFactory.getLogger("SERVICE")
@@ -147,7 +149,6 @@ class NotificationServiceImpl(
 
         deletePreviousNotificationMessages(notifications)
 
-        val now = LocalDateTime.now()
         notifications
             .forEach {
                 SendMessage(
@@ -158,7 +159,7 @@ class NotificationServiceImpl(
                 }.apply { sender.execute(this) }
 
                 it.notificationAttempts = 0
-                it.timeOfLastNotification = now
+                it.timeOfLastNotification = LocalDateTime.now(clock)
                 it.previousNotificationMessageId = null
             }
 
