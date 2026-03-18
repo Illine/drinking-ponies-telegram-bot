@@ -1,28 +1,39 @@
 package ru.illine.drinking.ponies.dao.access
 
-import ru.illine.drinking.ponies.model.dto.NotificationDto
+import ru.illine.drinking.ponies.model.base.DelayNotificationType
+import ru.illine.drinking.ponies.model.dto.internal.NotificationSettingDto
+import ru.illine.drinking.ponies.model.dto.internal.TelegramChatDto
+import ru.illine.drinking.ponies.model.dto.internal.TelegramUserDto
 import java.time.LocalDateTime
 import java.time.LocalTime
 
 interface NotificationAccessService {
 
-    fun findAll(): Set<NotificationDto>
+    fun findAllNotificationSettings(): Set<NotificationSettingDto>
 
-    fun findByUserId(userId: Long): NotificationDto
+    fun findNotificationSettingByTelegramUserId(telegramUserId: Long): NotificationSettingDto
 
-    fun existsByUserId(userId: Long): Boolean
+    fun existsByTelegramUserId(telegramUserId: Long): Boolean
 
-    fun save(dto: NotificationDto): NotificationDto
+    fun save(
+        user: TelegramUserDto,
+        chat: TelegramChatDto,
+        setting: NotificationSettingDto
+    ): TelegramUserDto
 
-    fun updateTimeOfLastNotification(userId: Long, time: LocalDateTime): NotificationDto
+    fun updateNotificationSettings(
+        telegramUserId: Long, telegramChatId: Long, delayNotification: DelayNotificationType
+    ): NotificationSettingDto
 
-    fun updateNotifications(notifications: Collection<NotificationDto>): Set<NotificationDto>
+    fun updateTimeOfLastNotification(telegramUserId: Long, time: LocalDateTime): NotificationSettingDto
 
-    fun enableByUserId(userId: Long)
+    fun updateNotificationSettings(settings: Collection<NotificationSettingDto>): Set<NotificationSettingDto>
 
-    fun disableByUserId(userId: Long)
+    fun isEnabledNotifications(telegramUserId: Long): Boolean
 
-    fun isActiveNotification(userId: Long): Boolean
+    fun enableNotifications(telegramUserId: Long)
+
+    fun disableNotifications(telegramUserId: Long)
 
     fun changeQuiteMode(userId: Long, start: LocalTime, end: LocalTime)
 

@@ -5,7 +5,7 @@ import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
 import ru.illine.drinking.ponies.model.base.AnswerNotificationType
-import ru.illine.drinking.ponies.model.dto.NotificationDto
+import ru.illine.drinking.ponies.model.dto.internal.NotificationSettingDto
 import ru.illine.drinking.ponies.service.MessageEditorService
 import ru.illine.drinking.ponies.service.button.strategy.AbstractAnswerNotificationReplyButtonStrategy
 import ru.illine.drinking.ponies.util.TelegramConstants
@@ -18,9 +18,9 @@ class CancelAnswerNotificationReplayButtonStrategy(
     messageEditorService: MessageEditorService,
     private val notificationAccessService: NotificationAccessService,
     private val clock: Clock
-) : AbstractAnswerNotificationReplyButtonStrategy<NotificationDto>(sender, messageEditorService) {
+) : AbstractAnswerNotificationReplyButtonStrategy<NotificationSettingDto>(sender, messageEditorService) {
 
-    override fun updateLastNotificationTime(callbackQuery: CallbackQuery): () -> NotificationDto = {
+    override fun updateLastNotificationTime(callbackQuery: CallbackQuery): () -> NotificationSettingDto = {
         notificationAccessService.updateTimeOfLastNotification(callbackQuery.from.id, LocalDateTime.now(clock))
     }
 

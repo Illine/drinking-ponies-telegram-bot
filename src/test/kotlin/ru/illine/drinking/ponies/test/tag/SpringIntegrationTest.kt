@@ -3,6 +3,9 @@ package ru.illine.drinking.ponies.test.tag
 import org.junit.jupiter.api.Tag
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ActiveProfiles
+import org.springframework.test.context.bean.override.mockito.MockitoBean
+import org.telegram.telegrambots.abilitybots.api.bot.BaseAbilityBot
+import org.telegram.telegrambots.longpolling.TelegramBotsLongPollingApplication
 import ru.illine.drinking.ponies.DrinkingPoniesApplication
 import ru.illine.drinking.ponies.test.config.TestDatabaseConfig
 import ru.illine.drinking.ponies.test.config.TestTimeConfig
@@ -15,8 +18,9 @@ import ru.illine.drinking.ponies.test.config.TestTimeConfig
     classes = [
         DrinkingPoniesApplication::class,
         TestDatabaseConfig::class,
-        TestTimeConfig::class
+        TestTimeConfig::class,
     ]
 )
+@MockitoBean(types = [TelegramBotsLongPollingApplication::class, BaseAbilityBot::class])
 @ActiveProfiles("integration-test")
 annotation class SpringIntegrationTest

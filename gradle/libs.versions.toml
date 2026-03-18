@@ -1,14 +1,14 @@
 [versions]
-spring-boot-plugin = "3.3.13"
-spring-dependency-management-plugin = "1.1.5"
+spring-boot-plugin = "3.5.9"
+spring-dependency-management-plugin = "1.1.7"
 liquibase-plugin = "2.2.1"
-kotlin-plugin = "1.8.22"
+kotlin-plugin = "2.1.21"
 
 jaxb-api = "2.3.0"
 validation-api = "2.0.1.Final"
 logbook = "3.9.0"
 telegram-bot = "9.2.0"
-datasource-decorator-spring-boot = "1.9.1"
+datasource-decorator-spring-boot = "1.10.0"
 p6spy = "3.9.1"
 liquibase-core = "4.27.0"
 liquibase-dsl = "3.0.3"
@@ -72,3 +72,4 @@ liquibase = { id = "org.liquibase.gradle", version.ref = "liquibase-plugin" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin-plugin" }
 kotlin-spring = { id = "org.jetbrains.kotlin.plugin.spring", version.ref = "kotlin-plugin" }
 kotlin-jpa = { id = "org.jetbrains.kotlin.plugin.jpa", version.ref = "kotlin-plugin" }
+kotlin-kapt = { id = "org.jetbrains.kotlin.kapt", version.ref = "kotlin-plugin" }

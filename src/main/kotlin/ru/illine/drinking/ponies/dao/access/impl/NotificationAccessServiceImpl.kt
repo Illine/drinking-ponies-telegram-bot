@@ -3,119 +3,185 @@ package ru.illine.drinking.ponies.dao.access.impl
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import ru.illine.drinking.ponies.builder.NotificationSettingBuilder
+import ru.illine.drinking.ponies.builder.TelegramChatBuilder
+import ru.illine.drinking.ponies.builder.TelegramUserBuilder
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
-import ru.illine.drinking.ponies.dao.repository.NotificationRepository
-import ru.illine.drinking.ponies.model.dto.NotificationDto
+import ru.illine.drinking.ponies.dao.repository.NotificationSettingRepository
+import ru.illine.drinking.ponies.dao.repository.TelegramChatRepository
+import ru.illine.drinking.ponies.dao.repository.TelegramUserRepository
+import ru.illine.drinking.ponies.model.base.DelayNotificationType
+import ru.illine.drinking.ponies.model.dto.internal.NotificationSettingDto
+import ru.illine.drinking.ponies.model.dto.internal.TelegramChatDto
+import ru.illine.drinking.ponies.model.dto.internal.TelegramUserDto
 import java.time.LocalDateTime
 import java.time.LocalTime
 
 @Service
 class NotificationAccessServiceImpl(
-    private val repository: NotificationRepository
+    private val settingRepository: NotificationSettingRepository,
+    private val userRepository: TelegramUserRepository,
+    private val chatRepository: TelegramChatRepository,
 ) : NotificationAccessService {
 
     private val log = LoggerFactory.getLogger("ACCESS-SERVICE")
 
     @Transactional
-    override fun findAll(): Set<NotificationDto> {
-        log.info("Finding all Notification records")
+    override fun findAllNotificationSettings(): Set<NotificationSettingDto> {
+        log.debug("Finding all notification setting records")
 
-        return repository.findAll()
-            .map { it.toDto() }
+        return settingRepository.findAll()
+            .map {
+                val user = TelegramUserBuilder.toDto(it.telegramUser)
+                val chat = TelegramChatBuilder.toDto(it.telegramChat, user)
+                NotificationSettingBuilder.toDto(it, user, chat)
+            }
             .toSet()
     }
 
     @Transactional
-    override fun findByUserId(userId: Long): NotificationDto {
-        log.info("Finding a Notification by userId [$userId]")
+    override fun findNotificationSettingByTelegramUserId(telegramUserId: Long): NotificationSettingDto {
+        log.debug("Finding a Notification by telegramUserId [$telegramUserId]")
 
         return requireNotNull(
-            repository.findByUserId(userId),
-            { "Not found a Notification by userId [$userId]" }
-        ).toDto()
-    }
-
-    @Transactional
-    override fun existsByUserId(userId: Long): Boolean {
-        log.info("Does a notification exist for the userId: [$userId]?")
-        return repository.existsByUserId(userId)
-    }
-
-    @Transactional
-    override fun save(dto: NotificationDto): NotificationDto {
-        log.info("Saving a Notification by userId [${dto.userId}]")
-
-        val foundEntity = repository.findByUserId(dto.userId)
-        if (foundEntity == null) {
-            log.info("The Notification will be saved as a new record")
-            val entity = dto.toEntity()
-            return repository.save(entity).toDto()
+            settingRepository.findByTelegramUser_ExternalUserId(telegramUserId),
+            { "Not found a Notification Setting by telegramUserId [$telegramUserId]" }
+        ).let {
+            val user = TelegramUserBuilder.toDto(it.telegramUser)
+            val chat = TelegramChatBuilder.toDto(it.telegramChat, user)
+            NotificationSettingBuilder.toDto(it, user, chat)
         }
-
-        log.info("The Notification will be updated for an existed entity by id: [${foundEntity.id}]")
-        val entity = dto.toEntity()
-        entity.id = foundEntity.id
-        return repository.save(entity).toDto()
     }
 
     @Transactional
-    override fun updateTimeOfLastNotification(userId: Long, time: LocalDateTime): NotificationDto {
-        log.info("Updating a time of last notification for a Notification by userId [$userId]")
+    override fun existsByTelegramUserId(telegramUserId: Long): Boolean {
+        log.debug("Does a notification exist for the telegramUserId: [$telegramUserId]?")
+        return userRepository.existsByExternalUserId(telegramUserId)
+    }
 
-        val foundEntity = requireNotNull(
-            repository.findByUserId(userId),
-            { "Not found a Notification by userId [$userId]" }
+    @Transactional
+    override fun save(
+        user: TelegramUserDto,
+        chat: TelegramChatDto,
+        setting: NotificationSettingDto
+    ): TelegramUserDto {
+        log.debug("Saving a new user, chat and setting for a telegram user: [${user.externalUserId}]")
+
+        val externalUserId = user.externalUserId
+        val externalChatId = chat.externalChatId
+
+        val userEntity =
+            userRepository.findByExternalUserId(
+                externalUserId
+            ) ?: TelegramUserBuilder.toEntity(user)
+
+        val chatEntity =
+            chatRepository.findByExternalChatId(externalChatId) ?: TelegramChatBuilder.toEntity(chat, userEntity)
+
+        val settingEntity =
+            settingRepository.findByTelegramUser_ExternalUserId(
+                externalUserId
+            ) ?: NotificationSettingBuilder.toEntity(setting, userEntity, chatEntity)
+
+        userEntity.addTelegramChat(chatEntity)
+        userEntity.addNotificationSetting(settingEntity)
+
+        return userRepository.save(userEntity).let { TelegramUserBuilder.toDto(it) }
+    }
+
+    @Transactional
+    override fun updateNotificationSettings(
+        telegramUserId: Long,
+        telegramChatId: Long,
+        delayNotification: DelayNotificationType
+    ): NotificationSettingDto {
+        log.debug("The Notification Settings will be updated for an existed entity by id: [${telegramUserId}]")
+
+        val setting = requireNotNull(
+            settingRepository.findByTelegramUser_ExternalUserId(telegramUserId),
+            { "Not found a Notification Settings by telegramUserId: [$telegramUserId], telegramChatId: [$telegramChatId]" }
         )
 
-        return foundEntity
+        if (setting.delayNotification != delayNotification) {
+            setting.delayNotification = delayNotification
+            settingRepository.save(setting)
+        }
+
+        return setting.let {
+            val user = TelegramUserBuilder.toDto(it.telegramUser)
+            val chat = TelegramChatBuilder.toDto(it.telegramChat, user)
+            NotificationSettingBuilder.toDto(it, user, chat)
+        }
+    }
+
+    @Transactional
+    override fun enableNotifications(telegramUserId: Long) {
+        log.debug("A notification settings will be enabled (enabled = true) by telegramUserId [$telegramUserId]")
+        settingRepository.switchEnabled(telegramUserId, true)
+    }
+
+    @Transactional
+    override fun disableNotifications(telegramUserId: Long) {
+        log.debug("A notification settings will be disabled (enabled = false) by telegramUserId [$telegramUserId]")
+        settingRepository.switchEnabled(telegramUserId, false)
+    }
+
+    @Transactional
+    override fun updateNotificationSettings(settings: Collection<NotificationSettingDto>): Set<NotificationSettingDto> {
+        log.debug("Updating of notification settings...")
+
+        return settings
+            .map {
+                val user = TelegramUserBuilder.toEntity(it.telegramUser)
+                val chat = TelegramChatBuilder.toEntity(it.telegramChat, user)
+                NotificationSettingBuilder.toEntity(it, user, chat)
+            }
+            .apply { settingRepository.saveAll(this) }
+            .map {
+                val user = TelegramUserBuilder.toDto(it.telegramUser)
+                val chat = TelegramChatBuilder.toDto(it.telegramChat, user)
+                NotificationSettingBuilder.toDto(it, user, chat)
+            }
+            .toSet()
+    }
+
+    @Transactional
+    override fun updateTimeOfLastNotification(telegramUserId: Long, time: LocalDateTime): NotificationSettingDto {
+        log.debug("Updating a time of last notification by telegramUserId [$telegramUserId]")
+
+        val setting = requireNotNull(
+            settingRepository.findByTelegramUser_ExternalUserId(telegramUserId),
+            { "Not found a Notification Setting by telegramUserId [$telegramUserId]" }
+        )
+
+        return setting
             .apply {
                 timeOfLastNotification = time
                 notificationAttempts = 0
+            }.let {
+                settingRepository.save(it)
+            }.let {
+                val user = TelegramUserBuilder.toDto(it.telegramUser)
+                val chat = TelegramChatBuilder.toDto(it.telegramChat, user)
+                NotificationSettingBuilder.toDto(it, user, chat)
             }
-            .let { repository.save(it) }.toDto()
     }
 
     @Transactional
-    override fun updateNotifications(notifications: Collection<NotificationDto>): Set<NotificationDto> {
-        log.info("Updating of notifications...")
-
-        val updatedEntities =
-            notifications
-                .map { it.toEntity() }
-                .toList()
-
-        return repository.saveAll(updatedEntities)
-            .map { it.toDto() }
-            .toSet()
-    }
-
-    @Transactional
-    override fun enableByUserId(userId: Long) {
-        log.info("A notification will be enabled (deleted = false) by userId [$userId]")
-        repository.switchDeleted(userId, false)
-    }
-
-    @Transactional
-    override fun disableByUserId(userId: Long) {
-        log.info("A notification will be disabled (deleted = true) by userId [$userId]")
-        repository.switchDeleted(userId, true)
-    }
-
-    @Transactional
-    override fun isActiveNotification(userId: Long): Boolean  {
-        log.info("Checking if notifications are active by userId: [$userId]")
-        return repository.isDeletedByUserId(userId)
+    override fun isEnabledNotifications(telegramUserId: Long): Boolean {
+        log.debug("Checking if notifications are active by telegramUserId: [$telegramUserId]")
+        return settingRepository.isEnabledByTelegramUserId(telegramUserId)
     }
 
     @Transactional
     override fun changeQuiteMode(userId: Long, start: LocalTime, end: LocalTime) {
-        log.info("The quiet mod will be updated for a user [$userId], start time: [$start], end time: [$end]")
-        repository.updateQuietMode(userId, start, end)
+        log.debug("The quiet mod will be updated for a user [{}], start time: [{}], end time: [{}]", userId, start, end)
+        settingRepository.updateQuietMode(userId, start, end)
     }
 
     @Transactional
     override fun disableQuietMode(userId: Long) {
-        log.info("The quiet mod will be disabled for a user [$userId]")
-        repository.updateQuietMode(userId)
+        log.debug("The quiet mod will be disabled for a user [$userId]")
+        settingRepository.updateQuietMode(userId)
     }
 }

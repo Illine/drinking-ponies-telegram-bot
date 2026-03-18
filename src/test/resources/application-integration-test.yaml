@@ -39,10 +39,10 @@ spring:
 
 telegram-bot:
   version: integration-test
-  token: ${TELEGRAM_BOT_TOKEN}
+  token: test-bot-token
   username: DrinkingPoniesBotIntegrationTest
-  creator-id: ${TELEGRAM_BOT_CREATOR_ID}
-  auto-update-commands: true
+  creator-id: 1
+  auto-update-commands: false
   http:
     connection-time-to-live-in-sec: 60
     max-connection-total: 100

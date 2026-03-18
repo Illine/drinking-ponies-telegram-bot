@@ -7,7 +7,9 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
 import ru.illine.drinking.ponies.model.base.SettingsType
-import ru.illine.drinking.ponies.model.dto.NotificationDto
+import ru.illine.drinking.ponies.model.dto.internal.NotificationSettingDto
+import ru.illine.drinking.ponies.model.dto.internal.TelegramChatDto
+import ru.illine.drinking.ponies.model.dto.internal.TelegramUserDto
 import ru.illine.drinking.ponies.service.MessageEditorService
 import ru.illine.drinking.ponies.service.NotificationService
 import ru.illine.drinking.ponies.service.button.ButtonDataService
@@ -23,7 +25,8 @@ class NotificationServiceImpl(
     private val messageEditorService: MessageEditorService,
     private val notificationAccessService: NotificationAccessService,
     private val settingsButtonDataService: ButtonDataService<SettingsType>,
-    private val clock: Clock
+    private val clock: Clock,
+    accessService: NotificationAccessService
 ) : NotificationService {
 
     private val log = LoggerFactory.getLogger("SERVICE")
@@ -37,24 +40,23 @@ class NotificationServiceImpl(
         val userId = messageContext.user().id
         val chatId = messageContext.chatId()
 
-        val notification = notificationAccessService.existsByUserId(userId).check(
+        val setting = notificationAccessService.existsByTelegramUserId(userId).check(
             ifTrue = {
-                notificationAccessService.findByUserId(userId)
+                notificationAccessService.findNotificationSettingByTelegramUserId(userId)
             },
             ifFalse = {
-                val notification = NotificationDto.create(userId, chatId)
-                notificationAccessService.save(notification)
+                createNewUser(userId, chatId)
             }
         )
 
         SendMessage(
             messageContext.chatId().toString(),
-            TelegramConstants.START_DEFAULT_SETTINGS_MESSAGE.format(notification.delayNotification.displayName)
+            TelegramConstants.START_DEFAULT_SETTINGS_MESSAGE.format(setting.delayNotification.displayName)
         ).apply { sender.execute(this) }
     }
 
     override fun stop(messageContext: MessageContext) {
-        notificationAccessService.disableByUserId(messageContext.user().id)
+        notificationAccessService.disableNotifications(messageContext.user().id)
 
         SendMessage(
             messageContext.chatId().toString(),
@@ -63,7 +65,7 @@ class NotificationServiceImpl(
     }
 
     override fun resume(messageContext: MessageContext) {
-        notificationAccessService.enableByUserId(messageContext.user().id)
+        notificationAccessService.enableNotifications(messageContext.user().id)
 
         SendMessage(
             messageContext.chatId().toString(),
@@ -74,7 +76,7 @@ class NotificationServiceImpl(
     override fun pause(messageContext: MessageContext) {
         val userId = messageContext.user().id
         val chantId = messageContext.chatId()
-        val delayNotification = notificationAccessService.findByUserId(userId).delayNotification
+        val delayNotification = notificationAccessService.findNotificationSettingByTelegramUserId(userId).delayNotification
 
         val sendMessageFunction: () -> Unit = {
             SendMessage(
@@ -85,7 +87,7 @@ class NotificationServiceImpl(
             }.apply { sender.execute(this) }
         }
 
-        sendIfNotificationActive(
+        sendIfNotificationEnabled(
             userId, chantId, sendMessageFunction
         )
     }
@@ -113,12 +115,12 @@ class NotificationServiceImpl(
             }
         }
 
-        sendIfNotificationActive(
+        sendIfNotificationEnabled(
             messageContext.user().id, messageContext.chatId(), sendMessageFunction
         )
     }
 
-    override fun sendNotifications(notifications: Collection<NotificationDto>) {
+    override fun sendNotifications(notifications: Collection<NotificationSettingDto>) {
         if (notifications.isEmpty()) {
             log.debug("There are no notifications to send")
             return
@@ -129,19 +131,19 @@ class NotificationServiceImpl(
         notifications
             .forEach {
                 ++it.notificationAttempts
-                it.previousNotificationMessageId =
+                it.telegramChat.previousNotificationMessageId =
                     SendMessage(
-                        it.chatId.toString(),
+                        it.telegramChat.previousNotificationMessageId.toString(),
                         TelegramConstants.NOTIFICATION_QUESTION_MESSAGE
                     ).apply {
                         replyMarkup = TelegramBotKeyboardHelper.notifyButtons()
                     }.let { sender.execute(it) }.messageId
             }
 
-        notificationAccessService.updateNotifications(notifications)
+        notificationAccessService.updateNotificationSettings(notifications)
     }
 
-    override fun suspendNotifications(notifications: Collection<NotificationDto>) {
+    override fun suspendNotifications(notifications: Collection<NotificationSettingDto>) {
         if (notifications.isEmpty()) {
             log.debug("There are no notifications to send")
             return
@@ -152,7 +154,7 @@ class NotificationServiceImpl(
         notifications
             .forEach {
                 SendMessage(
-                    it.chatId.toString(),
+                    it.telegramChat.previousNotificationMessageId.toString(),
                     TelegramConstants.NOTIFICATION_SUSPEND_MESSAGE.format(it.delayNotification.displayName)
                 ).apply {
                     disableNotification = true
@@ -160,18 +162,18 @@ class NotificationServiceImpl(
 
                 it.notificationAttempts = 0
                 it.timeOfLastNotification = LocalDateTime.now(clock)
-                it.previousNotificationMessageId = null
+                it.telegramChat.previousNotificationMessageId = null
             }
 
-        notificationAccessService.updateNotifications(notifications)
+        notificationAccessService.updateNotificationSettings(notifications)
     }
 
-    private fun deletePreviousNotificationMessages(notifications: Collection<NotificationDto>) {
+    private fun deletePreviousNotificationMessages(settings: Collection<NotificationSettingDto>) {
         log.info("Deleting all old notifications messages...")
 
-        val messageInfo = notifications.stream()
-            .filter { it.previousNotificationMessageId != null }
-            .map { Pair(it.chatId, it.previousNotificationMessageId!!) }
+        val messageInfo = settings
+            .filter { it.telegramChat.previousNotificationMessageId != null }
+            .map { Pair(it.telegramChat.externalChatId, it.telegramChat.previousNotificationMessageId!!) }
             .toList()
 
         log.info("Found [${messageInfo.size}] the old notification messages")
@@ -180,20 +182,32 @@ class NotificationServiceImpl(
         messageEditorService.deleteMessages(messageInfo)
     }
 
-    fun sendIfNotificationActive(userId: Long, chatId: Long, sendMessage: () -> Unit) {
-        notificationAccessService.isActiveNotification(userId)
+    private fun sendIfNotificationEnabled(userId: Long, chatId: Long, sendMessage: () -> Unit) {
+        notificationAccessService.isEnabledNotifications(userId)
             .check(
                 ifTrue = {
+                    log.debug("A notification is enabled for user (userId: [$userId]), send a standard message")
+                    sendMessage()
+                },
+                ifFalse = {
                     log.debug("A notification is disabled for user (userId: [$userId]), send a disabled message")
                     SendMessage(
                         chatId.toString(),
                         TelegramConstants.NOTIFICATION_NOT_ACTIVE_MESSAGE
                     ).apply { sender.execute(this) }
-                },
-                ifFalse = {
-                    log.debug("A notification is enabled for user (userId: [$userId]), send a standard message")
-                    sendMessage()
                 }
             )
+    }
+
+    private fun createNewUser(
+        userId: Long,
+        chatId: Long
+    ): NotificationSettingDto {
+        val user = TelegramUserDto.create(userId)
+        val chat = TelegramChatDto.create(chatId, user)
+        val setting = NotificationSettingDto.create(user, chat)
+
+        notificationAccessService.save(user, chat, setting)
+        return notificationAccessService.findNotificationSettingByTelegramUserId(userId)
     }
 }

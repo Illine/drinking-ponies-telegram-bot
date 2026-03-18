@@ -27,12 +27,12 @@ class DelaySettingsReplayButtonStrategy(
 
         messageEditorService.deleteReplyMarkup(chatId, messageId)
 
-        val currentNotification =
-            notificationAccessService.findByUserId(callbackQuery.from.id).delayNotification
+        val currentNotificationSetting =
+            notificationAccessService.findNotificationSettingByTelegramUserId(callbackQuery.from.id).delayNotification
 
         SendMessage(
             chatId.toString(),
-            TelegramConstants.SETTINGS_DELAY_NOTIFICATION_GREETING_MESSAGE.format(currentNotification.displayName)
+            TelegramConstants.SETTINGS_DELAY_NOTIFICATION_GREETING_MESSAGE.format(currentNotificationSetting.displayName)
         ).apply {
             enableMarkdown(true)
         }.apply { sender.execute(this) }
@@ -41,7 +41,7 @@ class DelaySettingsReplayButtonStrategy(
             chatId.toString(),
             TelegramConstants.SETTINGS_DELAY_NOTIFICATION_BUTTON_MESSAGE
         ).apply {
-            replyMarkup = TelegramBotKeyboardHelper.delayTimeButtons(currentNotification)
+            replyMarkup = TelegramBotKeyboardHelper.delayTimeButtons(currentNotificationSetting)
         }.apply { sender.execute(this) }
     }
 

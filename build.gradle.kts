@@ -10,21 +10,14 @@ plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.kotlin.spring)
     alias(libs.plugins.kotlin.jpa)
+    alias(libs.plugins.kotlin.kapt)
 }
 
 group = "ru.illine"
-version = "7.4.0"
 
 java {
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(17))
-    }
-}
-
-@Suppress("UnstableApiUsage")
-configurations {
-    compileOnly {
-        extendsFrom(configurations.annotationProcessor.get())
     }
 }
 
@@ -67,7 +60,7 @@ dependencies {
     runtimeOnly(libs.postgres)
     runtimeOnly(libs.micrometer.exposition.formats)
 
-    annotationProcessor(libs.spring.boot.configuration.processor)
+    kapt(libs.spring.boot.configuration.processor)
 
     testImplementation(libs.spring.boot.starter.test) {
         exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
@@ -82,9 +75,9 @@ dependencies {
 }
 
 allOpen {
-    annotation("javax.persistence.Entity")
-    annotation("javax.persistence.MappedSuperclass")
-    annotation("javax.persistence.Embeddable")
+    annotation("jakarta.persistence.Entity")
+    annotation("jakarta.persistence.MappedSuperclass")
+    annotation("jakarta.persistence.Embeddable")
 }
 
 liquibase {

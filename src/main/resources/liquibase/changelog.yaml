@@ -16,3 +16,6 @@ databaseChangeLog:
   - include:
       file: 0.6.0/changes.yaml
       relativeToChangelogFile: true
+  - include:
+      file: 7.4.0/changes.yaml
+      relativeToChangelogFile: true

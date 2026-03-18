@@ -2,7 +2,7 @@ package ru.illine.drinking.ponies.service.impl
 
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
-import ru.illine.drinking.ponies.model.dto.NotificationDto
+import ru.illine.drinking.ponies.model.dto.internal.NotificationSettingDto
 import ru.illine.drinking.ponies.service.NotificationTimeService
 import java.time.*
 import java.time.zone.ZoneRulesException
@@ -13,7 +13,7 @@ class NotificationTimeServiceImpl(private val clock: Clock) : NotificationTimeSe
 
     private val log = LoggerFactory.getLogger("SERVICE")
 
-    override fun isOutsideQuietTime(dto: NotificationDto): Boolean {
+    override fun isOutsideQuietTime(dto: NotificationSettingDto): Boolean {
         log.debug("Checking quiet mode for user id: [{}]", dto.id)
 
         val quietStart = dto.quietModeStart
@@ -36,7 +36,7 @@ class NotificationTimeServiceImpl(private val clock: Clock) : NotificationTimeSe
         }
     }
 
-    override fun isNotificationDue(dto: NotificationDto): Boolean {
+    override fun isNotificationDue(dto: NotificationSettingDto): Boolean {
         val now = LocalDateTime.now(clock)
 
         log.debug("Checking notification due time for user id: [{}]", dto.id)
@@ -54,11 +54,11 @@ class NotificationTimeServiceImpl(private val clock: Clock) : NotificationTimeSe
         return isDue
     }
 
-    private fun getUserLocalTime(dto: NotificationDto): LocalTime {
+    private fun getUserLocalTime(dto: NotificationSettingDto): LocalTime {
         val userZoneId = try {
-            ZoneId.of(dto.userTimeZone)
+            ZoneId.of(dto.telegramUser.userTimeZone)
         } catch (e: ZoneRulesException) {
-            log.error("Invalid timezone for user [${dto.id}]: [${dto.userTimeZone}]. Fallback to UTC.")
+            log.error("Invalid timezone for user [${dto.id}]: [${dto.telegramUser.userTimeZone}]. Fallback to UTC.")
             ZoneId.of("UTC")
         }
 

@@ -4,7 +4,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
-import ru.illine.drinking.ponies.model.dto.NotificationDto
+import ru.illine.drinking.ponies.model.dto.internal.NotificationSettingDto
 import ru.illine.drinking.ponies.service.NotificationService
 import ru.illine.drinking.ponies.service.NotificationTimeService
 
@@ -20,10 +20,10 @@ class NotificationScheduler(
     private val log = LoggerFactory.getLogger("SCHEDULER")
 
     @Scheduled(cron = "\${telegram-bot.schedule.notification.cron}")
-    fun sendDrinkingReminders() {
-        log.info("Starting drinking notification scheduler")
 
-        val (exhaustedNotifications, activeNotifications) = notificationAccessService.findAll()
+    fun sendDrinkingReminders() { log.info("Starting drinking notification scheduler")
+
+        val (exhaustedNotifications, activeNotifications) = notificationAccessService.findAllNotificationSettings()
             .filter(notificationTimeService::isOutsideQuietTime)
             .filter { notificationTimeService.isNotificationDue(it) }
             .partition { it.notificationAttempts == MAX_REMINDED_NOTIFICATION_ATTEMPTS }
@@ -34,7 +34,7 @@ class NotificationScheduler(
         log.info("Drinking notification scheduler finished")
     }
 
-    private fun notifyAll(notifications: List<NotificationDto>) {
+    private fun notifyAll(notifications: List<NotificationSettingDto>) {
         if (notifications.isEmpty()) {
             return
         }
@@ -43,7 +43,7 @@ class NotificationScheduler(
         notificationService.sendNotifications(notifications)
     }
 
-    private fun cancelAll(notifications: List<NotificationDto>) {
+    private fun cancelAll(notifications: List<NotificationSettingDto>) {
         if (notifications.isEmpty()) {
             return
         }
