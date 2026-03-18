@@ -20,16 +20,15 @@ class NotificationSettingsServiceImpl(
     private val logger = LoggerFactory.getLogger("SERVICE")
 
     override fun changeQuiteMode(userId: Long, messageId: Int, start: LocalTime, end: LocalTime) {
-        logger.info("Change time of quite mode for user [$userId], start: [$start], end: [$end]")
+        logger.info("Change time of quite mode for telegram user [$userId], start: [$start], end: [$end]")
         require(start != end) { "Start must be before end" }
 
-
-        notificationAccessService.findByUserId(userId)
+        notificationAccessService.findNotificationSettingByTelegramUserId(userId)
             .apply {
                 notificationAccessService.changeQuiteMode(userId, start, end)
-                messageEditorService.deleteReplyMarkup(chatId, messageId)
+                messageEditorService.deleteReplyMarkup(this.telegramChat.externalChatId, messageId)
                 SendMessage(
-                    chatId.toString(),
+                    this.telegramChat.externalChatId.toString(),
                     TelegramConstants.SETTINGS_QUIET_MODE_TIME_NOTIFICATION_CHANGING.format(start, end)
                 ).apply {
                     enableMarkdown(true)

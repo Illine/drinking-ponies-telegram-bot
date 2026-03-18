@@ -7,7 +7,7 @@ import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
 import ru.illine.drinking.ponies.model.base.PauseNotificationType
-import ru.illine.drinking.ponies.model.dto.NotificationDto
+import ru.illine.drinking.ponies.model.dto.internal.NotificationSettingDto
 import ru.illine.drinking.ponies.service.MessageEditorService
 import ru.illine.drinking.ponies.service.button.ReplyButtonStrategy
 import ru.illine.drinking.ponies.util.TelegramConstants
@@ -46,8 +46,9 @@ class PauseNotificationReplayButtonStrategy(
         userId: Long,
         chatId: Long
     ) {
-        val savedNotification = notificationAccessService.findByUserId(userId)
-        val delayedNotificationTime = getDelayedNotificationTime(savedNotification, pauseNotification)
+        val savedNotificationSetting =
+            notificationAccessService.findNotificationSettingByTelegramUserId(userId)
+        val delayedNotificationTime = getDelayedNotificationTime(savedNotificationSetting, pauseNotification)
         log.info(
             "A notification will be delayed to [{}] delayNotification for a user [{}]",
             pauseNotification,
@@ -68,11 +69,12 @@ class PauseNotificationReplayButtonStrategy(
         chatId: Long
     ) {
         log.info("A notification will be reset to user's delayNotification for a user [{}]", userId)
-        val savedNotification = notificationAccessService.findByUserId(userId)
-        val delayNotification = savedNotification.delayNotification
+        val savedNotificationSetting =
+            notificationAccessService.findNotificationSettingByTelegramUserId(userId)
+        val delayNotification = savedNotificationSetting.delayNotification
         log.info("User's delayNotification: [{}]", delayNotification)
         val delayedNotificationTime =
-            getDelayedNotificationTime(savedNotification, delayNotification.minutes)
+            getDelayedNotificationTime(savedNotificationSetting, delayNotification.minutes)
         log.info("The new notification will be at [{}]", delayedNotificationTime)
 
         notificationAccessService.updateTimeOfLastNotification(userId, delayedNotificationTime)
@@ -91,15 +93,15 @@ class PauseNotificationReplayButtonStrategy(
     }
 
     private fun getDelayedNotificationTime(
-        savedNotification: NotificationDto,
+        savedNotificationSetting: NotificationSettingDto,
         pauseNotification: PauseNotificationType
-    ): LocalDateTime = getDelayedNotificationTime(savedNotification, pauseNotification.minutes)
+    ): LocalDateTime = getDelayedNotificationTime(savedNotificationSetting, pauseNotification.minutes)
 
     private fun getDelayedNotificationTime(
-        savedNotification: NotificationDto,
+        savedNotificationSetting: NotificationSettingDto,
         minutes: Long
     ): LocalDateTime {
-        val userZoneId = ZoneId.of(savedNotification.userTimeZone)
+        val userZoneId = ZoneId.of(savedNotificationSetting.telegramUser.userTimeZone)
         val userDateTime = ZonedDateTime.now(userZoneId)
         return userDateTime.plusMinutes(minutes).toLocalDateTime()
     }

@@ -1,10 +1,11 @@
-package ru.illine.drinking.ponies.model.dto
+package ru.illine.drinking.ponies.model.dto.internal
 
 import ru.illine.drinking.ponies.model.base.DelayNotificationType
 import ru.illine.drinking.ponies.model.entity.NotificationEntity
 import java.time.LocalDateTime
 import java.time.LocalTime
 
+@Deprecated(message = "The dto will be removed in a future release: 7.5.0")
 data class NotificationDto(
     var id: Long? = null,
 

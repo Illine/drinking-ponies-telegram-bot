@@ -7,7 +7,6 @@ import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
 import ru.illine.drinking.ponies.model.base.DelayNotificationType
-import ru.illine.drinking.ponies.model.dto.NotificationDto
 import ru.illine.drinking.ponies.service.MessageEditorService
 import ru.illine.drinking.ponies.service.button.ReplyButtonStrategy
 import ru.illine.drinking.ponies.util.TelegramConstants
@@ -31,16 +30,16 @@ class DelayNotificationReplayButtonStrategy(
         val delayNotification = DelayNotificationType.typeOf(queryData) ?: DelayNotificationType.TWO_HOURS
 
         log.info(
-            "A user [{}] for chat [{}] with delay setting [{}] will be stored to a database",
+            "A telegram user [{}] for telegram chat [{}] with delay setting [{}] will be stored to a database",
             userId,
             chatId,
             delayNotification
         )
 
-        log.info("A notification for user [{}] with delay setting [{}] will be saved", userId, delayNotification)
-        val notification = NotificationDto.create(userId, chatId, delayNotification)
-        val savedNotification = notificationAccessService.save(notification)
-        log.info("The notification (id: [{}]) has saved", savedNotification.id)
+        log.info("A notification settings for user [{}] with delay setting [{}] will be saved", userId, delayNotification)
+        val updatedNotificationSettings =
+            notificationAccessService.updateNotificationSettings(userId, chatId, delayNotification)
+        log.info("The notification settings (id: [{}]) has updated", updatedNotificationSettings.id)
 
         SendMessage(
             chatId.toString(),

@@ -1,7 +1,7 @@
 package ru.illine.drinking.ponies.service
 
 import org.telegram.telegrambots.abilitybots.api.objects.MessageContext
-import ru.illine.drinking.ponies.model.dto.NotificationDto
+import ru.illine.drinking.ponies.model.dto.internal.NotificationSettingDto
 
 interface NotificationService {
 
@@ -15,7 +15,7 @@ interface NotificationService {
 
     fun settings(messageContext: MessageContext)
 
-    fun sendNotifications(notifications: Collection<NotificationDto>)
+    fun sendNotifications(notifications: Collection<NotificationSettingDto>)
 
-    fun suspendNotifications(notifications: Collection<NotificationDto>)
+    fun suspendNotifications(notifications: Collection<NotificationSettingDto>)
 }

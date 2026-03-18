@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param
 import ru.illine.drinking.ponies.model.entity.NotificationEntity
 import java.time.LocalTime
 
+@Deprecated(message = "The repository will be removed in a future release: 7.5.0")
 interface NotificationRepository : JpaRepository<NotificationEntity, Long> {
 
     @Query(
