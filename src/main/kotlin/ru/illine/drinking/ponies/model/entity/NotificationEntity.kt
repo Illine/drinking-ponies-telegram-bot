@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package ru.illine.drinking.ponies.model.entity
 
 import com.fasterxml.jackson.annotation.JsonIgnore

@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package ru.illine.drinking.ponies.model.dto.internal
 
 import ru.illine.drinking.ponies.model.base.DelayNotificationType

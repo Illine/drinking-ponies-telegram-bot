@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package ru.illine.drinking.ponies.dao.repository
 
 import org.springframework.data.jpa.repository.JpaRepository
