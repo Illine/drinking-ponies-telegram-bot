@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package ru.illine.drinking.ponies.model.entity
 
 import com.fasterxml.jackson.annotation.JsonIgnore
@@ -5,10 +7,11 @@ import jakarta.persistence.*
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
 import ru.illine.drinking.ponies.model.base.DelayNotificationType
-import ru.illine.drinking.ponies.model.dto.NotificationDto
+import ru.illine.drinking.ponies.model.dto.internal.NotificationDto
 import java.time.LocalDateTime
 import java.time.LocalTime
 
+@Deprecated(message = "The entity will be removed in a future release: 7.5.0")
 @Entity
 @Table(
     name = "notifications",

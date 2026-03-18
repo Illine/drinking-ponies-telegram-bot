@@ -14,8 +14,6 @@ abstract class AbstractAnswerNotificationReplyButtonStrategy<T>(
     private val messageEditorService: MessageEditorService
 ) : ReplyButtonStrategy {
 
-    protected val questionMessageEditedPattern = "%s\nВаш ответ: *%s*"
-
     override fun reply(callbackQuery: CallbackQuery) {
         editNotification(callbackQuery)
 

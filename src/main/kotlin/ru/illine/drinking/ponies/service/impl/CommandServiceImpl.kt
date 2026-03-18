@@ -9,7 +9,6 @@ import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.illine.drinking.ponies.config.property.TelegramBotProperties
 import ru.illine.drinking.ponies.model.base.TelegramCommandType
 import ru.illine.drinking.ponies.service.CommandService
-import java.util.*
 
 @Service
 class CommandServiceImpl(
