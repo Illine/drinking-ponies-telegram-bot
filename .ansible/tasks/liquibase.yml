@@ -2,7 +2,7 @@
   template:
     src: "liquibase.properties.j2"
     dest: "/tmp/liquibase.properties"
-    mode: "0755"
+    mode: "0600"
   delegate_to: localhost
 
 - name: Run Liquibase Update

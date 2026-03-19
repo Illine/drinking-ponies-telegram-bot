@@ -1,16 +1,16 @@
 - name: Check if docker is installed
-  ansible.builtin.shell: >
+  ansible.builtin.command: >
     which docker
   register: docker_check
   failed_when:
-    - docker_check.stdout == ""
+    - docker_check.rc != 0
 
 - name: Check if docker compose is installed
-  ansible.builtin.shell: >
-    which docker compose
+  ansible.builtin.command: >
+    docker compose version
   register: docker_compose_check
   failed_when:
-    - docker_compose_check.stdout == ""
+    - docker_compose_check.rc != 0
 
 - name: Ensure all necessary directories exist
   file:
@@ -24,12 +24,12 @@
 
 - name: Docker Login
   ansible.builtin.shell: >
-    docker login -u {{ gitlab_registry_username }} -p {{ gitlab_registry_token }} {{ gitlab_registry }}
+    echo {{ gitlab_registry_token }} | docker login -u {{ gitlab_registry_username }} --password-stdin {{ gitlab_registry }}
 
 - name: Update docker-compose.yaml
   template:
     src: "docker-compose.yaml.j2"
-    dest: "//{{ dptb_root_dir}}/{{ dptb_main_dir }}/docker-compose.yaml"
+    dest: "/{{ dptb_root_dir}}/{{ dptb_main_dir }}/docker-compose.yaml"
   become: true
 
 - name: Update env's
