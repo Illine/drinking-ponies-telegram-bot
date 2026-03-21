@@ -1,6 +1,6 @@
 package ru.illine.drinking.ponies.model.dto.internal
 
-import ru.illine.drinking.ponies.model.base.TimeNotificationType
+import ru.illine.drinking.ponies.model.base.DelayTimeNotificationType
 import java.time.LocalDateTime
 import java.time.LocalTime
 
@@ -11,7 +11,7 @@ data class NotificationSettingDto(
 
     val telegramChat: TelegramChatDto,
 
-    val delayNotification: TimeNotificationType,
+    val delayNotification: DelayTimeNotificationType,
 
     var timeOfLastNotification: LocalDateTime = LocalDateTime.now(),
 
@@ -27,7 +27,7 @@ data class NotificationSettingDto(
         fun create(
             telegramUser: TelegramUserDto,
             telegramChat: TelegramChatDto,
-            delayNotification: TimeNotificationType = TimeNotificationType.TWO_HOURS,
+            delayNotification: DelayTimeNotificationType = DelayTimeNotificationType.TWO_HOURS,
             quietModeStart: LocalTime = LocalTime.of(23, 0),
             quietModeEnd: LocalTime = LocalTime.of(11, 0)
         ): NotificationSettingDto = NotificationSettingDto(

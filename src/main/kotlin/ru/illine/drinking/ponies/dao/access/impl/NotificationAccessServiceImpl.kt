@@ -10,7 +10,7 @@ import ru.illine.drinking.ponies.dao.access.NotificationAccessService
 import ru.illine.drinking.ponies.dao.repository.NotificationSettingRepository
 import ru.illine.drinking.ponies.dao.repository.TelegramChatRepository
 import ru.illine.drinking.ponies.dao.repository.TelegramUserRepository
-import ru.illine.drinking.ponies.model.base.TimeNotificationType
+import ru.illine.drinking.ponies.model.base.DelayTimeNotificationType
 import ru.illine.drinking.ponies.model.dto.internal.NotificationSettingDto
 import ru.illine.drinking.ponies.model.dto.internal.TelegramChatDto
 import ru.illine.drinking.ponies.model.dto.internal.TelegramUserDto
@@ -93,7 +93,7 @@ class NotificationAccessServiceImpl(
     override fun updateNotificationSettings(
         telegramUserId: Long,
         telegramChatId: Long,
-        delayNotification: TimeNotificationType
+        delayNotification: DelayTimeNotificationType
     ): NotificationSettingDto {
         log.debug("The Notification Settings will be updated for an existed entity by id: [${telegramUserId}]")
 

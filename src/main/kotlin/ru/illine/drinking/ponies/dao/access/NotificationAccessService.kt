@@ -1,6 +1,6 @@
 package ru.illine.drinking.ponies.dao.access
 
-import ru.illine.drinking.ponies.model.base.TimeNotificationType
+import ru.illine.drinking.ponies.model.base.DelayTimeNotificationType
 import ru.illine.drinking.ponies.model.dto.internal.NotificationSettingDto
 import ru.illine.drinking.ponies.model.dto.internal.TelegramChatDto
 import ru.illine.drinking.ponies.model.dto.internal.TelegramUserDto
@@ -22,7 +22,7 @@ interface NotificationAccessService {
     ): TelegramUserDto
 
     fun updateNotificationSettings(
-        telegramUserId: Long, telegramChatId: Long, delayNotification: TimeNotificationType
+        telegramUserId: Long, telegramChatId: Long, delayNotification: DelayTimeNotificationType
     ): NotificationSettingDto
 
     fun updateTimeOfLastNotification(telegramUserId: Long, time: LocalDateTime): NotificationSettingDto

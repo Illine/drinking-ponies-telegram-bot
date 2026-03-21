@@ -6,6 +6,7 @@ import org.telegram.telegrambots.abilitybots.api.objects.MessageContext
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
+import ru.illine.drinking.ponies.model.base.PauseTimeNotificationType
 import ru.illine.drinking.ponies.model.base.SettingsType
 import ru.illine.drinking.ponies.model.dto.internal.NotificationSettingDto
 import ru.illine.drinking.ponies.model.dto.internal.TelegramChatDto
@@ -83,7 +84,11 @@ class NotificationServiceImpl(
                 chantId.toString(),
                 TelegramMessageConstants.PAUSE_GREETING_MESSAGE
             ).apply {
-                replyMarkup = TelegramBotKeyboardHelper.pauseSnoozeTimeButtons(delayNotification)
+                replyMarkup = TelegramBotKeyboardHelper.timeOptionButtons(
+                    PauseTimeNotificationType.entries.filter {
+                        it == PauseTimeNotificationType.RESET || it.minutes > delayNotification.minutes
+                    }
+                )
             }.apply { sender.execute(this) }
         }
 

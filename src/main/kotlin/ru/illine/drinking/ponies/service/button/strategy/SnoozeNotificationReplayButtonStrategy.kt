@@ -6,7 +6,7 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
-import ru.illine.drinking.ponies.model.base.TimeNotificationType
+import ru.illine.drinking.ponies.model.base.DelayTimeNotificationType
 import ru.illine.drinking.ponies.service.MessageEditorService
 import ru.illine.drinking.ponies.service.button.ReplyButtonStrategy
 import ru.illine.drinking.ponies.util.TelegramMessageConstants
@@ -27,7 +27,7 @@ class SnoozeNotificationReplayButtonStrategy(
         val chatId = callbackQuery.message.chatId
         val queryData = callbackQuery.data
 
-        val snoozeType = TimeNotificationType.typeOf(queryData) ?: TimeNotificationType.TEN_MINUTES
+        val snoozeType = DelayTimeNotificationType.typeOf(queryData) ?: DelayTimeNotificationType.TEN_MINUTES
 
         log.info(
             "A telegram user [{}] for telegram chat [{}] with snooze setting [{}] will delay notification",
@@ -50,7 +50,7 @@ class SnoozeNotificationReplayButtonStrategy(
         ).apply { messageSender.execute(this) }
     }
 
-    override fun isQueryData(queryData: String): Boolean = TimeNotificationType.typeOf(queryData) != null
+    override fun isQueryData(queryData: String): Boolean = DelayTimeNotificationType.typeOf(queryData) != null
 
     private fun deleteOldReplayMarkup(callbackQuery: CallbackQuery) {
         messageEditorService.deleteReplyMarkup(
