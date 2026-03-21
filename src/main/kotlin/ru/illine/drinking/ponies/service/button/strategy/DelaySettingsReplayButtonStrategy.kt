@@ -43,8 +43,8 @@ class DelaySettingsReplayButtonStrategy(
             TelegramMessageConstants.SETTINGS_DELAY_NOTIFICATION_BUTTON_MESSAGE
         ).apply {
             replyMarkup = TelegramBotKeyboardHelper.timeOptionButtons(
-                TimeNotificationType.entries,
-//                exclude = currentNotificationSetting
+                TimeNotificationType.settingsTimes(),
+                exclude = setOf(currentNotificationSetting)
             )
         }.apply { sender.execute(this) }
     }

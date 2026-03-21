@@ -38,13 +38,13 @@ object TelegramBotKeyboardHelper {
             .build()
     }
 
-    fun delayOptionButtons(): ReplyKeyboard {
+    fun delayOptionButtons(): ReplyKeyboard =
+        timeOptionButtons(TimeNotificationType.delayTimes())
 
-    }
-
-    fun pauseOptionButtons(): ReplyKeyboard {
-
-    }
+    fun pauseOptionButtons(currentDelay: TimeNotificationType): ReplyKeyboard =
+        timeOptionButtons(TimeNotificationType.pauseTimes().filter {
+            it == TimeNotificationType.RESET || it.minutes > currentDelay.minutes
+        })
 
     fun timeOptionButtons(
         options: Collection<TimeNotificationType>,

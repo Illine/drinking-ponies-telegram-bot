@@ -31,13 +31,14 @@ enum class TimeNotificationType(
                 .find { Objects.equals(queryData, it.queryData.toString()) }
         }
 
-        fun delayTimes() {
+        fun delayTimes(): List<TimeNotificationType> =
+            listOf(FIVE_MINUTES, TEN_MINUTES, TWENTY_MINUTES, HALF_HOUR)
 
-        }
+        fun settingsTimes(): List<TimeNotificationType> =
+            listOf(HOUR, HOUR_AND_HALF, TWO_HOURS, THREE_HOURS)
 
-        fun pauseTimes() {
-
-        }
+        fun pauseTimes(): List<TimeNotificationType> =
+            listOf(RESET, HOUR, TWO_HOURS, THREE_HOURS, FOUR_HOURS, FIVE_HOURS)
 
     }
 
