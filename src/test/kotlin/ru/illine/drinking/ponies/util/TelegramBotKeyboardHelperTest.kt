@@ -9,9 +9,7 @@ import org.junit.jupiter.params.provider.EnumSource
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup
-import ru.illine.drinking.ponies.model.base.AnswerNotificationType
-import ru.illine.drinking.ponies.model.base.SettingsType
-import ru.illine.drinking.ponies.model.base.TimeNotificationType
+import ru.illine.drinking.ponies.model.base.*
 import ru.illine.drinking.ponies.service.button.ButtonDataService
 import ru.illine.drinking.ponies.test.tag.UnitTest
 
@@ -53,16 +51,49 @@ class TelegramBotKeyboardHelperTest {
         assertEquals(expectedButtonsSize, actual.keyboard[0].size)
     }
 
-    // delayOptionButtons
+    // snoozeOptionButtons
 
     @Test
-    @DisplayName("delayOptionButtons(): returns valid keyboard")
-    fun `successful delayOptionButtons`() {
+    @DisplayName("snoozeOptionButtons(): returns valid keyboard")
+    fun `successful snoozeOptionButtons`() {
         val expectedButtonsSize = 1
-        val expectedRowsSize = TimeNotificationType.delayTimes().size
+        val expectedRowsSize = SnoozeNotificationType.entries.size
 
         val actual =
-            TelegramBotKeyboardHelper.delayOptionButtons() as InlineKeyboardMarkup
+            TelegramBotKeyboardHelper.snoozeOptionButtons() as InlineKeyboardMarkup
+
+        assertNotNull(actual)
+        assertDoesNotThrow { actual.validate() }
+        assertEquals(expectedRowsSize, actual.keyboard.size)
+        assertEquals(expectedButtonsSize, actual.keyboard[0].size)
+    }
+
+    // delaySettingOptionButtons
+
+    @ParameterizedTest
+    @EnumSource(DelaySettingNotificationType::class)
+    @DisplayName("delaySettingOptionButtons(): returns valid keyboard with exclude")
+    fun `successful delaySettingOptionButtons with exclude`(type: DelaySettingNotificationType) {
+        val expectedButtonsSize = 1
+        val expectedRowsSize = DelaySettingNotificationType.entries.size - 1
+
+        val actual =
+            TelegramBotKeyboardHelper.delaySettingOptionButtons(exclude = type) as InlineKeyboardMarkup
+
+        assertNotNull(actual)
+        assertDoesNotThrow { actual.validate() }
+        assertEquals(expectedRowsSize, actual.keyboard.size)
+        assertEquals(expectedButtonsSize, actual.keyboard[0].size)
+    }
+
+    @Test
+    @DisplayName("delaySettingOptionButtons(): returns valid keyboard without exclude")
+    fun `successful delaySettingOptionButtons without exclude`() {
+        val expectedButtonsSize = 1
+        val expectedRowsSize = DelaySettingNotificationType.entries.size
+
+        val actual =
+            TelegramBotKeyboardHelper.delaySettingOptionButtons() as InlineKeyboardMarkup
 
         assertNotNull(actual)
         assertDoesNotThrow { actual.validate() }
@@ -76,50 +107,12 @@ class TelegramBotKeyboardHelperTest {
     @DisplayName("pauseOptionButtons(): returns valid keyboard")
     fun `successful pauseOptionButtons`() {
         val expectedButtonsSize = 1
-        val currentDelay = TimeNotificationType.HALF_HOUR
-        val expectedRowsSize = TimeNotificationType.pauseTimes()
-            .count { it == TimeNotificationType.RESET || it.minutes > currentDelay.minutes }
+        val currentDelay = DelaySettingNotificationType.HOUR
+        val expectedRowsSize = PauseNotificationType.entries
+            .count { it == PauseNotificationType.RESET || it.minutes > currentDelay.minutes }
 
         val actual =
             TelegramBotKeyboardHelper.pauseOptionButtons(currentDelay) as InlineKeyboardMarkup
-
-        assertNotNull(actual)
-        assertDoesNotThrow { actual.validate() }
-        assertEquals(expectedRowsSize, actual.keyboard.size)
-        assertEquals(expectedButtonsSize, actual.keyboard[0].size)
-    }
-
-    // timeOptionButtons
-
-    @ParameterizedTest
-    @EnumSource(TimeNotificationType::class)
-    @DisplayName("timeOptionButtons(): returns valid keyboard with exclude")
-    fun `successful timeOptionButtons with exclude`(timeNotificationType: TimeNotificationType) {
-        val expectedButtonsSize = 1
-        val expectedRowsSize = TimeNotificationType.entries.size - 1
-
-        val actual =
-            TelegramBotKeyboardHelper.timeOptionButtons(
-                TimeNotificationType.entries,
-                exclude = setOf(timeNotificationType)
-            ) as InlineKeyboardMarkup
-
-        assertNotNull(actual)
-        assertDoesNotThrow { actual.validate() }
-        assertEquals(expectedRowsSize, actual.keyboard.size)
-        assertEquals(expectedButtonsSize, actual.keyboard[0].size)
-    }
-
-    @Test
-    @DisplayName("timeOptionButtons(): returns valid keyboard without exclude")
-    fun `successful timeOptionButtons without exclude`() {
-        val expectedButtonsSize = 1
-        val expectedRowsSize = TimeNotificationType.entries.size
-
-        val actual =
-            TelegramBotKeyboardHelper.timeOptionButtons(
-                TimeNotificationType.entries
-            ) as InlineKeyboardMarkup
 
         assertNotNull(actual)
         assertDoesNotThrow { actual.validate() }

@@ -23,7 +23,7 @@ class DelayAnswerNotificationReplayButtonStrategy(
             callbackQuery.message.chatId.toString(),
             getMessageText()
         ).apply {
-            replyMarkup = TelegramBotKeyboardHelper.delayOptionButtons()
+            replyMarkup = TelegramBotKeyboardHelper.snoozeOptionButtons()
             messageSender.execute(this)
         }
     }

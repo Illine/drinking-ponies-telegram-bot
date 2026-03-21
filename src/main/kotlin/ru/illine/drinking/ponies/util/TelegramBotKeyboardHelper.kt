@@ -5,9 +5,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboard
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow
 import org.telegram.telegrambots.meta.api.objects.webapp.WebAppInfo
-import ru.illine.drinking.ponies.model.base.AnswerNotificationType
-import ru.illine.drinking.ponies.model.base.SettingsType
-import ru.illine.drinking.ponies.model.base.TimeNotificationType
+import ru.illine.drinking.ponies.model.base.*
 import ru.illine.drinking.ponies.service.button.ButtonDataService
 
 object TelegramBotKeyboardHelper {
@@ -38,17 +36,20 @@ object TelegramBotKeyboardHelper {
             .build()
     }
 
-    fun delayOptionButtons(): ReplyKeyboard =
-        timeOptionButtons(TimeNotificationType.delayTimes())
+    fun snoozeOptionButtons(): ReplyKeyboard =
+        timeOptionButtons(SnoozeNotificationType.entries)
 
-    fun pauseOptionButtons(currentDelay: TimeNotificationType): ReplyKeyboard =
-        timeOptionButtons(TimeNotificationType.pauseTimes().filter {
-            it == TimeNotificationType.RESET || it.minutes > currentDelay.minutes
+    fun delaySettingOptionButtons(exclude: DelaySettingNotificationType? = null): ReplyKeyboard =
+        timeOptionButtons(DelaySettingNotificationType.entries, exclude?.let { setOf(it) } ?: setOf())
+
+    fun pauseOptionButtons(currentDelay: DelaySettingNotificationType): ReplyKeyboard =
+        timeOptionButtons(PauseNotificationType.entries.filter {
+            it == PauseNotificationType.RESET || it.minutes > currentDelay.minutes
         })
 
     fun timeOptionButtons(
-        options: Collection<TimeNotificationType>,
-        exclude: Set<TimeNotificationType> = setOf()
+        options: Collection<TimeBasedOption>,
+        exclude: Set<TimeBasedOption> = setOf()
     ): ReplyKeyboard {
         val rows = options
             .filter { !exclude.contains(it) }

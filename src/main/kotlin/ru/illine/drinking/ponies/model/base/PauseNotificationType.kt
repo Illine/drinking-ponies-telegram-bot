@@ -1,0 +1,30 @@
+package ru.illine.drinking.ponies.model.base
+
+import ru.illine.drinking.ponies.util.TelegramMessageConstants
+import ru.illine.drinking.ponies.util.TelegramTimeConstants
+import java.util.*
+
+@Suppress("unused")
+enum class PauseNotificationType(
+    override val displayName: String,
+    override val minutes: Long,
+    override val queryData: UUID
+) : TimeBasedOption {
+    RESET(TelegramMessageConstants.PAUSE_RESET_TO_DEFAULT_MESSAGE, 0, UUID.fromString("806c7780-3c82-445f-835d-b65dd3232688")),
+
+    HOUR(TelegramTimeConstants.HOUR, 60, UUID.fromString("568df560-f242-4dd0-bb44-a0773b27d75d")),
+    TWO_HOURS(TelegramTimeConstants.TWO_HOURS, 120, UUID.fromString("3bcf42ec-e44c-4f29-b410-e65d5293c786")),
+    THREE_HOURS(TelegramTimeConstants.THREE_HOURS, 180, UUID.fromString("a32279e9-c489-4a74-bd2f-bce9a2ca81fa")),
+    FOUR_HOURS(TelegramTimeConstants.FOUR_HOURS, 240, UUID.fromString("cb9f45b0-0016-45d1-a436-6c109c548423")),
+    FIVE_HOURS(TelegramTimeConstants.FIVE_HOURS, 300, UUID.fromString("508c756f-7987-4b51-bd94-bad6f1a671a3"));
+
+    companion object {
+
+        fun typeOf(queryData: String): PauseNotificationType? {
+            return entries
+                .find { Objects.equals(queryData, it.queryData.toString()) }
+        }
+
+    }
+
+}

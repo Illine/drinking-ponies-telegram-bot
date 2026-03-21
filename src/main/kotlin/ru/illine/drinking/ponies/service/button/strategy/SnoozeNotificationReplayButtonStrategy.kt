@@ -6,13 +6,13 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
-import ru.illine.drinking.ponies.model.base.DelaySettingNotificationType
+import ru.illine.drinking.ponies.model.base.SnoozeNotificationType
 import ru.illine.drinking.ponies.service.MessageEditorService
 import ru.illine.drinking.ponies.service.button.ReplyButtonStrategy
 import ru.illine.drinking.ponies.util.TelegramMessageConstants
 
 @Service
-class DelayNotificationReplayButtonStrategy(
+class SnoozeNotificationReplayButtonStrategy(
     private val sender: TelegramClient,
     private val notificationAccessService: NotificationAccessService,
     private val messageEditorService: MessageEditorService
@@ -27,27 +27,30 @@ class DelayNotificationReplayButtonStrategy(
         val chatId = callbackQuery.message.chatId
         val queryData = callbackQuery.data
 
-        val delayNotification = DelaySettingNotificationType.typeOf(queryData) ?: DelaySettingNotificationType.TWO_HOURS
+        val snoozeType = SnoozeNotificationType.typeOf(queryData) ?: SnoozeNotificationType.TEN_MINUTES
 
         log.info(
-            "A telegram user [{}] for telegram chat [{}] with delay setting [{}] will be stored to a database",
+            "A telegram user [{}] for telegram chat [{}] with snooze setting [{}] will delay notification",
             userId,
             chatId,
-            delayNotification
+            snoozeType
         )
 
-        log.info("A notification settings for user [{}] with delay setting [{}] will be saved", userId, delayNotification)
-        val updatedNotificationSettings =
-            notificationAccessService.updateNotificationSettings(userId, chatId, delayNotification)
-        log.info("The notification settings (id: [{}]) has updated", updatedNotificationSettings.id)
+        val notificationSetting = notificationAccessService.findNotificationSettingByTelegramUserId(userId)
+        notificationAccessService.updateTimeOfLastNotification(
+            userId,
+            notificationSetting.timeOfLastNotification.plusMinutes(snoozeType.minutes)
+        )
+
+        log.info("The notification for user [{}] has been snoozed for [{}] minutes", userId, snoozeType.minutes)
 
         SendMessage(
             chatId.toString(),
-            TelegramMessageConstants.TIME_BUTTON_RESULT_MESSAGE.format(delayNotification.displayName)
+            TelegramMessageConstants.NOTIFICATION_SNOOZE_RESULT_MESSAGE.format(snoozeType.displayName)
         ).apply { sender.execute(this) }
     }
 
-    override fun isQueryData(queryData: String): Boolean = DelaySettingNotificationType.typeOf(queryData) != null
+    override fun isQueryData(queryData: String): Boolean = SnoozeNotificationType.typeOf(queryData) != null
 
     private fun deleteOldReplayMarkup(callbackQuery: CallbackQuery) {
         messageEditorService.deleteReplyMarkup(

@@ -7,7 +7,7 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
 import org.springframework.beans.factory.annotation.Autowired
-import ru.illine.drinking.ponies.model.base.TimeNotificationType
+import ru.illine.drinking.ponies.model.base.DelaySettingNotificationType
 import ru.illine.drinking.ponies.test.generator.DtoGenerator
 import ru.illine.drinking.ponies.test.tag.SpringIntegrationTest
 import ru.illine.drinking.ponies.test.util.ClockHelperTest
@@ -59,7 +59,7 @@ class NotificationTimeServiceTest @Autowired constructor(
     fun `isNotificationDue table test`(
         currentTimeIso: String,
         lastNotificationTimeIso: String,
-        delay: TimeNotificationType,
+        delay: DelaySettingNotificationType,
         expected: Boolean,
         description: String
     ) {
@@ -190,42 +190,42 @@ class NotificationTimeServiceTest @Autowired constructor(
                 // FORMAT: CurrentTime | LastNotificationTime | Delay | Expected | Description
 
                 Arguments.of(
-                    "2025-01-01T12:00:00Z", "2025-01-01T10:00:00Z", TimeNotificationType.TWO_HOURS, true,
+                    "2025-01-01T12:00:00Z", "2025-01-01T10:00:00Z", DelaySettingNotificationType.TWO_HOURS, true,
                     "Exact boundary: 10:00 + 120m == 12:00, boundary is inclusive [<=] -> Due"
                 ),
 
                 Arguments.of(
-                    "2025-01-01T13:00:00Z", "2025-01-01T10:00:00Z", TimeNotificationType.HOUR, true,
+                    "2025-01-01T13:00:00Z", "2025-01-01T10:00:00Z", DelaySettingNotificationType.HOUR, true,
                     "Exact boundary: 12:00 + 60m == 13:00, boundary is inclusive [<=]  -> Due"
                 ),
 
                 Arguments.of(
-                    "2025-01-01T12:00:01Z", "2025-01-01T10:00:00Z", TimeNotificationType.TWO_HOURS, true,
+                    "2025-01-01T12:00:01Z", "2025-01-01T10:00:00Z", DelaySettingNotificationType.TWO_HOURS, true,
                     "1 second after due time -> Due"
                 ),
 
                 Arguments.of(
-                    "2025-01-01T11:59:59Z", "2025-01-01T10:00:00Z", TimeNotificationType.TWO_HOURS, false,
+                    "2025-01-01T11:59:59Z", "2025-01-01T10:00:00Z", DelaySettingNotificationType.TWO_HOURS, false,
                     "1 second before due time -> Not Due"
                 ),
 
                 Arguments.of(
-                    "2025-01-01T15:00:00Z", "2025-01-01T10:00:00Z", TimeNotificationType.HOUR, true,
+                    "2025-01-01T15:00:00Z", "2025-01-01T10:00:00Z", DelaySettingNotificationType.HOUR, true,
                     "Long overdue: 10:00 + 60m < 15:00 -> Due"
                 ),
 
                 Arguments.of(
-                    "2025-01-02T01:00:00Z", "2025-01-01T23:00:00Z", TimeNotificationType.HOUR, true,
+                    "2025-01-02T01:00:00Z", "2025-01-01T23:00:00Z", DelaySettingNotificationType.HOUR, true,
                     "Day rollover: 23:00 + 60m = 00:00 (next day) < 01:00 -> Due"
                 ),
 
                 Arguments.of(
-                    "2025-01-01T12:00:00Z", "2025-01-01T11:50:00Z", TimeNotificationType.HALF_HOUR, false,
+                    "2025-01-01T12:00:00Z", "2025-01-01T11:50:00Z", DelaySettingNotificationType.HALF_HOUR, false,
                     "Short delay not reached: 11:50 + 30m = 12:20 > 12:00 -> Not Due"
                 ),
 
                 Arguments.of(
-                    "2025-01-01T10:00:00Z", "2025-01-01T12:00:00Z", TimeNotificationType.HOUR, false,
+                    "2025-01-01T10:00:00Z", "2025-01-01T12:00:00Z", DelaySettingNotificationType.HOUR, false,
                     "Last notification is in future -> Not Due"
                 )
             )
