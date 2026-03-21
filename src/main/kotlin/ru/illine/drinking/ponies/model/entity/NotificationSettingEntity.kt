@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import jakarta.persistence.*
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
-import ru.illine.drinking.ponies.model.base.DelayTimeNotificationType
+import ru.illine.drinking.ponies.model.base.TimeNotificationType
 import java.time.LocalDateTime
 import java.time.LocalTime
 
@@ -39,7 +39,7 @@ class NotificationSettingEntity(
 
     @Enumerated(EnumType.STRING)
     @Column(name = "delay_notification", nullable = false)
-    var delayNotification: DelayTimeNotificationType,
+    var delayNotification: TimeNotificationType,
 
     @Column(name = "time_of_last_notification", nullable = false)
     var timeOfLastNotification: LocalDateTime,

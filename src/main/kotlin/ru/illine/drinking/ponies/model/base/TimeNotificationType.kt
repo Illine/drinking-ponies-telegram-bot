@@ -5,12 +5,17 @@ import ru.illine.drinking.ponies.util.TelegramTimeConstants
 import java.util.*
 
 @Suppress("unused")
-enum class PauseTimeNotificationType(
-    override val displayName: String,
-    override val minutes: Long,
-    override val queryData: UUID
-) : TimeBasedOption {
+enum class TimeNotificationType(
+    val displayName: String,
+    val minutes: Long,
+    val queryData: UUID
+) {
     RESET(TelegramMessageConstants.PAUSE_RESET_TO_DEFAULT_MESSAGE, 0, UUID.fromString("806c7780-3c82-445f-835d-b65dd3232688")),
+
+    FIVE_MINUTES(TelegramTimeConstants.FIVE_MINUTES, 5, UUID.fromString("a1c2d3e4-5f67-4890-abcd-ef1234567801")),
+    TEN_MINUTES(TelegramTimeConstants.TEN_MINUTES, 10, UUID.fromString("b2d3e4f5-6a78-4901-bcde-f12345678902")),
+    TWENTY_MINUTES(TelegramTimeConstants.TWENTY_MINUTES, 20, UUID.fromString("c3e4f5a6-7b89-4012-cdef-123456789003")),
+    HALF_HOUR(TelegramTimeConstants.HALF_HOUR, 30, UUID.fromString("e86794e6-be89-4423-b2dc-804118565699")),
 
     HOUR(TelegramTimeConstants.HOUR, 60, UUID.fromString("568df560-f242-4dd0-bb44-a0773b27d75d")),
     HOUR_AND_HALF(TelegramTimeConstants.HOUR_AND_HALF, 90, UUID.fromString("757f013a-d9fd-463c-974d-27e8f52f8d36")),
@@ -21,9 +26,17 @@ enum class PauseTimeNotificationType(
 
     companion object {
 
-        fun typeOf(queryData: String): PauseTimeNotificationType? {
+        fun typeOf(queryData: String): TimeNotificationType? {
             return entries
                 .find { Objects.equals(queryData, it.queryData.toString()) }
+        }
+
+        fun delayTimes() {
+
+        }
+
+        fun pauseTimes() {
+
         }
 
     }

@@ -5,8 +5,8 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
-import ru.illine.drinking.ponies.model.base.DelayTimeNotificationType
 import ru.illine.drinking.ponies.model.base.SettingsType
+import ru.illine.drinking.ponies.model.base.TimeNotificationType
 import ru.illine.drinking.ponies.service.MessageEditorService
 import ru.illine.drinking.ponies.service.button.ButtonDataService
 import ru.illine.drinking.ponies.service.button.ReplyButtonStrategy
@@ -43,8 +43,8 @@ class DelaySettingsReplayButtonStrategy(
             TelegramMessageConstants.SETTINGS_DELAY_NOTIFICATION_BUTTON_MESSAGE
         ).apply {
             replyMarkup = TelegramBotKeyboardHelper.timeOptionButtons(
-                DelayTimeNotificationType.entries,
-                exclude = currentNotificationSetting
+                TimeNotificationType.entries,
+//                exclude = currentNotificationSetting
             )
         }.apply { sender.execute(this) }
     }

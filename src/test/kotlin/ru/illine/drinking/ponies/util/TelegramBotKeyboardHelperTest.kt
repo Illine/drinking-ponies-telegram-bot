@@ -10,8 +10,8 @@ import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup
 import ru.illine.drinking.ponies.model.base.AnswerNotificationType
-import ru.illine.drinking.ponies.model.base.DelayTimeNotificationType
 import ru.illine.drinking.ponies.model.base.SettingsType
+import ru.illine.drinking.ponies.model.base.TimeNotificationType
 import ru.illine.drinking.ponies.service.button.ButtonDataService
 import ru.illine.drinking.ponies.test.tag.UnitTest
 
@@ -56,16 +56,16 @@ class TelegramBotKeyboardHelperTest {
     // timeOptionButtons
 
     @ParameterizedTest
-    @EnumSource(DelayTimeNotificationType::class)
+    @EnumSource(TimeNotificationType::class)
     @DisplayName("timeOptionButtons(): returns valid keyboard with exclude")
-    fun `successful timeOptionButtons with exclude`(delayTimeNotificationType: DelayTimeNotificationType) {
+    fun `successful timeOptionButtons with exclude`(timeNotificationType: TimeNotificationType) {
         val expectedButtonsSize = 1
-        val expectedRowsSize = DelayTimeNotificationType.entries.size - 1
+        val expectedRowsSize = TimeNotificationType.entries.size - 1
 
         val actual =
             TelegramBotKeyboardHelper.timeOptionButtons(
-                DelayTimeNotificationType.entries,
-                exclude = delayTimeNotificationType
+                TimeNotificationType.entries,
+                exclude = timeNotificationType
             ) as InlineKeyboardMarkup
 
         assertNotNull(actual)
@@ -78,11 +78,11 @@ class TelegramBotKeyboardHelperTest {
     @DisplayName("timeOptionButtons(): returns valid keyboard without exclude")
     fun `successful timeOptionButtons without exclude`() {
         val expectedButtonsSize = 1
-        val expectedRowsSize = DelayTimeNotificationType.entries.size
+        val expectedRowsSize = TimeNotificationType.entries.size
 
         val actual =
             TelegramBotKeyboardHelper.timeOptionButtons(
-                DelayTimeNotificationType.entries
+                TimeNotificationType.entries
             ) as InlineKeyboardMarkup
 
         assertNotNull(actual)

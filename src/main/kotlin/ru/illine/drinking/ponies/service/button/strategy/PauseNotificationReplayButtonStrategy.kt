@@ -6,7 +6,7 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
-import ru.illine.drinking.ponies.model.base.PauseTimeNotificationType
+import ru.illine.drinking.ponies.model.base.TimeNotificationType
 import ru.illine.drinking.ponies.model.dto.internal.NotificationSettingDto
 import ru.illine.drinking.ponies.service.MessageEditorService
 import ru.illine.drinking.ponies.service.button.ReplyButtonStrategy
@@ -32,9 +32,9 @@ class PauseNotificationReplayButtonStrategy(
         val chatId = callbackQuery.message.chatId
         val queryData = callbackQuery.data
 
-        val pauseNotification = PauseTimeNotificationType.typeOf(queryData)!!
+        val pauseNotification = TimeNotificationType.typeOf(queryData)!!
 
-        if (pauseNotification != PauseTimeNotificationType.RESET) {
+        if (pauseNotification != TimeNotificationType.RESET) {
             pause(pauseNotification, userId, chatId)
         } else {
             cancelPause(userId, chatId)
@@ -42,7 +42,7 @@ class PauseNotificationReplayButtonStrategy(
     }
 
     private fun pause(
-        pauseNotification: PauseTimeNotificationType,
+        pauseNotification: TimeNotificationType,
         userId: Long,
         chatId: Long
     ) {
@@ -94,7 +94,7 @@ class PauseNotificationReplayButtonStrategy(
 
     private fun getDelayedNotificationTime(
         savedNotificationSetting: NotificationSettingDto,
-        pauseNotification: PauseTimeNotificationType
+        pauseNotification: TimeNotificationType
     ): LocalDateTime = getDelayedNotificationTime(savedNotificationSetting, pauseNotification.minutes)
 
     private fun getDelayedNotificationTime(
@@ -106,7 +106,7 @@ class PauseNotificationReplayButtonStrategy(
         return userDateTime.plusMinutes(minutes).toLocalDateTime()
     }
 
-    override fun isQueryData(queryData: String): Boolean = PauseTimeNotificationType.typeOf(queryData) != null
+    override fun isQueryData(queryData: String): Boolean = TimeNotificationType.typeOf(queryData) != null
 
     private fun deleteOldReplayMarkup(callbackQuery: CallbackQuery) {
         messageEditorService.deleteReplyMarkup(

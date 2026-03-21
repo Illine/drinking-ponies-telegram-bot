@@ -7,7 +7,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import org.telegram.telegrambots.meta.api.objects.webapp.WebAppInfo
 import ru.illine.drinking.ponies.model.base.AnswerNotificationType
 import ru.illine.drinking.ponies.model.base.SettingsType
-import ru.illine.drinking.ponies.model.base.TimeBasedOption
+import ru.illine.drinking.ponies.model.base.TimeNotificationType
 import ru.illine.drinking.ponies.service.button.ButtonDataService
 
 object TelegramBotKeyboardHelper {
@@ -38,12 +38,20 @@ object TelegramBotKeyboardHelper {
             .build()
     }
 
+    fun delayOptionButtons(): ReplyKeyboard {
+
+    }
+
+    fun pauseOptionButtons(): ReplyKeyboard {
+
+    }
+
     fun timeOptionButtons(
-        options: Collection<TimeBasedOption>,
-        exclude: TimeBasedOption? = null
+        options: Collection<TimeNotificationType>,
+        exclude: Set<TimeNotificationType> = setOf()
     ): ReplyKeyboard {
         val rows = options
-            .filter { it != exclude }
+            .filter { !exclude.contains(it) }
             .map {
                 InlineKeyboardRow(
                     InlineKeyboardButton.builder()
