@@ -63,7 +63,7 @@ object TelegramMessageConstants {
     val NOTIFICATION_SUSPEND_MESSAGE =
         """
                 Котик, твое уведомление отложено! 
-                Надеюсь в следующий раз (который будет через %s) я снова тебе напомню, не волнуйся!
+                Надеюсь в следующий раз (который будет через %s) и я снова тебе напомню, не волнуйся!
             """.trimIndent()
 
     val NOTIFICATION_ANSWER_YES_MESSAGE = "Ты - солнышко! Так держать!"

@@ -138,7 +138,7 @@ class NotificationServiceImpl(
                 ++it.notificationAttempts
                 it.telegramChat.previousNotificationMessageId =
                     SendMessage(
-                        it.telegramChat.previousNotificationMessageId.toString(),
+                        it.telegramChat.externalChatId.toString(),
                         TelegramMessageConstants.NOTIFICATION_QUESTION_MESSAGE
                     ).apply {
                         replyMarkup = TelegramBotKeyboardHelper.notifyButtons()
@@ -159,7 +159,7 @@ class NotificationServiceImpl(
         notifications
             .forEach {
                 SendMessage(
-                    it.telegramChat.previousNotificationMessageId.toString(),
+                    it.telegramChat.externalChatId.toString(),
                     TelegramMessageConstants.NOTIFICATION_SUSPEND_MESSAGE.format(it.delayNotification.displayName)
                 ).apply {
                     disableNotification = true
