@@ -10,7 +10,7 @@ import ru.illine.drinking.ponies.service.MessageEditorService
 import ru.illine.drinking.ponies.service.button.ButtonDataService
 import ru.illine.drinking.ponies.service.button.ReplyButtonStrategy
 import ru.illine.drinking.ponies.util.TelegramBotKeyboardHelper
-import ru.illine.drinking.ponies.util.TelegramConstants
+import ru.illine.drinking.ponies.util.TelegramMessageConstants
 import java.util.*
 
 @Service
@@ -32,14 +32,14 @@ class DelaySettingsReplayButtonStrategy(
 
         SendMessage(
             chatId.toString(),
-            TelegramConstants.SETTINGS_DELAY_NOTIFICATION_GREETING_MESSAGE.format(currentNotificationSetting.displayName)
+            TelegramMessageConstants.SETTINGS_DELAY_NOTIFICATION_GREETING_MESSAGE.format(currentNotificationSetting.displayName)
         ).apply {
             enableMarkdown(true)
         }.apply { sender.execute(this) }
 
         SendMessage(
             chatId.toString(),
-            TelegramConstants.SETTINGS_DELAY_NOTIFICATION_BUTTON_MESSAGE
+            TelegramMessageConstants.SETTINGS_DELAY_NOTIFICATION_BUTTON_MESSAGE
         ).apply {
             replyMarkup = TelegramBotKeyboardHelper.delayTimeButtons(currentNotificationSetting)
         }.apply { sender.execute(this) }

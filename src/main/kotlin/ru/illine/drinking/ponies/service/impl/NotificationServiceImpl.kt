@@ -15,7 +15,7 @@ import ru.illine.drinking.ponies.service.NotificationService
 import ru.illine.drinking.ponies.service.button.ButtonDataService
 import ru.illine.drinking.ponies.util.FunctionHelper.check
 import ru.illine.drinking.ponies.util.TelegramBotKeyboardHelper
-import ru.illine.drinking.ponies.util.TelegramConstants
+import ru.illine.drinking.ponies.util.TelegramMessageConstants
 import java.time.Clock
 import java.time.LocalDateTime
 
@@ -34,7 +34,7 @@ class NotificationServiceImpl(
     override fun start(messageContext: MessageContext) {
         SendMessage(
             messageContext.chatId().toString(),
-            TelegramConstants.START_GREETING_MESSAGE.format(messageContext.user().userName)
+            TelegramMessageConstants.START_GREETING_MESSAGE.format(messageContext.user().userName)
         ).apply { sender.execute(this) }
 
         val userId = messageContext.user().id
@@ -51,7 +51,7 @@ class NotificationServiceImpl(
 
         SendMessage(
             messageContext.chatId().toString(),
-            TelegramConstants.START_DEFAULT_SETTINGS_MESSAGE.format(setting.delayNotification.displayName)
+            TelegramMessageConstants.START_DEFAULT_SETTINGS_MESSAGE.format(setting.delayNotification.displayName)
         ).apply { sender.execute(this) }
     }
 
@@ -60,7 +60,7 @@ class NotificationServiceImpl(
 
         SendMessage(
             messageContext.chatId().toString(),
-            TelegramConstants.STOP_GREETING_MESSAGE.format(messageContext.user().userName)
+            TelegramMessageConstants.STOP_GREETING_MESSAGE.format(messageContext.user().userName)
         ).apply { sender.execute(this) }
     }
 
@@ -69,7 +69,7 @@ class NotificationServiceImpl(
 
         SendMessage(
             messageContext.chatId().toString(),
-            TelegramConstants.RESUME_GREETING_MESSAGE.format(messageContext.user().userName)
+            TelegramMessageConstants.RESUME_GREETING_MESSAGE.format(messageContext.user().userName)
         ).apply { sender.execute(this) }
     }
 
@@ -81,9 +81,9 @@ class NotificationServiceImpl(
         val sendMessageFunction: () -> Unit = {
             SendMessage(
                 chantId.toString(),
-                TelegramConstants.PAUSE_GREETING_MESSAGE
+                TelegramMessageConstants.PAUSE_GREETING_MESSAGE
             ).apply {
-                replyMarkup = TelegramBotKeyboardHelper.pauseTimeButtons(delayNotification)
+                replyMarkup = TelegramBotKeyboardHelper.pauseSnoozeTimeButtons(delayNotification)
             }.apply { sender.execute(this) }
         }
 
@@ -97,7 +97,7 @@ class NotificationServiceImpl(
         val sendMessageFunction: () -> Unit = {
             SendMessage(
                 chantId.toString(),
-                TelegramConstants.SETTINGS_GREETING_MESSAGE
+                TelegramMessageConstants.SETTINGS_GREETING_MESSAGE
             ).apply {
                 replyMarkup = TelegramBotKeyboardHelper.settingsButtons(settingsButtonDataService)
             }.let {
@@ -134,7 +134,7 @@ class NotificationServiceImpl(
                 it.telegramChat.previousNotificationMessageId =
                     SendMessage(
                         it.telegramChat.previousNotificationMessageId.toString(),
-                        TelegramConstants.NOTIFICATION_QUESTION_MESSAGE
+                        TelegramMessageConstants.NOTIFICATION_QUESTION_MESSAGE
                     ).apply {
                         replyMarkup = TelegramBotKeyboardHelper.notifyButtons()
                     }.let { sender.execute(it) }.messageId
@@ -155,7 +155,7 @@ class NotificationServiceImpl(
             .forEach {
                 SendMessage(
                     it.telegramChat.previousNotificationMessageId.toString(),
-                    TelegramConstants.NOTIFICATION_SUSPEND_MESSAGE.format(it.delayNotification.displayName)
+                    TelegramMessageConstants.NOTIFICATION_SUSPEND_MESSAGE.format(it.delayNotification.displayName)
                 ).apply {
                     disableNotification = true
                 }.apply { sender.execute(this) }
@@ -193,7 +193,7 @@ class NotificationServiceImpl(
                     log.debug("A notification is disabled for user (userId: [$userId]), send a disabled message")
                     SendMessage(
                         chatId.toString(),
-                        TelegramConstants.NOTIFICATION_NOT_ACTIVE_MESSAGE
+                        TelegramMessageConstants.NOTIFICATION_NOT_ACTIVE_MESSAGE
                     ).apply { sender.execute(this) }
                 }
             )

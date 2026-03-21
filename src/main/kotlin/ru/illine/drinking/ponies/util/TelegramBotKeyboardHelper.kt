@@ -6,7 +6,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardRow
 import org.telegram.telegrambots.meta.api.objects.webapp.WebAppInfo
 import ru.illine.drinking.ponies.model.base.AnswerNotificationType
-import ru.illine.drinking.ponies.model.base.DelayNotificationType
+import ru.illine.drinking.ponies.model.base.TimeNotificationType
 import ru.illine.drinking.ponies.model.base.PauseNotificationType
 import ru.illine.drinking.ponies.model.base.SettingsType
 import ru.illine.drinking.ponies.service.button.ButtonDataService
@@ -14,7 +14,7 @@ import ru.illine.drinking.ponies.service.button.ButtonDataService
 object TelegramBotKeyboardHelper {
 
     fun settingsButtons(service: ButtonDataService<SettingsType>, messageId: Int? = null): InlineKeyboardMarkup {
-        val rows = SettingsType.values()
+        val rows = SettingsType.entries
             .filter { it.visible }
             .map {
                 val buttonData = service.getData(it)
@@ -39,8 +39,8 @@ object TelegramBotKeyboardHelper {
             .build()
     }
 
-    fun delayTimeButtons(delayTime: DelayNotificationType? = null): ReplyKeyboard {
-        val rows = DelayNotificationType.values()
+    fun delayTimeButtons(delayTime: TimeNotificationType? = null): ReplyKeyboard {
+        val rows = TimeNotificationType.entries
             .filter { it != delayTime }
             .map {
                 InlineKeyboardRow(
@@ -56,8 +56,8 @@ object TelegramBotKeyboardHelper {
             .build()
     }
 
-    fun pauseTimeButtons(currentDelayTime: DelayNotificationType): ReplyKeyboard {
-        val rows = PauseNotificationType.values()
+    fun pauseSnoozeTimeButtons(currentDelayTime: TimeNotificationType): ReplyKeyboard {
+        val rows = PauseNotificationType.entries
             .filter { it == PauseNotificationType.RESET || it.minutes > currentDelayTime.minutes }
             .map {
                 InlineKeyboardRow(
@@ -73,8 +73,24 @@ object TelegramBotKeyboardHelper {
             .build()
     }
 
+    fun delaySnoozeTimeButtons(): ReplyKeyboard {
+        val rows = TimeNotificationType.entries
+            .map {
+                InlineKeyboardRow(
+                    InlineKeyboardButton.builder()
+                        .text(it.displayName)
+                        .callbackData(it.queryData.toString())
+                        .build()
+                )
+            }
+
+        return InlineKeyboardMarkup.builder()
+            .keyboard(rows)
+            .build()
+    }
+
     fun notifyButtons(): ReplyKeyboard {
-        val buttons = AnswerNotificationType.values()
+        val buttons = AnswerNotificationType.entries
             .map {
                 InlineKeyboardButton.builder()
                     .text(it.displayName)

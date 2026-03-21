@@ -7,7 +7,7 @@ import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
 import ru.illine.drinking.ponies.service.MessageEditorService
 import ru.illine.drinking.ponies.service.app.NotificationSettingsService
-import ru.illine.drinking.ponies.util.TelegramConstants
+import ru.illine.drinking.ponies.util.TelegramMessageConstants
 import java.time.LocalTime
 
 @Service
@@ -29,7 +29,7 @@ class NotificationSettingsServiceImpl(
                 messageEditorService.deleteReplyMarkup(this.telegramChat.externalChatId, messageId)
                 SendMessage(
                     this.telegramChat.externalChatId.toString(),
-                    TelegramConstants.SETTINGS_QUIET_MODE_TIME_NOTIFICATION_CHANGING.format(start, end)
+                    TelegramMessageConstants.SETTINGS_QUIET_MODE_TIME_NOTIFICATION_CHANGING.format(start, end)
                 ).apply {
                     enableMarkdown(true)
                 }.apply { sender.execute(this) }

@@ -1,8 +1,6 @@
 package ru.illine.drinking.ponies.util
 
-object TelegramConstants {
-
-    const val TELEGRAM_USER_ATTRIBUTE = "telegramUser"
+object TelegramMessageConstants {
 
     val START_GREETING_MESSAGE =
         """
@@ -72,8 +70,13 @@ object TelegramConstants {
 
     val NOTIFICATION_ANSWER_DELAY_MESSAGE =
         """
-                Это грустно, что ты так мало пьёшь! 
-                Наверное, котик был занят? Ничего страшного! Я напомню через несколько минут!
+                Это грустно, что ты так мало пьёшь!
+                Наверное, котик был занят? Ничего страшного! Выбери, через сколько минут напомнить.
+            """.trimIndent()
+
+    val NOTIFICATION_SNOOZE_RESULT_MESSAGE =
+        """
+                Хорошо! Я напомню тебе через %s!
             """.trimIndent()
 
     val NOTIFICATION_ANSWER_CANCEL_MESSAGE = "Милый зайчик, пожалуйста, напейся в следующий раз!"
@@ -84,13 +87,5 @@ object TelegramConstants {
             """.trimIndent()
 
     val PAUSE_RESET_TO_DEFAULT_MESSAGE = "Вернуть как было!"
-
-    val HALF_HOUR = "30 минут"
-    val HOUR = "1 час"
-    val HOUR_AND_HALF = "1 час 30 минут"
-    val TWO_HOURS = "2 часа"
-    val THREE_HOURS = "3 часа"
-    val FOUR_HOURS = "4 часа"
-    val FIVE_HOURS = "5 часов"
 
 }

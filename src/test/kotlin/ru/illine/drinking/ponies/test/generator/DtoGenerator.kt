@@ -1,6 +1,6 @@
 package ru.illine.drinking.ponies.test.generator
 
-import ru.illine.drinking.ponies.model.base.DelayNotificationType
+import ru.illine.drinking.ponies.model.base.TimeNotificationType
 import ru.illine.drinking.ponies.model.dto.internal.NotificationSettingDto
 import ru.illine.drinking.ponies.model.dto.internal.TelegramChatDto
 import ru.illine.drinking.ponies.model.dto.internal.TelegramUserDto
@@ -15,7 +15,7 @@ class DtoGenerator {
         fun generateNotificationDto(
             externalUserId: Long = Random.nextLong(),
             externalChatId: Long = Random.nextLong(),
-            delayNotification: DelayNotificationType = DelayNotificationType.HOUR,
+            delayNotification: TimeNotificationType = TimeNotificationType.HOUR,
             timeOfLastNotification: LocalDateTime = LocalDateTime.now(),
             notificationAttempts: Int = 0,
             userTimeZone: String = "Europe/Moscow",

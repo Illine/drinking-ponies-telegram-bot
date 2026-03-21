@@ -12,8 +12,8 @@ import ru.illine.drinking.ponies.service.button.ReplyButtonStrategy
 import ru.illine.drinking.ponies.util.TelegramMessageConstants
 
 @Service
-class DelayNotificationReplayButtonStrategy(
-    private val sender: TelegramClient,
+class SnoozeNotificationReplayButtonStrategy(
+    private val messageSender: TelegramClient,
     private val notificationAccessService: NotificationAccessService,
     private val messageEditorService: MessageEditorService
 ) : ReplyButtonStrategy {
@@ -27,24 +27,27 @@ class DelayNotificationReplayButtonStrategy(
         val chatId = callbackQuery.message.chatId
         val queryData = callbackQuery.data
 
-        val delayNotification = TimeNotificationType.typeOf(queryData) ?: TimeNotificationType.TWO_HOURS
+        val snoozeType = TimeNotificationType.typeOf(queryData) ?: TimeNotificationType.TEN_MINUTES
 
         log.info(
-            "A telegram user [{}] for telegram chat [{}] with delay setting [{}] will be stored to a database",
+            "A telegram user [{}] for telegram chat [{}] with snooze setting [{}] will delay notification",
             userId,
             chatId,
-            delayNotification
+            snoozeType
         )
 
-        log.info("A notification settings for user [{}] with delay setting [{}] will be saved", userId, delayNotification)
-        val updatedNotificationSettings =
-            notificationAccessService.updateNotificationSettings(userId, chatId, delayNotification)
-        log.info("The notification settings (id: [{}]) has updated", updatedNotificationSettings.id)
+        val notificationSetting = notificationAccessService.findNotificationSettingByTelegramUserId(userId)
+        notificationAccessService.updateTimeOfLastNotification(
+            userId,
+            notificationSetting.timeOfLastNotification.plusMinutes(snoozeType.minutes)
+        )
+
+        log.info("The notification for user [{}] has been snoozed for [{}] minutes", userId, snoozeType.minutes)
 
         SendMessage(
             chatId.toString(),
-            TelegramMessageConstants.TIME_BUTTON_RESULT_MESSAGE.format(delayNotification.displayName)
-        ).apply { sender.execute(this) }
+            TelegramMessageConstants.NOTIFICATION_SNOOZE_RESULT_MESSAGE.format(snoozeType.displayName)
+        ).apply { messageSender.execute(this) }
     }
 
     override fun isQueryData(queryData: String): Boolean = TimeNotificationType.typeOf(queryData) != null

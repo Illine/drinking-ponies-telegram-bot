@@ -21,7 +21,7 @@ class CommandServiceImpl(
     override fun register() {
         if (telegramBotProperties.autoUpdateCommands) {
             log.warn("Telegram Commands will be updated!")
-            val availabilityCommands = TelegramCommandType.values()
+            val availabilityCommands = TelegramCommandType.entries
                 .asIterable()
                 .filter { it.visible }
                 .sortedBy { it.order }

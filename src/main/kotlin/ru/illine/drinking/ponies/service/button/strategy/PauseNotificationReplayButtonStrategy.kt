@@ -10,7 +10,7 @@ import ru.illine.drinking.ponies.model.base.PauseNotificationType
 import ru.illine.drinking.ponies.model.dto.internal.NotificationSettingDto
 import ru.illine.drinking.ponies.service.MessageEditorService
 import ru.illine.drinking.ponies.service.button.ReplyButtonStrategy
-import ru.illine.drinking.ponies.util.TelegramConstants
+import ru.illine.drinking.ponies.util.TelegramMessageConstants
 import ru.illine.drinking.ponies.util.TimeMessageHelper
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -60,7 +60,7 @@ class PauseNotificationReplayButtonStrategy(
 
         SendMessage(
             chatId.toString(),
-            TelegramConstants.PAUSE_BUTTON_RESULT_MESSAGE.format(pauseNotification.displayName)
+            TelegramMessageConstants.PAUSE_BUTTON_RESULT_MESSAGE.format(pauseNotification.displayName)
         ).apply { sender.execute(this) }
     }
 
@@ -81,7 +81,7 @@ class PauseNotificationReplayButtonStrategy(
 
         val timeNextNotification = TimeMessageHelper.timeToString(delayedNotificationTime)
         val message =
-            TelegramConstants.PAUSE_RESET_BUTTON_RESULT_MESSAGE.format(
+            TelegramMessageConstants.PAUSE_RESET_BUTTON_RESULT_MESSAGE.format(
                 delayNotification.displayName,
                 timeNextNotification
             )

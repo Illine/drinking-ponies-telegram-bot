@@ -8,7 +8,7 @@ import ru.illine.drinking.ponies.model.base.AnswerNotificationType
 import ru.illine.drinking.ponies.model.dto.internal.NotificationSettingDto
 import ru.illine.drinking.ponies.service.MessageEditorService
 import ru.illine.drinking.ponies.service.button.strategy.AbstractAnswerNotificationReplyButtonStrategy
-import ru.illine.drinking.ponies.util.TelegramConstants
+import ru.illine.drinking.ponies.util.TelegramMessageConstants
 import java.time.LocalDateTime
 
 @Service
@@ -22,7 +22,7 @@ class YesAnswerNotificationReplayButtonStrategy(
         notificationAccessService.updateTimeOfLastNotification(callbackQuery.from.id, LocalDateTime.now())
     }
 
-    override fun getMessageText(): String = TelegramConstants.NOTIFICATION_ANSWER_YES_MESSAGE
+    override fun getMessageText(): String = TelegramMessageConstants.NOTIFICATION_ANSWER_YES_MESSAGE
 
     override fun getAnswerType(): AnswerNotificationType = AnswerNotificationType.YES
 }
