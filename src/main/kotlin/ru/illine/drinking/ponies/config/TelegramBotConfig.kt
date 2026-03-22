@@ -12,9 +12,9 @@ import org.zalando.logbook.Logbook
 import org.zalando.logbook.okhttp.LogbookInterceptor
 import ru.illine.drinking.ponies.bot.DrinkingPoniesTelegramBot
 import ru.illine.drinking.ponies.config.property.TelegramBotProperties
-import ru.illine.drinking.ponies.service.CommandService
-import ru.illine.drinking.ponies.service.NotificationService
 import ru.illine.drinking.ponies.service.button.ReplayButtonFactory
+import ru.illine.drinking.ponies.service.command.CommandService
+import ru.illine.drinking.ponies.service.notification.NotificationService
 import java.util.concurrent.TimeUnit
 
 @Configuration

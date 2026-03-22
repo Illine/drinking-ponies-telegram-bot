@@ -10,13 +10,13 @@ import org.springframework.validation.annotation.Validated
 data class ButtonProperties(
 
     @NotNull
-    val data: Data
+    var data: Data
 
 ) {
     data class Data(
 
         @NotEmpty
-        val delayNotification: String,
+        val notificationInterval: String,
 
         @NotEmpty
         val quietModeTime: String,

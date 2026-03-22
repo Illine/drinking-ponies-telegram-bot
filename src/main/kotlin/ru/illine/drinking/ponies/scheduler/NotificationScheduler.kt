@@ -5,8 +5,8 @@ import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
 import ru.illine.drinking.ponies.model.dto.internal.NotificationSettingDto
-import ru.illine.drinking.ponies.service.NotificationService
-import ru.illine.drinking.ponies.service.NotificationTimeService
+import ru.illine.drinking.ponies.service.notification.NotificationService
+import ru.illine.drinking.ponies.service.notification.NotificationTimeService
 
 @Component
 class NotificationScheduler(
