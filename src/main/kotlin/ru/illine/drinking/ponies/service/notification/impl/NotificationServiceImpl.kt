@@ -4,6 +4,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.telegram.telegrambots.abilitybots.api.objects.MessageContext
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
+import org.telegram.telegrambots.meta.exceptions.TelegramApiRequestException
 import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
 import ru.illine.drinking.ponies.model.base.SettingsType
@@ -127,8 +128,8 @@ class NotificationServiceImpl(
 
         deletePreviousNotificationMessages(notifications)
 
-        notifications
-            .forEach {
+        val sent = notifications.filter {
+            sendOrDisableOnBlock(it) {
                 ++it.notificationAttempts
                 it.telegramChat.previousNotificationMessageId =
                     SendMessage(
@@ -138,8 +139,9 @@ class NotificationServiceImpl(
                         replyMarkup = TelegramBotKeyboardHelper.notifyButtons()
                     }.let { sender.execute(it) }.messageId
             }
+        }
 
-        notificationAccessService.updateNotificationSettings(notifications)
+        notificationAccessService.updateNotificationSettings(sent)
     }
 
     override fun suspendNotifications(notifications: Collection<NotificationSettingDto>) {
@@ -150,8 +152,8 @@ class NotificationServiceImpl(
 
         deletePreviousNotificationMessages(notifications)
 
-        notifications
-            .forEach {
+        val sent = notifications.filter {
+            sendOrDisableOnBlock(it) {
                 SendMessage(
                     it.telegramChat.externalChatId.toString(),
                     TelegramMessageConstants.NOTIFICATION_SUSPEND_MESSAGE.format(it.notificationInterval.displayName)
@@ -163,8 +165,24 @@ class NotificationServiceImpl(
                 it.timeOfLastNotification = LocalDateTime.now(clock)
                 it.telegramChat.previousNotificationMessageId = null
             }
+        }
 
-        notificationAccessService.updateNotificationSettings(notifications)
+        notificationAccessService.updateNotificationSettings(sent)
+    }
+
+    private fun sendOrDisableOnBlock(notification: NotificationSettingDto, send: () -> Unit): Boolean {
+        return try {
+            send()
+            true
+        } catch (e: TelegramApiRequestException) {
+            if (e.errorCode == 403) {
+                log.warn("User (externalUserId: [{}]) blocked the bot, disabling notifications", notification.telegramUser.externalUserId)
+                notificationAccessService.disableNotifications(notification.telegramUser.externalUserId)
+                false
+            } else {
+                throw e
+            }
+        }
     }
 
     private fun deletePreviousNotificationMessages(settings: Collection<NotificationSettingDto>) {
