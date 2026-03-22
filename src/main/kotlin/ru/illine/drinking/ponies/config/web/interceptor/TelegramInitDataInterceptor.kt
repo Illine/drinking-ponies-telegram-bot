@@ -6,8 +6,8 @@ import org.slf4j.LoggerFactory
 import org.springframework.http.HttpMethod
 import org.springframework.stereotype.Component
 import org.springframework.web.servlet.HandlerInterceptor
-import ru.illine.drinking.ponies.service.TelegramValidatorService
-import ru.illine.drinking.ponies.util.TelegramConstants
+import ru.illine.drinking.ponies.service.telegram.TelegramValidatorService
+import ru.illine.drinking.ponies.util.telegram.TelegramGeneralConstants
 
 @Component
 class TelegramAuthInterceptor(
@@ -33,7 +33,7 @@ class TelegramAuthInterceptor(
 
         if (telegramValidatorService.verifySignature(initData)) {
             val telegramUser = telegramValidatorService.map(initData)
-            request.setAttribute(TelegramConstants.TELEGRAM_USER_ATTRIBUTE, telegramUser)
+            request.setAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE, telegramUser)
             return true
         }
 

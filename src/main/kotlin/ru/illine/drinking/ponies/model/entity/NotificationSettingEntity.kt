@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import jakarta.persistence.*
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
-import ru.illine.drinking.ponies.model.base.DelayNotificationType
+import ru.illine.drinking.ponies.model.base.IntervalNotificationType
 import java.time.LocalDateTime
 import java.time.LocalTime
 
@@ -39,7 +39,7 @@ class NotificationSettingEntity(
 
     @Enumerated(EnumType.STRING)
     @Column(name = "delay_notification", nullable = false)
-    var delayNotification: DelayNotificationType,
+    var notificationInterval: IntervalNotificationType,
 
     @Column(name = "time_of_last_notification", nullable = false)
     var timeOfLastNotification: LocalDateTime,
@@ -73,7 +73,7 @@ class NotificationSettingEntity(
         if (id != other.id) return false
         if (notificationAttempts != other.notificationAttempts) return false
         if (enabled != other.enabled) return false
-        if (delayNotification != other.delayNotification) return false
+        if (notificationInterval != other.notificationInterval) return false
         if (timeOfLastNotification != other.timeOfLastNotification) return false
         if (quietModeStart != other.quietModeStart) return false
         if (quietModeEnd != other.quietModeEnd) return false
@@ -85,7 +85,7 @@ class NotificationSettingEntity(
         var result = id?.hashCode() ?: 0
         result = 31 * result + notificationAttempts
         result = 31 * result + enabled.hashCode()
-        result = 31 * result + delayNotification.hashCode()
+        result = 31 * result + notificationInterval.hashCode()
         result = 31 * result + timeOfLastNotification.hashCode()
         result = 31 * result + (quietModeStart?.hashCode() ?: 0)
         result = 31 * result + (quietModeEnd?.hashCode() ?: 0)

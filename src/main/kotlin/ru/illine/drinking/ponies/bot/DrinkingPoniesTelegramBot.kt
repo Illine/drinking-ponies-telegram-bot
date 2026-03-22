@@ -9,9 +9,9 @@ import org.telegram.telegrambots.meta.api.objects.Update
 import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.illine.drinking.ponies.config.property.TelegramBotProperties
 import ru.illine.drinking.ponies.model.base.TelegramCommandType
-import ru.illine.drinking.ponies.service.CommandService
-import ru.illine.drinking.ponies.service.NotificationService
 import ru.illine.drinking.ponies.service.button.ReplayButtonFactory
+import ru.illine.drinking.ponies.service.command.CommandService
+import ru.illine.drinking.ponies.service.notification.NotificationService
 import java.util.function.BiConsumer
 
 
