@@ -24,6 +24,7 @@ class NotificationScheduler(
     fun sendDrinkingReminders() { log.info("Starting drinking notification scheduler")
 
         val (exhaustedNotifications, activeNotifications) = notificationAccessService.findAllNotificationSettings()
+            .filter { it.enabled }
             .filter(notificationTimeService::isOutsideQuietTime)
             .filter { notificationTimeService.isNotificationDue(it) }
             .partition { it.notificationAttempts == MAX_REMINDED_NOTIFICATION_ATTEMPTS }
