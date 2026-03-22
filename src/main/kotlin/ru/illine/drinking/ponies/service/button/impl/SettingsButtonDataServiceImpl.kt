@@ -12,7 +12,7 @@ class SettingsButtonDataServiceImpl(
 
     override fun getData(enumValue: SettingsType): String {
         return when (enumValue) {
-            SettingsType.DELAY_NOTIFICATION -> buttonProperties.data.delayNotification
+            SettingsType.NOTIFICATION_INTERVAL -> buttonProperties.data.notificationInterval
             SettingsType.QUIET_MODE_TIME -> buttonProperties.data.quietModeTime
             SettingsType.TIMEZONE -> buttonProperties.data.timezone
         }

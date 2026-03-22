@@ -10,7 +10,7 @@ import ru.illine.drinking.ponies.dao.access.NotificationAccessService
 import ru.illine.drinking.ponies.dao.repository.NotificationSettingRepository
 import ru.illine.drinking.ponies.dao.repository.TelegramChatRepository
 import ru.illine.drinking.ponies.dao.repository.TelegramUserRepository
-import ru.illine.drinking.ponies.model.base.DelayNotificationType
+import ru.illine.drinking.ponies.model.base.IntervalNotificationType
 import ru.illine.drinking.ponies.model.dto.internal.NotificationSettingDto
 import ru.illine.drinking.ponies.model.dto.internal.TelegramChatDto
 import ru.illine.drinking.ponies.model.dto.internal.TelegramUserDto
@@ -93,7 +93,7 @@ class NotificationAccessServiceImpl(
     override fun updateNotificationSettings(
         telegramUserId: Long,
         telegramChatId: Long,
-        delayNotification: DelayNotificationType
+        notificationInterval: IntervalNotificationType
     ): NotificationSettingDto {
         log.debug("The Notification Settings will be updated for an existed entity by id: [${telegramUserId}]")
 
@@ -102,8 +102,8 @@ class NotificationAccessServiceImpl(
             { "Not found a Notification Settings by telegramUserId: [$telegramUserId], telegramChatId: [$telegramChatId]" }
         )
 
-        if (setting.delayNotification != delayNotification) {
-            setting.delayNotification = delayNotification
+        if (setting.notificationInterval != notificationInterval) {
+            setting.notificationInterval = notificationInterval
             settingRepository.save(setting)
         }
 
@@ -174,7 +174,7 @@ class NotificationAccessServiceImpl(
     }
 
     @Transactional
-    override fun changeQuiteMode(userId: Long, start: LocalTime, end: LocalTime) {
+    override fun changeQuietMode(userId: Long, start: LocalTime, end: LocalTime) {
         log.debug("The quiet mod will be updated for a user [{}], start time: [{}], end time: [{}]", userId, start, end)
         settingRepository.updateQuietMode(userId, start, end)
     }

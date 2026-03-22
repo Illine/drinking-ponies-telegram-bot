@@ -37,7 +37,7 @@ enum class TimeType(
     companion object {
 
         fun typeOf(queryData: String): TimeType? {
-            return TimeType.values()
+            return TimeType.entries
                 .find { Objects.equals(queryData, it.queryData.toString()) }
         }
 

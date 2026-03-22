@@ -9,9 +9,9 @@ enum class SettingsType(
     val visible: Boolean,
     val web: Boolean
 ) {
-    DELAY_NOTIFICATION(
+    NOTIFICATION_INTERVAL(
         "Периодичность уведомлений",
-        GetterButtonData { service -> service.getData(DELAY_NOTIFICATION) },
+        GetterButtonData { service -> service.getData(NOTIFICATION_INTERVAL) },
         true,
         false
     ),
