@@ -10,8 +10,8 @@ values (1, 1);
 insert into telegram_chats (telegram_user_id, external_chat_id)
 values (2, 2);
 
-insert into notification_settings (telegram_user_id, telegram_chat_id, delay_notification, time_of_last_notification, notification_attempts, enabled)
+insert into notification_settings (telegram_user_id, telegram_chat_id, notification_interval, time_of_last_notification, notification_attempts, enabled)
 values (1, 1, 'TWO_HOURS', now(), 1, true);
 
-insert into notification_settings (telegram_user_id, telegram_chat_id, delay_notification, time_of_last_notification, notification_attempts, enabled)
+insert into notification_settings (telegram_user_id, telegram_chat_id, notification_interval, time_of_last_notification, notification_attempts, enabled)
 values (2, 2, 'TWO_HOURS', now(), 1, false);

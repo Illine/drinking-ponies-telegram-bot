@@ -38,7 +38,7 @@ class NotificationSettingEntity(
     var telegramChat: TelegramChatEntity,
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "delay_notification", nullable = false)
+    @Column(name = "notification_interval", nullable = false)
     var notificationInterval: IntervalNotificationType,
 
     @Column(name = "time_of_last_notification", nullable = false)
