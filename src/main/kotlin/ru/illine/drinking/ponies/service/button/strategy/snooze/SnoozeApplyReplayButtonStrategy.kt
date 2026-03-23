@@ -10,12 +10,15 @@ import ru.illine.drinking.ponies.model.base.SnoozeNotificationType
 import ru.illine.drinking.ponies.service.button.ReplyButtonStrategy
 import ru.illine.drinking.ponies.service.telegram.MessageEditorService
 import ru.illine.drinking.ponies.util.telegram.TelegramMessageConstants
+import java.time.Clock
+import java.time.LocalDateTime
 
 @Service
 class SnoozeApplyReplayButtonStrategy(
     private val sender: TelegramClient,
     private val notificationAccessService: NotificationAccessService,
-    private val messageEditorService: MessageEditorService
+    private val messageEditorService: MessageEditorService,
+    private val clock: Clock
 ) : ReplyButtonStrategy {
 
     private val log = LoggerFactory.getLogger("REPLAY-STRATEGY")
@@ -40,9 +43,14 @@ class SnoozeApplyReplayButtonStrategy(
         )
 
         val notificationSetting = notificationAccessService.findNotificationSettingByTelegramUserId(userId)
+        val now = LocalDateTime.now(clock)
+        // The scheduler fires when: timeOfLastNotification + interval <= now
+        // To make the next notification fire exactly snoozeMinutes from now:
+        //   timeOfLastNotification + interval = now + snoozeMinutes
+        //   timeOfLastNotification = now - interval + snoozeMinutes
         notificationAccessService.updateTimeOfLastNotification(
             userId,
-            notificationSetting.timeOfLastNotification.plusMinutes(snoozeType.minutes)
+            now.minusMinutes(notificationSetting.notificationInterval.minutes).plusMinutes(snoozeType.minutes)
         )
 
         SendMessage(
