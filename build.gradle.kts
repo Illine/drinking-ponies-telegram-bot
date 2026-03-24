@@ -132,5 +132,19 @@ tasks {
             xml.required = true
             xml.outputLocation = layout.buildDirectory.file("jacoco/coverage.xml")
         }
+
+        classDirectories.setFrom(
+            files(classDirectories.files.map {
+                fileTree(it) {
+                    exclude(
+                        "**/DrinkingPoniesApplicationKt*",
+                        "**/DrinkingPoniesTelegramBot*",
+                        "**/*\$DefaultImpls*",
+                        // Kotlin inline functions: JaCoCo cannot track coverage in the original class
+                        "**/FunctionHelper*"
+                    )
+                }
+            })
+        )
     }
 }
