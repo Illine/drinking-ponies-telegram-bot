@@ -144,7 +144,9 @@ tasks {
                         "**/FunctionHelper*",
                         // Spring @Configuration classes: beans are mocked or overridden in tests
                         "**/TelegramBotConfig*",
-                        "**/TimeConfig*"
+                        "**/TimeConfig*",
+                        // JPA entities: boilerplate managed by Hibernate, not application logic
+                        "**/*Entity*"
                     )
                 }
             })
