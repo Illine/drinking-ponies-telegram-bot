@@ -266,6 +266,20 @@ class NotificationServiceTest {
         }
     }
 
+    @Test
+    @DisplayName("suspendNotifications(): non-403 error - rethrows exception")
+    fun `suspendNotifications rethrows non-403 exception`() {
+        val dto = DtoGenerator.generateNotificationDto(externalUserId = userId, externalChatId = chatId)
+        val exception = mock(TelegramApiRequestException::class.java)
+        `when`(exception.errorCode).thenReturn(500)
+        doThrow(exception).`when`(sender).execute(any<SendMessage>())
+
+        assertThrows(TelegramApiRequestException::class.java) {
+            service.suspendNotifications(listOf(dto))
+        }
+        verify(notificationAccessService, never()).disableNotifications(any())
+    }
+
     private fun buildMessageContext(): MessageContext {
         val user = mock(User::class.java)
         `when`(user.id).thenReturn(userId)
