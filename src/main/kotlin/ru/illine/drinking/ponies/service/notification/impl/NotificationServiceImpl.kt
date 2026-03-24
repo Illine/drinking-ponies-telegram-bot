@@ -6,6 +6,7 @@ import org.telegram.telegrambots.abilitybots.api.objects.MessageContext
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.exceptions.TelegramApiRequestException
 import org.telegram.telegrambots.meta.generics.TelegramClient
+import ru.illine.drinking.ponies.config.property.TelegramBotProperties
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
 import ru.illine.drinking.ponies.model.base.SettingsType
 import ru.illine.drinking.ponies.model.dto.internal.NotificationSettingDto
@@ -15,6 +16,7 @@ import ru.illine.drinking.ponies.service.button.ButtonDataService
 import ru.illine.drinking.ponies.service.notification.NotificationService
 import ru.illine.drinking.ponies.service.telegram.MessageEditorService
 import ru.illine.drinking.ponies.util.FunctionHelper.check
+import ru.illine.drinking.ponies.util.TimeHelper
 import ru.illine.drinking.ponies.util.telegram.TelegramBotKeyboardHelper
 import ru.illine.drinking.ponies.util.telegram.TelegramMessageConstants
 import java.time.Clock
@@ -26,6 +28,7 @@ class NotificationServiceImpl(
     private val messageEditorService: MessageEditorService,
     private val notificationAccessService: NotificationAccessService,
     private val settingsButtonDataService: ButtonDataService<SettingsType>,
+    private val telegramBotProperties: TelegramBotProperties,
     private val clock: Clock,
 ) : NotificationService {
 
@@ -131,6 +134,9 @@ class NotificationServiceImpl(
         val sent = notifications.filter {
             sendOrDisableOnBlock(it) {
                 ++it.notificationAttempts
+                it.timeOfLastNotification = TimeHelper.nextNotificationTimeByNow(
+                    clock, it.notificationInterval.minutes, telegramBotProperties.notification.retryIntervalMinutes
+                )
                 it.telegramChat.previousNotificationMessageId =
                     SendMessage(
                         it.telegramChat.externalChatId.toString(),

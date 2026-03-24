@@ -15,7 +15,9 @@ import org.telegram.telegrambots.meta.api.objects.User
 import org.telegram.telegrambots.meta.api.objects.message.Message
 import org.telegram.telegrambots.meta.exceptions.TelegramApiRequestException
 import org.telegram.telegrambots.meta.generics.TelegramClient
+import ru.illine.drinking.ponies.config.property.TelegramBotProperties
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
+import ru.illine.drinking.ponies.model.base.IntervalNotificationType
 import ru.illine.drinking.ponies.model.base.SettingsType
 import ru.illine.drinking.ponies.service.button.ButtonDataService
 import ru.illine.drinking.ponies.service.notification.impl.NotificationServiceImpl
@@ -25,6 +27,7 @@ import ru.illine.drinking.ponies.test.tag.UnitTest
 import ru.illine.drinking.ponies.util.telegram.TelegramMessageConstants
 import java.time.Clock
 import java.time.Instant
+import java.time.LocalDateTime
 import java.time.ZoneOffset
 
 @UnitTest
@@ -33,6 +36,17 @@ class NotificationServiceTest {
 
     private val userId = 1L
     private val chatId = 2L
+
+    private val retryIntervalMinutes = 1L
+    private val botProperties = TelegramBotProperties(
+        version = "1.0.0",
+        token = "token",
+        username = "username",
+        creatorId = 1L,
+        autoUpdateCommands = true,
+        http = TelegramBotProperties.Http(connectionTimeToLiveInSec = 30, maxConnectionTotal = 10),
+        notification = TelegramBotProperties.Notification(retryIntervalMinutes = retryIntervalMinutes)
+    )
 
     private lateinit var sender: TelegramClient
     private lateinit var messageEditorService: MessageEditorService
@@ -49,7 +63,14 @@ class NotificationServiceTest {
         @Suppress("UNCHECKED_CAST")
         settingsButtonDataService = mock(ButtonDataService::class.java) as ButtonDataService<SettingsType>
         clock = Clock.fixed(Instant.now(), ZoneOffset.UTC)
-        service = NotificationServiceImpl(sender, messageEditorService, notificationAccessService, settingsButtonDataService, clock)
+        service = NotificationServiceImpl(
+            sender,
+            messageEditorService,
+            notificationAccessService,
+            settingsButtonDataService,
+            botProperties,
+            clock
+        )
     }
 
     @Test
@@ -189,11 +210,16 @@ class NotificationServiceTest {
 
         service.sendNotifications(listOf(dto))
 
+        val expectedTimeOfLastNotification = LocalDateTime.now(clock)
+            .minusMinutes(IntervalNotificationType.HOUR.minutes)
+            .plusMinutes(retryIntervalMinutes)
+
         verify(messageEditorService).deleteMessages(anyCollection())
         verify(sender).execute(any<SendMessage>())
         verify(notificationAccessService).updateNotificationSettings(anyCollection())
         assertEquals(1, dto.notificationAttempts)
         assertEquals(2, dto.telegramChat.previousNotificationMessageId)
+        assertEquals(expectedTimeOfLastNotification, dto.timeOfLastNotification)
     }
 
     @Test

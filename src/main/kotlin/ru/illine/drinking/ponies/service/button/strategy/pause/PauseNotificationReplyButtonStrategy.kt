@@ -10,7 +10,7 @@ import ru.illine.drinking.ponies.model.base.PauseNotificationType
 import ru.illine.drinking.ponies.model.dto.internal.NotificationSettingDto
 import ru.illine.drinking.ponies.service.button.ReplyButtonStrategy
 import ru.illine.drinking.ponies.service.telegram.MessageEditorService
-import ru.illine.drinking.ponies.util.TimeMessageHelper
+import ru.illine.drinking.ponies.util.TimeHelper
 import ru.illine.drinking.ponies.util.telegram.TelegramMessageConstants
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -80,7 +80,7 @@ class PauseNotificationReplyButtonStrategy(
 
         notificationAccessService.updateTimeOfLastNotification(userId, nextNotificationTime)
 
-        val timeNextNotification = TimeMessageHelper.timeToString(nextNotificationTime)
+        val timeNextNotification = TimeHelper.timeToString(nextNotificationTime)
         val message =
             TelegramMessageConstants.PAUSE_RESET_BUTTON_RESULT_MESSAGE.format(
                 notificationInterval.displayName,
