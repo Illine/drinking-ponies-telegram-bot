@@ -22,13 +22,13 @@ data class TelegramBotProperties(
     val username: String,
 
     @NotNull
-    val creatorId: Long,
+    var creatorId: Long,
 
     @NonNull
     val autoUpdateCommands: Boolean,
 
     @NotNull
-    val http: Http
+    var http: Http
 
 ) {
     data class Http(
