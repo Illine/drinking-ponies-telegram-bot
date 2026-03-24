@@ -9,9 +9,9 @@ import ru.illine.drinking.ponies.dao.access.NotificationAccessService
 import ru.illine.drinking.ponies.model.base.SnoozeNotificationType
 import ru.illine.drinking.ponies.service.button.ReplyButtonStrategy
 import ru.illine.drinking.ponies.service.telegram.MessageEditorService
+import ru.illine.drinking.ponies.util.TimeHelper
 import ru.illine.drinking.ponies.util.telegram.TelegramMessageConstants
 import java.time.Clock
-import java.time.LocalDateTime
 
 @Service
 class SnoozeApplyReplyButtonStrategy(
@@ -43,15 +43,13 @@ class SnoozeApplyReplyButtonStrategy(
         )
 
         val notificationSetting = notificationAccessService.findNotificationSettingByTelegramUserId(userId)
-        val now = LocalDateTime.now(clock)
-        // The scheduler fires when: timeOfLastNotification + interval <= now
-        // To make the next notification fire exactly snoozeMinutes from now:
-        //   timeOfLastNotification + interval = now + snoozeMinutes
-        //   timeOfLastNotification = now - interval + snoozeMinutes
-        notificationAccessService.updateTimeOfLastNotification(
-            userId,
-            now.minusMinutes(notificationSetting.notificationInterval.minutes).plusMinutes(snoozeType.minutes)
-        )
+        val nextNotificationTime =
+            TimeHelper.nextNotificationTimeByNow(
+                clock,
+                notificationSetting.notificationInterval.minutes,
+                snoozeType.minutes
+            )
+        notificationAccessService.updateTimeOfLastNotification(userId, nextNotificationTime)
 
         SendMessage(
             chatId.toString(),
