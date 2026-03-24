@@ -18,7 +18,7 @@ class DefaultExceptionHandler {
 
     @ExceptionHandler(value = [MissingServletRequestParameterException::class])
     fun handleMissingParamsException(e: MissingServletRequestParameterException): ResponseEntity<ErrorResponse> {
-        logger.error("Missing required parameter: ${e.parameterName}", e)
+        logger.warn("Missing required parameter: ${e.parameterName}", e)
         val response = ErrorResponse("missing required parameter")
         return ResponseEntity
             .status(HttpStatus.BAD_REQUEST)
@@ -35,9 +35,9 @@ class DefaultExceptionHandler {
             val errorMessages = e.bindingResult.fieldErrors.joinToString(", ") {
                 "${it.field}: ${it.defaultMessage}"
             }
-            logger.error("Validation failed: $errorMessages", e)
+            logger.warn("Validation failed: $errorMessages", e)
         } else  {
-            logger.error("Illegal argument", e)
+            logger.warn("Illegal argument", e)
         }
         val response = ErrorResponse("validation failed")
         return ResponseEntity

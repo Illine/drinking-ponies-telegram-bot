@@ -20,19 +20,23 @@ class NotificationScheduler(
     private val log = LoggerFactory.getLogger("SCHEDULER")
 
     @Scheduled(cron = "\${telegram-bot.schedule.notification.cron}")
+    fun sendDrinkingReminders() {
+        log.info("Starting drinking notification scheduler")
 
-    fun sendDrinkingReminders() { log.info("Starting drinking notification scheduler")
+        try {
+            val (exhaustedNotifications, activeNotifications) = notificationAccessService.findAllNotificationSettings()
+                .filter { it.enabled }
+                .filter(notificationTimeService::isOutsideQuietTime)
+                .filter { notificationTimeService.isNotificationDue(it) }
+                .partition { it.notificationAttempts == MAX_REMINDED_NOTIFICATION_ATTEMPTS }
 
-        val (exhaustedNotifications, activeNotifications) = notificationAccessService.findAllNotificationSettings()
-            .filter { it.enabled }
-            .filter(notificationTimeService::isOutsideQuietTime)
-            .filter { notificationTimeService.isNotificationDue(it) }
-            .partition { it.notificationAttempts == MAX_REMINDED_NOTIFICATION_ATTEMPTS }
+            cancelAll(exhaustedNotifications)
+            notifyAll(activeNotifications)
 
-        cancelAll(exhaustedNotifications)
-        notifyAll(activeNotifications)
-
-        log.info("Drinking notification scheduler finished")
+            log.info("Drinking notification scheduler finished")
+        } catch (e: Exception) {
+            log.error("Drinking notification scheduler failed", e)
+        }
     }
 
     private fun notifyAll(notifications: List<NotificationSettingDto>) {

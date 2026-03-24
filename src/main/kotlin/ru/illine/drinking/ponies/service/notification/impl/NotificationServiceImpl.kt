@@ -75,12 +75,12 @@ class NotificationServiceImpl(
 
     override fun pause(messageContext: MessageContext) {
         val userId = messageContext.user().id
-        val chantId = messageContext.chatId()
+        val chatId = messageContext.chatId()
         val notificationInterval = notificationAccessService.findNotificationSettingByTelegramUserId(userId).notificationInterval
 
         val sendMessageFunction: () -> Unit = {
             SendMessage(
-                chantId.toString(),
+                chatId.toString(),
                 TelegramMessageConstants.PAUSE_GREETING_MESSAGE
             ).apply {
                 replyMarkup = TelegramBotKeyboardHelper.pauseTimeButtons(notificationInterval)
@@ -88,15 +88,15 @@ class NotificationServiceImpl(
         }
 
         sendIfNotificationEnabled(
-            userId, chantId, sendMessageFunction
+            userId, chatId, sendMessageFunction
         )
     }
 
     override fun settings(messageContext: MessageContext) {
-        val chantId = messageContext.chatId()
+        val chatId = messageContext.chatId()
         val sendMessageFunction: () -> Unit = {
             SendMessage(
-                chantId.toString(),
+                chatId.toString(),
                 TelegramMessageConstants.SETTINGS_GREETING_MESSAGE
             ).apply {
                 replyMarkup = TelegramBotKeyboardHelper.settingsButtons(settingsButtonDataService)

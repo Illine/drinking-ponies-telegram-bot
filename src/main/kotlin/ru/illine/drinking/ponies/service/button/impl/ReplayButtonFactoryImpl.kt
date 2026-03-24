@@ -10,8 +10,7 @@ class ReplayButtonFactoryImpl(
 ) : ReplayButtonFactory {
 
     override fun getStrategy(queryData: String): ReplyButtonStrategy {
-        return requireNotNull(
-            strategies.find { it.isQueryData(queryData) }
-        )
+        return strategies.find { it.isQueryData(queryData) }
+            ?: throw IllegalArgumentException("Unknown query data: $queryData")
     }
 }
