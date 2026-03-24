@@ -21,7 +21,7 @@ class SnoozeApplyReplyButtonStrategy(
     private val clock: Clock
 ) : ReplyButtonStrategy {
 
-    private val log = LoggerFactory.getLogger("REPLY-STRATEGY")
+    private val logger = LoggerFactory.getLogger("REPLY-STRATEGY")
 
     override fun reply(callbackQuery: CallbackQuery) {
         messageEditorService.deleteReplyMarkup(
@@ -35,7 +35,7 @@ class SnoozeApplyReplyButtonStrategy(
 
         val snoozeType = SnoozeNotificationType.typeOf(queryData) ?: SnoozeNotificationType.TEN_MINS
 
-        log.info(
+        logger.info(
             "A telegram user [{}] for telegram chat [{}] will snooze notification for [{}] minutes",
             userId,
             chatId,

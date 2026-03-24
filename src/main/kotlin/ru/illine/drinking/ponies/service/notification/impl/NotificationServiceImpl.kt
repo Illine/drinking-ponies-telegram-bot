@@ -29,7 +29,7 @@ class NotificationServiceImpl(
     private val clock: Clock,
 ) : NotificationService {
 
-    private val log = LoggerFactory.getLogger("SERVICE")
+    private val logger = LoggerFactory.getLogger("SERVICE")
 
     override fun start(messageContext: MessageContext) {
         SendMessage(
@@ -122,7 +122,7 @@ class NotificationServiceImpl(
 
     override fun sendNotifications(notifications: Collection<NotificationSettingDto>) {
         if (notifications.isEmpty()) {
-            log.debug("There are no notifications to send")
+            logger.debug("There are no notifications to send")
             return
         }
 
@@ -146,7 +146,7 @@ class NotificationServiceImpl(
 
     override fun suspendNotifications(notifications: Collection<NotificationSettingDto>) {
         if (notifications.isEmpty()) {
-            log.debug("There are no notifications to send")
+            logger.debug("There are no notifications to send")
             return
         }
 
@@ -176,7 +176,7 @@ class NotificationServiceImpl(
             true
         } catch (e: TelegramApiRequestException) {
             if (e.errorCode == 403) {
-                log.warn("User (externalUserId: [{}]) blocked the bot, disabling notifications", notification.telegramUser.externalUserId)
+                logger.warn("User (externalUserId: [{}]) blocked the bot, disabling notifications", notification.telegramUser.externalUserId)
                 notificationAccessService.disableNotifications(notification.telegramUser.externalUserId)
                 false
             } else {
@@ -186,15 +186,15 @@ class NotificationServiceImpl(
     }
 
     private fun deletePreviousNotificationMessages(settings: Collection<NotificationSettingDto>) {
-        log.info("Deleting all old notifications messages...")
+        logger.info("Deleting all old notifications messages...")
 
         val messageInfo = settings
             .filter { it.telegramChat.previousNotificationMessageId != null }
             .map { Pair(it.telegramChat.externalChatId, it.telegramChat.previousNotificationMessageId!!) }
             .toList()
 
-        log.info("Found [${messageInfo.size}] the old notification messages")
-        log.debug("The old messages: \n{}", messageInfo)
+        logger.info("Found [${messageInfo.size}] the old notification messages")
+        logger.debug("The old messages: \n{}", messageInfo)
 
         messageEditorService.deleteMessages(messageInfo)
     }
@@ -203,11 +203,11 @@ class NotificationServiceImpl(
         notificationAccessService.isEnabledNotifications(userId)
             .check(
                 ifTrue = {
-                    log.debug("A notification is enabled for user (userId: [$userId]), send a standard message")
+                    logger.debug("A notification is enabled for user (userId: [$userId]), send a standard message")
                     sendMessage()
                 },
                 ifFalse = {
-                    log.debug("A notification is disabled for user (userId: [$userId]), send a disabled message")
+                    logger.debug("A notification is disabled for user (userId: [$userId]), send a disabled message")
                     SendMessage(
                         chatId.toString(),
                         TelegramMessageConstants.NOTIFICATION_NOT_ACTIVE_MESSAGE

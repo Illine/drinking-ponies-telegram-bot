@@ -15,7 +15,7 @@ class MessageEditorServiceImpl(
     private val sender: TelegramClient
 ) : MessageEditorService {
 
-    private val log = LoggerFactory.getLogger("SERVICE")
+    private val logger = LoggerFactory.getLogger("SERVICE")
 
     override fun deleteReplyMarkup(chatId: Long, messageId: Int) {
         EditMessageReplyMarkup()
@@ -58,7 +58,7 @@ class MessageEditorServiceImpl(
                 FunctionHelper.catchAny(
                     action = { sender.execute(this) },
                     errorLogging = {
-                        log.error(
+                        logger.error(
                             "A previous message can't be deleted! A chatId: [${this.chatId}], messageId: [${this.messageId}]",
                             it
                         )

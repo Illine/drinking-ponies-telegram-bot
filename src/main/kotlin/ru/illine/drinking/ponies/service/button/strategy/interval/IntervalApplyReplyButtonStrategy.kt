@@ -18,7 +18,7 @@ class IntervalApplyReplyButtonStrategy(
     private val messageEditorService: MessageEditorService
 ) : ReplyButtonStrategy {
 
-    private val log = LoggerFactory.getLogger("REPLY-STRATEGY")
+    private val logger = LoggerFactory.getLogger("REPLY-STRATEGY")
 
     override fun reply(callbackQuery: CallbackQuery) {
         deleteOldReplyMarkup(callbackQuery)
@@ -29,17 +29,17 @@ class IntervalApplyReplyButtonStrategy(
 
         val notificationInterval = IntervalNotificationType.typeOf(queryData) ?: IntervalNotificationType.TWO_HOURS
 
-        log.info(
+        logger.info(
             "A telegram user [{}] for telegram chat [{}] with interval setting [{}] will be stored to a database",
             userId,
             chatId,
             notificationInterval
         )
 
-        log.info("A notification settings for user [{}] with interval setting [{}] will be saved", userId, notificationInterval)
+        logger.info("A notification settings for user [{}] with interval setting [{}] will be saved", userId, notificationInterval)
         val updatedNotificationSettings =
             notificationAccessService.updateNotificationSettings(userId, chatId, notificationInterval)
-        log.info("The notification settings (id: [{}]) has updated", updatedNotificationSettings.id)
+        logger.info("The notification settings (id: [{}]) has updated", updatedNotificationSettings.id)
 
         SendMessage(
             chatId.toString(),

@@ -17,11 +17,11 @@ class NotificationScheduler(
 
     private val MAX_REMINDED_NOTIFICATION_ATTEMPTS = 3
 
-    private val log = LoggerFactory.getLogger("SCHEDULER")
+    private val logger = LoggerFactory.getLogger("SCHEDULER")
 
     @Scheduled(cron = "\${telegram-bot.schedule.notification.cron}")
     fun sendDrinkingReminders() {
-        log.info("Starting drinking notification scheduler")
+        logger.info("Starting drinking notification scheduler")
 
         try {
             val (exhaustedNotifications, activeNotifications) = notificationAccessService.findAllNotificationSettings()
@@ -33,9 +33,9 @@ class NotificationScheduler(
             cancelAll(exhaustedNotifications)
             notifyAll(activeNotifications)
 
-            log.info("Drinking notification scheduler finished")
+            logger.info("Drinking notification scheduler finished")
         } catch (e: Exception) {
-            log.error("Drinking notification scheduler failed", e)
+            logger.error("Drinking notification scheduler failed", e)
         }
     }
 
@@ -44,7 +44,7 @@ class NotificationScheduler(
             return
         }
 
-        log.info("Sending notifications to [{}] users", notifications.size)
+        logger.info("Sending notifications to [{}] users", notifications.size)
         notificationService.sendNotifications(notifications)
     }
 
@@ -53,7 +53,7 @@ class NotificationScheduler(
             return
         }
 
-        log.info("Suspending notifications for [{}] users (max attempts reached)", notifications.size)
+        logger.info("Suspending notifications for [{}] users (max attempts reached)", notifications.size)
         notificationService.suspendNotifications(notifications)
     }
 }

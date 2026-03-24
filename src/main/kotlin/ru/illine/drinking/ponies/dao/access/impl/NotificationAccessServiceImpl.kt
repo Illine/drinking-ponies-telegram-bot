@@ -24,11 +24,11 @@ class NotificationAccessServiceImpl(
     private val chatRepository: TelegramChatRepository,
 ) : NotificationAccessService {
 
-    private val log = LoggerFactory.getLogger("ACCESS-SERVICE")
+    private val logger = LoggerFactory.getLogger("ACCESS-SERVICE")
 
     @Transactional
     override fun findAllNotificationSettings(): Set<NotificationSettingDto> {
-        log.debug("Finding all notification setting records")
+        logger.debug("Finding all notification setting records")
 
         return settingRepository.findAll()
             .map {
@@ -41,7 +41,7 @@ class NotificationAccessServiceImpl(
 
     @Transactional
     override fun findNotificationSettingByTelegramUserId(telegramUserId: Long): NotificationSettingDto {
-        log.debug("Finding a Notification by telegramUserId [$telegramUserId]")
+        logger.debug("Finding a Notification by telegramUserId [$telegramUserId]")
 
         return requireNotNull(
             settingRepository.findByTelegramUser_ExternalUserId(telegramUserId),
@@ -55,7 +55,7 @@ class NotificationAccessServiceImpl(
 
     @Transactional
     override fun existsByTelegramUserId(telegramUserId: Long): Boolean {
-        log.debug("Does a notification exist for the telegramUserId: [$telegramUserId]?")
+        logger.debug("Does a notification exist for the telegramUserId: [$telegramUserId]?")
         return userRepository.existsByExternalUserId(telegramUserId)
     }
 
@@ -65,7 +65,7 @@ class NotificationAccessServiceImpl(
         chat: TelegramChatDto,
         setting: NotificationSettingDto
     ): TelegramUserDto {
-        log.debug("Saving a new user, chat and setting for a telegram user: [${user.externalUserId}]")
+        logger.debug("Saving a new user, chat and setting for a telegram user: [${user.externalUserId}]")
 
         val externalUserId = user.externalUserId
         val externalChatId = chat.externalChatId
@@ -95,7 +95,7 @@ class NotificationAccessServiceImpl(
         telegramChatId: Long,
         notificationInterval: IntervalNotificationType
     ): NotificationSettingDto {
-        log.debug("The Notification Settings will be updated for an existed entity by id: [${telegramUserId}]")
+        logger.debug("The Notification Settings will be updated for an existed entity by id: [${telegramUserId}]")
 
         val setting = requireNotNull(
             settingRepository.findByTelegramUser_ExternalUserId(telegramUserId),
@@ -116,19 +116,19 @@ class NotificationAccessServiceImpl(
 
     @Transactional
     override fun enableNotifications(telegramUserId: Long) {
-        log.debug("A notification settings will be enabled (enabled = true) by telegramUserId [$telegramUserId]")
+        logger.debug("A notification settings will be enabled (enabled = true) by telegramUserId [$telegramUserId]")
         settingRepository.switchEnabled(telegramUserId, true)
     }
 
     @Transactional
     override fun disableNotifications(telegramUserId: Long) {
-        log.debug("A notification settings will be disabled (enabled = false) by telegramUserId [$telegramUserId]")
+        logger.debug("A notification settings will be disabled (enabled = false) by telegramUserId [$telegramUserId]")
         settingRepository.switchEnabled(telegramUserId, false)
     }
 
     @Transactional
     override fun updateNotificationSettings(settings: Collection<NotificationSettingDto>): Set<NotificationSettingDto> {
-        log.debug("Updating of notification settings...")
+        logger.debug("Updating of notification settings...")
 
         return settings
             .map {
@@ -147,7 +147,7 @@ class NotificationAccessServiceImpl(
 
     @Transactional
     override fun updateTimeOfLastNotification(telegramUserId: Long, time: LocalDateTime): NotificationSettingDto {
-        log.debug("Updating a time of last notification by telegramUserId [$telegramUserId]")
+        logger.debug("Updating a time of last notification by telegramUserId [$telegramUserId]")
 
         val setting = requireNotNull(
             settingRepository.findByTelegramUser_ExternalUserId(telegramUserId),
@@ -169,19 +169,19 @@ class NotificationAccessServiceImpl(
 
     @Transactional
     override fun isEnabledNotifications(telegramUserId: Long): Boolean {
-        log.debug("Checking if notifications are active by telegramUserId: [$telegramUserId]")
+        logger.debug("Checking if notifications are active by telegramUserId: [$telegramUserId]")
         return settingRepository.isEnabledByTelegramUserId(telegramUserId)
     }
 
     @Transactional
     override fun changeQuietMode(userId: Long, start: LocalTime, end: LocalTime) {
-        log.debug("The quiet mod will be updated for a user [{}], start time: [{}], end time: [{}]", userId, start, end)
+        logger.debug("The quiet mod will be updated for a user [{}], start time: [{}], end time: [{}]", userId, start, end)
         settingRepository.updateQuietMode(userId, start, end)
     }
 
     @Transactional
     override fun disableQuietMode(userId: Long) {
-        log.debug("The quiet mod will be disabled for a user [$userId]")
+        logger.debug("The quiet mod will be disabled for a user [$userId]")
         settingRepository.updateQuietMode(userId)
     }
 }

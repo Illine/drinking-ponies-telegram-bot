@@ -20,7 +20,9 @@ import ru.illine.drinking.ponies.model.base.AnswerNotificationType
 import ru.illine.drinking.ponies.service.telegram.MessageEditorService
 import ru.illine.drinking.ponies.test.tag.UnitTest
 import ru.illine.drinking.ponies.util.telegram.TelegramMessageConstants
+import java.time.Clock
 import java.time.LocalDateTime
+import java.time.ZoneOffset
 
 @UnitTest
 @DisplayName("YesAnswerNotificationReplyButtonStrategy Unit Test")
@@ -29,6 +31,8 @@ class YesAnswerNotificationReplyButtonStrategyTest {
     private val userId = 1L
     private val chatId = 2L
     private val messageId = 3
+    private val fixedNow = LocalDateTime.of(2025, 1, 1, 14, 0, 0)
+    private val fixedClock = Clock.fixed(fixedNow.toInstant(ZoneOffset.UTC), ZoneOffset.UTC)
 
     private lateinit var sender: TelegramClient
     private lateinit var messageEditorService: MessageEditorService
@@ -40,7 +44,9 @@ class YesAnswerNotificationReplyButtonStrategyTest {
         sender = mock(TelegramClient::class.java)
         messageEditorService = mock(MessageEditorService::class.java)
         notificationAccessService = mock(NotificationAccessService::class.java)
-        strategy = YesAnswerNotificationReplyButtonStrategy(sender, messageEditorService, notificationAccessService)
+        strategy = YesAnswerNotificationReplyButtonStrategy(
+            sender, messageEditorService, notificationAccessService, fixedClock
+        )
     }
 
     @Test
