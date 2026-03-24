@@ -17,16 +17,16 @@ import java.time.ZoneId
 import java.time.ZonedDateTime
 
 @Service
-class PauseNotificationReplayButtonStrategy(
+class PauseNotificationReplyButtonStrategy(
     private val sender: TelegramClient,
     private val notificationAccessService: NotificationAccessService,
     private val messageEditorService: MessageEditorService
 ) : ReplyButtonStrategy {
 
-    private val log = LoggerFactory.getLogger("REPLAY-STRATEGY")
+    private val log = LoggerFactory.getLogger("REPLY-STRATEGY")
 
     override fun reply(callbackQuery: CallbackQuery) {
-        deleteOldReplayMarkup(callbackQuery)
+        deleteOldReplyMarkup(callbackQuery)
 
         val userId = callbackQuery.from.id
         val chatId = callbackQuery.message.chatId
@@ -108,7 +108,7 @@ class PauseNotificationReplayButtonStrategy(
 
     override fun isQueryData(queryData: String): Boolean = PauseNotificationType.typeOf(queryData) != null
 
-    private fun deleteOldReplayMarkup(callbackQuery: CallbackQuery) {
+    private fun deleteOldReplyMarkup(callbackQuery: CallbackQuery) {
         messageEditorService.deleteReplyMarkup(
             callbackQuery.message.chatId,
             callbackQuery.message.messageId,

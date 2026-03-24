@@ -23,8 +23,8 @@ import ru.illine.drinking.ponies.util.telegram.TelegramMessageConstants
 import java.time.LocalDateTime
 
 @UnitTest
-@DisplayName("YesAnswerNotificationReplayButtonStrategy Unit Test")
-class YesAnswerNotificationReplayButtonStrategyTest {
+@DisplayName("YesAnswerNotificationReplyButtonStrategy Unit Test")
+class YesAnswerNotificationReplyButtonStrategyTest {
 
     private val userId = 1L
     private val chatId = 2L
@@ -33,14 +33,14 @@ class YesAnswerNotificationReplayButtonStrategyTest {
     private lateinit var sender: TelegramClient
     private lateinit var messageEditorService: MessageEditorService
     private lateinit var notificationAccessService: NotificationAccessService
-    private lateinit var strategy: YesAnswerNotificationReplayButtonStrategy
+    private lateinit var strategy: YesAnswerNotificationReplyButtonStrategy
 
     @BeforeEach
     fun setUp() {
         sender = mock(TelegramClient::class.java)
         messageEditorService = mock(MessageEditorService::class.java)
         notificationAccessService = mock(NotificationAccessService::class.java)
-        strategy = YesAnswerNotificationReplayButtonStrategy(sender, messageEditorService, notificationAccessService)
+        strategy = YesAnswerNotificationReplyButtonStrategy(sender, messageEditorService, notificationAccessService)
     }
 
     @Test

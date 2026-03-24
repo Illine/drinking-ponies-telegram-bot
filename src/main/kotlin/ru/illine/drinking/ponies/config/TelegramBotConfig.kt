@@ -12,7 +12,7 @@ import org.zalando.logbook.Logbook
 import org.zalando.logbook.okhttp.LogbookInterceptor
 import ru.illine.drinking.ponies.bot.DrinkingPoniesTelegramBot
 import ru.illine.drinking.ponies.config.property.TelegramBotProperties
-import ru.illine.drinking.ponies.service.button.ReplayButtonFactory
+import ru.illine.drinking.ponies.service.button.ReplyButtonFactory
 import ru.illine.drinking.ponies.service.command.CommandService
 import ru.illine.drinking.ponies.service.notification.NotificationService
 import java.util.concurrent.TimeUnit
@@ -36,14 +36,14 @@ class TelegramBotConfig {
         telegramClient: TelegramClient,
         telegramBotProperties: TelegramBotProperties,
         notificationService: NotificationService,
-        replayButtonFactory: ReplayButtonFactory,
+        replyButtonFactory: ReplyButtonFactory,
         commandService: CommandService
     ): BaseAbilityBot {
         return DrinkingPoniesTelegramBot(
             telegramClient,
             telegramBotProperties,
             notificationService,
-            replayButtonFactory,
+            replyButtonFactory,
             commandService
         )
     }

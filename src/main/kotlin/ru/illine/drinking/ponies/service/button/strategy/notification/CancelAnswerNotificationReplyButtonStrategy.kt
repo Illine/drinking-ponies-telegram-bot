@@ -13,7 +13,7 @@ import java.time.Clock
 import java.time.LocalDateTime
 
 @Service
-class CancelAnswerNotificationReplayButtonStrategy(
+class CancelAnswerNotificationReplyButtonStrategy(
     sender: TelegramClient,
     messageEditorService: MessageEditorService,
     private val notificationAccessService: NotificationAccessService,

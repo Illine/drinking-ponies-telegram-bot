@@ -24,8 +24,8 @@ import java.time.LocalDateTime
 import java.time.ZoneOffset
 
 @UnitTest
-@DisplayName("CancelAnswerNotificationReplayButtonStrategy Unit Test")
-class CancelAnswerNotificationReplayButtonStrategyTest {
+@DisplayName("CancelAnswerNotificationReplyButtonStrategy Unit Test")
+class CancelAnswerNotificationReplyButtonStrategyTest {
 
     private val userId = 1L
     private val chatId = 2L
@@ -36,14 +36,14 @@ class CancelAnswerNotificationReplayButtonStrategyTest {
     private lateinit var sender: TelegramClient
     private lateinit var messageEditorService: MessageEditorService
     private lateinit var notificationAccessService: NotificationAccessService
-    private lateinit var strategy: CancelAnswerNotificationReplayButtonStrategy
+    private lateinit var strategy: CancelAnswerNotificationReplyButtonStrategy
 
     @BeforeEach
     fun setUp() {
         sender = mock(TelegramClient::class.java)
         messageEditorService = mock(MessageEditorService::class.java)
         notificationAccessService = mock(NotificationAccessService::class.java)
-        strategy = CancelAnswerNotificationReplayButtonStrategy(sender, messageEditorService, notificationAccessService, fixedClock)
+        strategy = CancelAnswerNotificationReplyButtonStrategy(sender, messageEditorService, notificationAccessService, fixedClock)
     }
 
     @Test

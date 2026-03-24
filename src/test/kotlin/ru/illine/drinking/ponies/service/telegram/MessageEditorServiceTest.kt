@@ -51,7 +51,7 @@ class MessageEditorServiceTest {
     fun `editReplyMarkup with keyboard`() {
         val keyboard = mock(InlineKeyboardMarkup::class.java)
 
-        service.editReplyMarkup("new text", chatId, messageId, replayKeyboard = keyboard)
+        service.editReplyMarkup("new text", chatId, messageId, replyKeyboard = keyboard)
 
         verify(sender).execute(any<EditMessageReplyMarkup>())
         verify(sender).execute(any<EditMessageText>())

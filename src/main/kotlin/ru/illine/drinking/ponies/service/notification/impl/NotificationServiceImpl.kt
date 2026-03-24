@@ -107,7 +107,7 @@ class NotificationServiceImpl(
                     newText = it.text,
                     chatId = it.chatId,
                     messageId = it.messageId,
-                    replayKeyboard = TelegramBotKeyboardHelper.settingsButtons(
+                    replyKeyboard = TelegramBotKeyboardHelper.settingsButtons(
                         settingsButtonDataService,
                         it.messageId
                     )

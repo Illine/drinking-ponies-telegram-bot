@@ -31,7 +31,7 @@ class MessageEditorServiceImpl(
         chatId: Long,
         messageId: Int,
         enableMarkDown: Boolean,
-        replayKeyboard: InlineKeyboardMarkup?
+        replyKeyboard: InlineKeyboardMarkup?
     ) {
         deleteReplyMarkup(chatId, messageId)
 
@@ -41,7 +41,7 @@ class MessageEditorServiceImpl(
                 setChatId(chatId)
                 setMessageId(messageId)
                 enableMarkdown(enableMarkDown)
-                setReplyMarkup(replayKeyboard)
+                setReplyMarkup(replyKeyboard)
         }.apply { sender.execute(this) }
 
     }

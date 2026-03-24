@@ -14,14 +14,14 @@ import java.time.Clock
 import java.time.LocalDateTime
 
 @Service
-class SnoozeApplyReplayButtonStrategy(
+class SnoozeApplyReplyButtonStrategy(
     private val sender: TelegramClient,
     private val notificationAccessService: NotificationAccessService,
     private val messageEditorService: MessageEditorService,
     private val clock: Clock
 ) : ReplyButtonStrategy {
 
-    private val log = LoggerFactory.getLogger("REPLAY-STRATEGY")
+    private val log = LoggerFactory.getLogger("REPLY-STRATEGY")
 
     override fun reply(callbackQuery: CallbackQuery) {
         messageEditorService.deleteReplyMarkup(

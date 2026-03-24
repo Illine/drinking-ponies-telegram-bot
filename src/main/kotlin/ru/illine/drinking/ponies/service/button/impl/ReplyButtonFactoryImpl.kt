@@ -1,13 +1,13 @@
 package ru.illine.drinking.ponies.service.button.impl
 
 import org.springframework.stereotype.Service
-import ru.illine.drinking.ponies.service.button.ReplayButtonFactory
+import ru.illine.drinking.ponies.service.button.ReplyButtonFactory
 import ru.illine.drinking.ponies.service.button.ReplyButtonStrategy
 
 @Service
-class ReplayButtonFactoryImpl(
+class ReplyButtonFactoryImpl(
     private val strategies: List<ReplyButtonStrategy>
-) : ReplayButtonFactory {
+) : ReplyButtonFactory {
 
     override fun getStrategy(queryData: String): ReplyButtonStrategy {
         return strategies.find { it.isQueryData(queryData) }

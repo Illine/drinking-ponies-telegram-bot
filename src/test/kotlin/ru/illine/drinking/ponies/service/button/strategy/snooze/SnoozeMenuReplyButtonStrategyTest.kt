@@ -19,21 +19,21 @@ import ru.illine.drinking.ponies.test.tag.UnitTest
 import ru.illine.drinking.ponies.util.telegram.TelegramMessageConstants
 
 @UnitTest
-@DisplayName("SnoozeMenuReplayButtonStrategy Unit Test")
-class SnoozeMenuReplayButtonStrategyTest {
+@DisplayName("SnoozeMenuReplyButtonStrategy Unit Test")
+class SnoozeMenuReplyButtonStrategyTest {
 
     private val chatId = 1L
     private val messageId = 2
 
     private lateinit var sender: TelegramClient
     private lateinit var messageEditorService: MessageEditorService
-    private lateinit var strategy: SnoozeMenuReplayButtonStrategy
+    private lateinit var strategy: SnoozeMenuReplyButtonStrategy
 
     @BeforeEach
     fun setUp() {
         sender = mock(TelegramClient::class.java)
         messageEditorService = mock(MessageEditorService::class.java)
-        strategy = SnoozeMenuReplayButtonStrategy(sender, messageEditorService)
+        strategy = SnoozeMenuReplyButtonStrategy(sender, messageEditorService)
     }
 
     @Test

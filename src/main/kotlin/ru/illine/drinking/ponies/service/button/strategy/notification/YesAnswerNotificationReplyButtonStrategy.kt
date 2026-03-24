@@ -12,7 +12,7 @@ import ru.illine.drinking.ponies.util.telegram.TelegramMessageConstants
 import java.time.LocalDateTime
 
 @Service
-class YesAnswerNotificationReplayButtonStrategy(
+class YesAnswerNotificationReplyButtonStrategy(
     sender: TelegramClient,
     messageEditorService: MessageEditorService,
     private val notificationAccessService: NotificationAccessService

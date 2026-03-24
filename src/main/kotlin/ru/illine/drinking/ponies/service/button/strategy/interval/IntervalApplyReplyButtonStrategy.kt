@@ -12,16 +12,16 @@ import ru.illine.drinking.ponies.service.telegram.MessageEditorService
 import ru.illine.drinking.ponies.util.telegram.TelegramMessageConstants
 
 @Service
-class IntervalApplyReplayButtonStrategy(
+class IntervalApplyReplyButtonStrategy(
     private val sender: TelegramClient,
     private val notificationAccessService: NotificationAccessService,
     private val messageEditorService: MessageEditorService
 ) : ReplyButtonStrategy {
 
-    private val log = LoggerFactory.getLogger("REPLAY-STRATEGY")
+    private val log = LoggerFactory.getLogger("REPLY-STRATEGY")
 
     override fun reply(callbackQuery: CallbackQuery) {
-        deleteOldReplayMarkup(callbackQuery)
+        deleteOldReplyMarkup(callbackQuery)
 
         val userId = callbackQuery.from.id
         val chatId = callbackQuery.message.chatId
@@ -49,7 +49,7 @@ class IntervalApplyReplayButtonStrategy(
 
     override fun isQueryData(queryData: String): Boolean = IntervalNotificationType.typeOf(queryData) != null
 
-    private fun deleteOldReplayMarkup(callbackQuery: CallbackQuery) {
+    private fun deleteOldReplyMarkup(callbackQuery: CallbackQuery) {
         messageEditorService.deleteReplyMarkup(
             callbackQuery.message.chatId,
             callbackQuery.message.messageId,

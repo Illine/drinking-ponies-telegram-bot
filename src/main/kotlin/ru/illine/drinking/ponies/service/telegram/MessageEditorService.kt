@@ -11,7 +11,7 @@ interface MessageEditorService {
         chatId: Long,
         messageId: Int,
         enableMarkDown: Boolean = false,
-        replayKeyboard: InlineKeyboardMarkup? = null
+        replyKeyboard: InlineKeyboardMarkup? = null
     )
 
     fun deleteMessage(chatId: Long, messageId: Int)

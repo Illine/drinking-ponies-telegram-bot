@@ -11,27 +11,27 @@ import org.mockito.Mockito.mock
 import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
 import ru.illine.drinking.ponies.model.base.SnoozeNotificationType
-import ru.illine.drinking.ponies.service.button.impl.ReplayButtonFactoryImpl
-import ru.illine.drinking.ponies.service.button.strategy.snooze.SnoozeApplyReplayButtonStrategy
+import ru.illine.drinking.ponies.service.button.impl.ReplyButtonFactoryImpl
+import ru.illine.drinking.ponies.service.button.strategy.snooze.SnoozeApplyReplyButtonStrategy
 import ru.illine.drinking.ponies.service.telegram.MessageEditorService
 import ru.illine.drinking.ponies.test.tag.UnitTest
 import java.time.Clock
 
 @UnitTest
-@DisplayName("ReplayButtonFactory Unit Test")
-class ReplayButtonFactoryTest {
+@DisplayName("ReplyButtonFactory Unit Test")
+class ReplyButtonFactoryTest {
 
-    private lateinit var factory: ReplayButtonFactoryImpl
+    private lateinit var factory: ReplyButtonFactoryImpl
 
     @BeforeEach
     fun setUp() {
-        val strategy = SnoozeApplyReplayButtonStrategy(
+        val strategy = SnoozeApplyReplyButtonStrategy(
             mock(TelegramClient::class.java),
             mock(NotificationAccessService::class.java),
             mock(MessageEditorService::class.java),
             Clock.systemUTC()
         )
-        factory = ReplayButtonFactoryImpl(listOf(strategy))
+        factory = ReplyButtonFactoryImpl(listOf(strategy))
     }
 
     @ParameterizedTest
