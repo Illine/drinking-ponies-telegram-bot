@@ -10,10 +10,7 @@ import ru.illine.drinking.ponies.util.FunctionHelper.check
 
 @UnitTest
 @DisplayName("FunctionHelper Unit Test")
-class FunctionHelperTestController {
-
-
-    // check
+class FunctionHelperTest {
 
     @Test
     @DisplayName("check(): returns necessary value when true")
@@ -38,8 +35,6 @@ class FunctionHelperTestController {
 
         assertEquals(expected, actual)
     }
-
-    // catchAny
 
     @Test
     @DisplayName("catchAny(): doesn't executes ifException when there isn't any exception")
@@ -83,8 +78,6 @@ class FunctionHelperTestController {
         assertTrue(expected)
     }
 
-    // catchAnyWithReturn
-
     @Test
     @DisplayName("catchAnyWithReturn(): doesn't executes ifException when there isn't any exception")
     fun `successful catchAnyWithReturn action`() {
@@ -127,5 +120,19 @@ class FunctionHelperTestController {
         )
 
         assertTrue(expected)
+    }
+
+    @Test
+    @DisplayName("catchAny(): swallows exception silently when default ifException and errorLogging are used")
+    fun `successful catchAny with defaults swallows exception`() {
+        catchAny(action = { throw RuntimeException() })
+    }
+
+    @Test
+    @DisplayName("catchAnyWithReturn(): returns null when exception is thrown and ifException is not provided")
+    fun `successful catchAnyWithReturn returns null when no ifException`() {
+        val actual: Boolean? = catchAnyWithReturn(action = { throw RuntimeException() })
+
+        assertNull(actual)
     }
 }

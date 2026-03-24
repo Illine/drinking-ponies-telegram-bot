@@ -25,8 +25,8 @@ import ru.illine.drinking.ponies.util.telegram.TelegramMessageConstants
 class IntervalApplyReplayButtonStrategyTest {
 
     private val userId = 1L
-    private val chatId = 100500L
-    private val messageId = 42
+    private val chatId = 2L
+    private val messageId = 3
 
     private lateinit var sender: TelegramClient
     private lateinit var notificationAccessService: NotificationAccessService

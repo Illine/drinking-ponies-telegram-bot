@@ -132,5 +132,26 @@ tasks {
             xml.required = true
             xml.outputLocation = layout.buildDirectory.file("jacoco/coverage.xml")
         }
+
+        classDirectories.setFrom(
+            files(classDirectories.files.map {
+                fileTree(it) {
+                    exclude(
+                        "**/DrinkingPoniesApplicationKt*",
+                        "**/DrinkingPoniesTelegramBot*",
+                        "**/*\$DefaultImpls*",
+                        // Kotlin inline functions: JaCoCo cannot track coverage in the original class
+                        "**/FunctionHelper*",
+                        // Spring @Configuration classes: beans are mocked or overridden in tests
+                        "**/TelegramBotConfig*",
+                        "**/TimeConfig*",
+                        // JPA entities: boilerplate managed by Hibernate, not application logic
+                        "**/*Entity*",
+                        // Spring @ConfigurationProperties: no business logic, Kotlin data class boilerplate
+                        "**/*Properties*"
+                    )
+                }
+            })
+        )
     }
 }
