@@ -141,7 +141,10 @@ tasks {
                         "**/DrinkingPoniesTelegramBot*",
                         "**/*\$DefaultImpls*",
                         // Kotlin inline functions: JaCoCo cannot track coverage in the original class
-                        "**/FunctionHelper*"
+                        "**/FunctionHelper*",
+                        // Spring @Configuration classes: beans are mocked or overridden in tests
+                        "**/TelegramBotConfig*",
+                        "**/TimeConfig*"
                     )
                 }
             })
