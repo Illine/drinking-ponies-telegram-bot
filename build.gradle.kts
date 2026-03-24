@@ -146,7 +146,9 @@ tasks {
                         // JPA entities: boilerplate managed by Hibernate, not application logic
                         "**/*Entity*",
                         // Spring @ConfigurationProperties: no business logic, Kotlin data class boilerplate
-                        "**/*Properties*"
+                        "**/*Properties*",
+                        // P6Spy logger: extends third-party Slf4JLogger, JaCoCo cannot correctly map coverage through parent bytecode
+                        "**/CustomP6SpyLogger*"
                     )
                 }
             })

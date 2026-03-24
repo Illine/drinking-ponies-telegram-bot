@@ -121,4 +121,15 @@ class NotificationSchedulerTest {
         verify(notificationService).sendNotifications(listOf(active))
         verify(notificationService).suspendNotifications(listOf(exhausted))
     }
+
+    @Test
+    @DisplayName("sendDrinkingReminders(): throws an error")
+    fun `scheduler failed`() {
+        `when`(notificationAccessService.findAllNotificationSettings()).thenThrow(RuntimeException("Scheduler Failed"))
+
+        scheduler.sendDrinkingReminders()
+
+        verify(notificationService, never()).sendNotifications(anyCollection())
+        verify(notificationService, never()).suspendNotifications(anyCollection())
+    }
 }
