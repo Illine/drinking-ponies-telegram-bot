@@ -14,7 +14,7 @@ plugins {
 }
 
 group = "ru.illine"
-version = "7.7.0"
+version = "7.8.0"
 
 java {
     toolchain {
@@ -33,7 +33,6 @@ dependencies {
     implementation(libs.spring.boot.starter.validation)
     implementation(libs.spring.boot.starter.web)
 
-    implementation(libs.jaxb.api)
     implementation(libs.kotlin.reflect)
     implementation(libs.jackson.module.kotlin)
     implementation(libs.validation.api)
@@ -56,7 +55,6 @@ dependencies {
     liquibaseRuntime(libs.postgres)
     liquibaseRuntime(libs.snakeyaml)
     liquibaseRuntime(libs.picocli)
-    liquibaseRuntime(libs.jaxb.api)
 
     runtimeOnly(libs.postgres)
     runtimeOnly(libs.micrometer.exposition.formats)
@@ -113,8 +111,8 @@ tasks {
     }
 
     compileKotlin {
-        kotlinOptions {
-            freeCompilerArgs += "-Xjsr305=strict"
+        compilerOptions {
+            freeCompilerArgs.add("-Xjsr305=strict")
         }
     }
 
@@ -132,5 +130,28 @@ tasks {
             xml.required = true
             xml.outputLocation = layout.buildDirectory.file("jacoco/coverage.xml")
         }
+
+        classDirectories.setFrom(
+            files(classDirectories.files.map {
+                fileTree(it) {
+                    exclude(
+                        "**/DrinkingPoniesApplicationKt*",
+                        "**/DrinkingPoniesTelegramBot*",
+                        "**/*\$DefaultImpls*",
+                        // Kotlin inline functions: JaCoCo cannot track coverage in the original class
+                        "**/FunctionHelper*",
+                        // Spring @Configuration classes: beans are mocked or overridden in tests
+                        "**/TelegramBotConfig*",
+                        "**/TimeConfig*",
+                        // JPA entities: boilerplate managed by Hibernate, not application logic
+                        "**/*Entity*",
+                        // Spring @ConfigurationProperties: no business logic, Kotlin data class boilerplate
+                        "**/*Properties*",
+                        // P6Spy logger: extends third-party Slf4JLogger, JaCoCo cannot correctly map coverage through parent bytecode
+                        "**/CustomP6SpyLogger*"
+                    )
+                }
+            })
+        )
     }
 }

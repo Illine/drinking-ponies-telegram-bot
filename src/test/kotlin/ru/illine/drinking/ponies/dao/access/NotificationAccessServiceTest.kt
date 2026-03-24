@@ -8,9 +8,11 @@ import org.junit.jupiter.api.function.ThrowingSupplier
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.context.jdbc.SqlConfig
+import ru.illine.drinking.ponies.model.base.IntervalNotificationType
 import ru.illine.drinking.ponies.test.generator.DtoGenerator
 import ru.illine.drinking.ponies.test.tag.SpringIntegrationTest
 import java.time.LocalDateTime
+import java.time.LocalTime
 
 @SpringIntegrationTest
 @DisplayName("NotificationAccessService Spring Integration Test")
@@ -34,25 +36,17 @@ class NotificationAccessServiceTest @Autowired constructor(
     private val DISABLED_TELEGRAM_USER_ID = 2L
     private val WITHOUT_NOTIFICATION_ATTEMPTS = 0
 
-    //  -----------------------   successful tests   -------------------------
-
-    // findAllNotificationSettings
-
     @Test
     @DisplayName("findAllNotificationSettings(): returns a not empty set")
     fun `successful findAllNotificationSettings`() {
         assertFalse(accessService.findAllNotificationSettings().isEmpty())
     }
 
-    // findNotificationSettingByTelegramUserId
-
     @Test
     @DisplayName("findNotificationSettingByTelegramUserId(): returns a found record")
     fun `successful findNotificationSettingByTelegramUserId`() {
         assertDoesNotThrow { accessService.findNotificationSettingByTelegramUserId(DEFAULT_TELEGRAM_USER_ID) }
     }
-
-    // existsByTelegramUserId
 
     @Test
     @DisplayName("existsByTelegramUserId(): returns a true")
@@ -77,8 +71,6 @@ class NotificationAccessServiceTest @Autowired constructor(
             )
         assertFalse(actual)
     }
-
-    // save
 
     @Test
     @DisplayName("save(): returns a new record")
@@ -110,7 +102,22 @@ class NotificationAccessServiceTest @Autowired constructor(
         assertEquals(DEFAULT_TELEGRAM_USER_ID, actual.externalUserId)
     }
 
-    // updateTimeOfLastNotification
+    @Test
+    @DisplayName("save(): reuses existing chat entity when externalChatId already exists")
+    fun `successful save with existing chat`() {
+        val dto = DtoGenerator.generateNotificationDto(
+            externalUserId = DEFAULT_TELEGRAM_USER_ID,
+            externalChatId = DEFAULT_TELEGRAM_USER_ID
+        )
+
+        val actual =
+            assertDoesNotThrow(
+                ThrowingSupplier {
+                    accessService.save(dto.telegramUser, dto.telegramChat, dto)
+                }
+            )
+        assertEquals(DEFAULT_TELEGRAM_USER_ID, actual.externalUserId)
+    }
 
     @Test
     @DisplayName("updateTimeOfLastNotification(): returns an updated record")
@@ -128,8 +135,6 @@ class NotificationAccessServiceTest @Autowired constructor(
         assertEquals(WITHOUT_NOTIFICATION_ATTEMPTS, actual.notificationAttempts)
     }
 
-    // updateNotificationSettings
-
     @Test
     @DisplayName("updateNotificationSettings(): returns an updated set of records")
     fun `successful updateNotificationSettings`() {
@@ -146,8 +151,6 @@ class NotificationAccessServiceTest @Autowired constructor(
         assertEquals(existed.id, actual.first().id)
     }
 
-    // enableNotifications
-
     @Test
     @DisplayName("enableNotifications(): changed 'enabled' flag as true")
     fun `successful enableNotifications`() {
@@ -158,8 +161,6 @@ class NotificationAccessServiceTest @Autowired constructor(
         )
         assertTrue(accessService.isEnabledNotifications(DISABLED_TELEGRAM_USER_ID))
     }
-
-    // disableNotifications
 
     @Test
     @DisplayName("disableNotifications(): changed 'enabled' flag as false")
@@ -172,9 +173,51 @@ class NotificationAccessServiceTest @Autowired constructor(
         assertFalse(accessService.isEnabledNotifications(DEFAULT_TELEGRAM_USER_ID))
     }
 
-    //  -----------------------   failure tests   -------------------------
+    @Test
+    @DisplayName("updateNotificationSettings(): updates interval when it differs from current")
+    fun `successful updateNotificationSettings changes interval`() {
+        val newInterval = IntervalNotificationType.HALF_HOUR
 
-    // findNotificationSettingByTelegramUserId
+        val actual = assertDoesNotThrow(
+            ThrowingSupplier {
+                accessService.updateNotificationSettings(DEFAULT_TELEGRAM_USER_ID, DEFAULT_TELEGRAM_USER_ID, newInterval)
+            }
+        )
+
+        assertEquals(newInterval, actual.notificationInterval)
+    }
+
+    @Test
+    @DisplayName("updateNotificationSettings(): does not update when interval is the same")
+    fun `successful updateNotificationSettings same interval`() {
+        val sameInterval = IntervalNotificationType.TWO_HOURS
+
+        assertDoesNotThrow(
+            ThrowingSupplier {
+                accessService.updateNotificationSettings(DEFAULT_TELEGRAM_USER_ID, DEFAULT_TELEGRAM_USER_ID, sameInterval)
+            }
+        )
+    }
+
+    @Test
+    @DisplayName("changeQuietMode(): updates quiet mode without exception")
+    fun `successful changeQuietMode`() {
+        assertDoesNotThrow(
+            ThrowingSupplier {
+                accessService.changeQuietMode(DEFAULT_TELEGRAM_USER_ID, LocalTime.of(22, 0), LocalTime.of(8, 0))
+            }
+        )
+    }
+
+    @Test
+    @DisplayName("disableQuietMode(): disables quiet mode without exception")
+    fun `successful disableQuietMode`() {
+        assertDoesNotThrow(
+            ThrowingSupplier {
+                accessService.disableQuietMode(DEFAULT_TELEGRAM_USER_ID)
+            }
+        )
+    }
 
     @Test
     @DisplayName("findNotificationSettingByTelegramUserId(): throws IllegalArgumentException when record not found by telegramUserId")
@@ -182,12 +225,18 @@ class NotificationAccessServiceTest @Autowired constructor(
         assertThrows<IllegalArgumentException> { accessService.findNotificationSettingByTelegramUserId(NOT_EXISTED_USER_ID) }
     }
 
-    // updateTimeOfLastNotification
-
     @Test
     @DisplayName("updateTimeOfLastNotification(): throws IllegalArgumentException when record not found by telegramUserId")
     fun `failure updateTimeOfLastNotification not found`() {
         val time = LocalDateTime.now()
         assertThrows<IllegalArgumentException> { accessService.updateTimeOfLastNotification(NOT_EXISTED_USER_ID, time) }
+    }
+
+    @Test
+    @DisplayName("updateNotificationSettings(): throws IllegalArgumentException when record not found by telegramUserId")
+    fun `failure updateNotificationSettings not found`() {
+        assertThrows<IllegalArgumentException> {
+            accessService.updateNotificationSettings(NOT_EXISTED_USER_ID, NOT_EXISTED_USER_ID, IntervalNotificationType.HOUR)
+        }
     }
 }

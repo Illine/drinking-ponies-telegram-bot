@@ -47,22 +47,17 @@ class NotificationSettingEntity(
     @Column(name = "notification_attempts", nullable = false)
     var notificationAttempts: Int = 0,
 
-    @Column(name = "quiet_mode_start", nullable = false)
+    @Column(name = "quiet_mode_start")
     @JsonIgnore
     var quietModeStart: LocalTime? = null,
 
-    @Column(name = "quiet_mode_end", nullable = false)
+    @Column(name = "quiet_mode_end")
     @JsonIgnore
     var quietModeEnd: LocalTime? = null,
 
     @Column(name = "enabled", nullable = false)
     var enabled: Boolean = true
 ) {
-
-    @PreRemove
-    private fun onDelete() {
-        enabled = false
-    }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

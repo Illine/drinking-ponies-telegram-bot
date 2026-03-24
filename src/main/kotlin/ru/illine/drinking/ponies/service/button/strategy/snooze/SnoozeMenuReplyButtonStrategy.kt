@@ -12,7 +12,7 @@ import ru.illine.drinking.ponies.util.telegram.TelegramMessageConstants
 import java.util.*
 
 @Service
-class SnoozeMenuReplayButtonStrategy(
+class SnoozeMenuReplyButtonStrategy(
     private val sender: TelegramClient,
     private val messageEditorService: MessageEditorService
 ) : ReplyButtonStrategy {

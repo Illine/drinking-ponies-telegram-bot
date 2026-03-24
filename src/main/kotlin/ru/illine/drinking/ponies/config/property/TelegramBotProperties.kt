@@ -22,13 +22,16 @@ data class TelegramBotProperties(
     val username: String,
 
     @NotNull
-    val creatorId: Long,
+    var creatorId: Long,
 
     @NonNull
     val autoUpdateCommands: Boolean,
 
     @NotNull
-    val http: Http
+    var http: Http,
+
+    @NotNull
+    val notification: Notification = Notification()
 
 ) {
     data class Http(
@@ -40,5 +43,11 @@ data class TelegramBotProperties(
         @Min(10)
         @Max(200)
         val maxConnectionTotal: Int
+    )
+
+    data class Notification(
+
+        @Min(1)
+        val retryIntervalMinutes: Long = 1L
     )
 }

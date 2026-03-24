@@ -9,7 +9,7 @@ import org.telegram.telegrambots.meta.api.objects.Update
 import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.illine.drinking.ponies.config.property.TelegramBotProperties
 import ru.illine.drinking.ponies.model.base.TelegramCommandType
-import ru.illine.drinking.ponies.service.button.ReplayButtonFactory
+import ru.illine.drinking.ponies.service.button.ReplyButtonFactory
 import ru.illine.drinking.ponies.service.command.CommandService
 import ru.illine.drinking.ponies.service.notification.NotificationService
 import java.util.function.BiConsumer
@@ -19,7 +19,7 @@ class DrinkingPoniesTelegramBot(
     telegramClient: TelegramClient,
     private val telegramBotProperties: TelegramBotProperties,
     private val notificationService: NotificationService,
-    private val replayButtonFactory: ReplayButtonFactory,
+    private val replyButtonFactory: ReplyButtonFactory,
     private val commandService: CommandService
 ) : AbilityBot(
     telegramClient,
@@ -104,7 +104,7 @@ class DrinkingPoniesTelegramBot(
     @Suppress("unused")
     fun replyInlineButtons(): Reply {
         val action = BiConsumer<BaseAbilityBot, Update> { _, update ->
-            replayButtonFactory.getStrategy(update.callbackQuery.data).reply(update.callbackQuery)
+            replyButtonFactory.getStrategy(update.callbackQuery.data).reply(update.callbackQuery)
         }
         return Reply.of(action, Flag.CALLBACK_QUERY)
     }

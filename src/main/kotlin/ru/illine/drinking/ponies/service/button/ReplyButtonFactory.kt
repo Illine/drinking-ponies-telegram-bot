@@ -1,6 +1,6 @@
 package ru.illine.drinking.ponies.service.button
 
-fun interface ReplayButtonFactory {
+fun interface ReplyButtonFactory {
 
     fun getStrategy(queryData: String): ReplyButtonStrategy
 

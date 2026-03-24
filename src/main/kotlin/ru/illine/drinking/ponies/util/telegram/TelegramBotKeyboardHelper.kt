@@ -16,7 +16,7 @@ object TelegramBotKeyboardHelper {
             .map {
                 val buttonData = service.getData(it)
                 if (it.web) {
-                    val updatedButtonData = messageId?.let { id -> "$buttonData?messageId=$id" } ?: buttonData
+                    val updatedButtonData = if (messageId != null) "$buttonData?messageId=$messageId" else buttonData
                     InlineKeyboardRow(
                         InlineKeyboardButton.builder()
                             .text(it.displayName).webApp(WebAppInfo(updatedButtonData))

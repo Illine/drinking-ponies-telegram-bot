@@ -14,7 +14,7 @@ import ru.illine.drinking.ponies.util.telegram.TelegramMessageConstants
 import java.util.*
 
 @Service
-class IntervalMenuReplayButtonStrategy(
+class IntervalMenuReplyButtonStrategy(
     private val sender: TelegramClient,
     private val notificationAccessService: NotificationAccessService,
     private val messageEditorService: MessageEditorService,

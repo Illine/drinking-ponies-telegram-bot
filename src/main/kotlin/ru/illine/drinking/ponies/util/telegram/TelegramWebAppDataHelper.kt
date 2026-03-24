@@ -71,7 +71,7 @@ object TelegramWebAppDataHelper {
     fun decode(initData: String): Map<String, String> {
         val decodedData = URLDecoder.decode(initData, StandardCharsets.UTF_8.name())
         return decodedData.split("&").associate {
-            val (key, value) = it.split("=")
+            val (key, value) = it.split("=", limit = 2)
             key to value
         }
     }
