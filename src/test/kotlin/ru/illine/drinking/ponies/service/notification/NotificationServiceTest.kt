@@ -32,7 +32,7 @@ import java.time.ZoneOffset
 class NotificationServiceTest {
 
     private val userId = 1L
-    private val chatId = 100500L
+    private val chatId = 1L
 
     private lateinit var sender: TelegramClient
     private lateinit var messageEditorService: MessageEditorService
@@ -251,6 +251,19 @@ class NotificationServiceTest {
 
         verify(notificationAccessService).disableNotifications(userId)
         verify(notificationAccessService).updateNotificationSettings(anyCollection())
+    }
+
+    @Test
+    @DisplayName("sendNotifications(): non-403 error - rethrows exception")
+    fun `sendNotifications rethrows non-403 exception`() {
+        val dto = DtoGenerator.generateNotificationDto(externalUserId = userId, externalChatId = chatId)
+        val exception = mock(TelegramApiRequestException::class.java)
+        `when`(exception.errorCode).thenReturn(500)
+        doThrow(exception).`when`(sender).execute(any<SendMessage>())
+
+        assertThrows(TelegramApiRequestException::class.java) {
+            service.sendNotifications(listOf(dto))
+        }
     }
 
     private fun buildMessageContext(): MessageContext {

@@ -21,8 +21,8 @@ import java.time.LocalTime
 class NotificationSettingsServiceTest {
 
     private val userId = 1L
-    private val chatId = 100500L
-    private val messageId = 42
+    private val chatId = 2L
+    private val messageId = 3
 
     private lateinit var notificationAccessService: NotificationAccessService
     private lateinit var messageEditorService: MessageEditorService

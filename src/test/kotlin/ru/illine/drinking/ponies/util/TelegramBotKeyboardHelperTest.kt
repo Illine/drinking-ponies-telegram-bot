@@ -35,11 +35,10 @@ class TelegramBotKeyboardHelperTest {
         `when`(service.getData(SettingsType.QUIET_MODE_TIME)).thenReturn(queryModeTime)
         `when`(service.getData(SettingsType.TIMEZONE)).thenReturn(timezone)
     }
-    // settingsButtons
 
     // ToDo Добавить проверку, что такие-то кнопки являются webApp
     @Test
-    @DisplayName("settingsButtons(): returns valid keyboard")
+    @DisplayName("settingsButtons(): returns valid keyboard without messageId")
     fun `successful settingsButtons`() {
         val expectedButtonsSize = 1
         val expectedRowsSize =
@@ -56,7 +55,16 @@ class TelegramBotKeyboardHelperTest {
         assertEquals(expectedButtonsSize, actual.keyboard[0].size)
     }
 
-    // intervalTimeButtons
+    @Test
+    @DisplayName("settingsButtons(): appends messageId to web button url when messageId provided")
+    fun `successful settingsButtons with messageId`() {
+        val messageId = 1
+
+        val actual = TelegramBotKeyboardHelper.settingsButtons(service, messageId)
+
+        assertNotNull(actual)
+        assertDoesNotThrow { actual.validate() }
+    }
 
     @ParameterizedTest
     @EnumSource(IntervalNotificationType::class)
@@ -89,8 +97,6 @@ class TelegramBotKeyboardHelperTest {
         assertEquals(expectedButtonsSize, actual.keyboard[0].size)
     }
 
-    // snoozeTimeButtons
-
     @Test
     @DisplayName("snoozeTimeButtons(): returns valid keyboard")
     fun `successful snoozeTimeButtons`() {
@@ -105,8 +111,6 @@ class TelegramBotKeyboardHelperTest {
         assertEquals(expectedRowsSize, actual.keyboard.size)
         assertEquals(expectedButtonsSize, actual.keyboard[0].size)
     }
-
-    // notifyButtons
 
     @Test
     @DisplayName("notifyButtons(): returns valid keyboard")

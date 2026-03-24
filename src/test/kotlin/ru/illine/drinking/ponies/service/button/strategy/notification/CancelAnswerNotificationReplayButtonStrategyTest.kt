@@ -28,8 +28,8 @@ import java.time.ZoneOffset
 class CancelAnswerNotificationReplayButtonStrategyTest {
 
     private val userId = 1L
-    private val chatId = 100500L
-    private val messageId = 42
+    private val chatId = 2L
+    private val messageId = 3
     private val fixedNow = LocalDateTime.of(2025, 1, 1, 14, 0, 0)
     private val fixedClock = Clock.fixed(fixedNow.toInstant(ZoneOffset.UTC), ZoneOffset.UTC)
 

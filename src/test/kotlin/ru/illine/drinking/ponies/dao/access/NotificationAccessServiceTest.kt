@@ -103,6 +103,23 @@ class NotificationAccessServiceTest @Autowired constructor(
     }
 
     @Test
+    @DisplayName("save(): reuses existing chat entity when externalChatId already exists")
+    fun `successful save with existing chat`() {
+        val dto = DtoGenerator.generateNotificationDto(
+            externalUserId = DEFAULT_TELEGRAM_USER_ID,
+            externalChatId = DEFAULT_TELEGRAM_USER_ID
+        )
+
+        val actual =
+            assertDoesNotThrow(
+                ThrowingSupplier {
+                    accessService.save(dto.telegramUser, dto.telegramChat, dto)
+                }
+            )
+        assertEquals(DEFAULT_TELEGRAM_USER_ID, actual.externalUserId)
+    }
+
+    @Test
     @DisplayName("updateTimeOfLastNotification(): returns an updated record")
     fun `successful updateTimeOfLastNotification`() {
         val time = LocalDateTime.now()

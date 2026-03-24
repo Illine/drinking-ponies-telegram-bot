@@ -22,8 +22,8 @@ import ru.illine.drinking.ponies.util.telegram.TelegramMessageConstants
 @DisplayName("SnoozeMenuReplayButtonStrategy Unit Test")
 class SnoozeMenuReplayButtonStrategyTest {
 
-    private val chatId = 100500L
-    private val messageId = 42
+    private val chatId = 1L
+    private val messageId = 2
 
     private lateinit var sender: TelegramClient
     private lateinit var messageEditorService: MessageEditorService
@@ -35,8 +35,6 @@ class SnoozeMenuReplayButtonStrategyTest {
         messageEditorService = mock(MessageEditorService::class.java)
         strategy = SnoozeMenuReplayButtonStrategy(sender, messageEditorService)
     }
-
-    // reply
 
     @Test
     @DisplayName("reply(): edits original message with snooze display name")

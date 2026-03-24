@@ -28,8 +28,8 @@ import java.time.ZoneOffset
 class SnoozeApplyReplayButtonStrategyTest {
 
     private val userId = 1L
-    private val chatId = 100500L
-    private val messageId = 42
+    private val chatId = 2L
+    private val messageId = 3
     private val fixedNow = LocalDateTime.of(2025, 1, 1, 14, 0, 0)
     private val fixedClock = Clock.fixed(fixedNow.toInstant(ZoneOffset.UTC), ZoneOffset.UTC)
 
@@ -101,6 +101,20 @@ class SnoozeApplyReplayButtonStrategyTest {
     fun `isQueryData returns true for snooze types`(snoozeType: SnoozeNotificationType) {
         val result = strategy.isQueryData(snoozeType.queryData.toString())
         assertTrue(result)
+    }
+
+    @Test
+    @DisplayName("reply(): falls back to TEN_MINS when queryData doesn't match any SnoozeNotificationType")
+    fun `reply falls back to TEN_MINS for unknown queryData`() {
+        val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = userId)
+        `when`(notificationAccessService.findNotificationSettingByTelegramUserId(userId)).thenReturn(notificationDto)
+
+        val callbackQuery = buildCallbackQuery("00000000-0000-0000-0000-000000000000")
+        strategy.reply(callbackQuery)
+
+        val interval = notificationDto.notificationInterval.minutes
+        val expectedTime = fixedNow.minusMinutes(interval).plusMinutes(SnoozeNotificationType.TEN_MINS.minutes)
+        verify(notificationAccessService).updateTimeOfLastNotification(userId, expectedTime)
     }
 
     @Test
