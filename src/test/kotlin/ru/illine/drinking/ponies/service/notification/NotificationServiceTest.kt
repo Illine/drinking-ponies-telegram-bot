@@ -32,7 +32,7 @@ import java.time.ZoneOffset
 class NotificationServiceTest {
 
     private val userId = 1L
-    private val chatId = 1L
+    private val chatId = 2L
 
     private lateinit var sender: TelegramClient
     private lateinit var messageEditorService: MessageEditorService
@@ -259,6 +259,19 @@ class NotificationServiceTest {
         val dto = DtoGenerator.generateNotificationDto(externalUserId = userId, externalChatId = chatId)
         val exception = mock(TelegramApiRequestException::class.java)
         `when`(exception.errorCode).thenReturn(500)
+        doThrow(exception).`when`(sender).execute(any<SendMessage>())
+
+        assertThrows(TelegramApiRequestException::class.java) {
+            service.sendNotifications(listOf(dto))
+        }
+    }
+
+    @Test
+    @DisplayName("sendNotifications(): null errorCode - rethrows exception")
+    fun `sendNotifications rethrows null errorCode exception`() {
+        val dto = DtoGenerator.generateNotificationDto(externalUserId = userId, externalChatId = chatId)
+        val exception = mock(TelegramApiRequestException::class.java)
+        doReturn(null).`when`(exception).errorCode
         doThrow(exception).`when`(sender).execute(any<SendMessage>())
 
         assertThrows(TelegramApiRequestException::class.java) {

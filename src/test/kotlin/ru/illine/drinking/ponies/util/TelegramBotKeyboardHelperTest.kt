@@ -46,8 +46,7 @@ class TelegramBotKeyboardHelperTest {
                 .filter { it.visible }
                 .count()
 
-        val actual =
-            TelegramBotKeyboardHelper.settingsButtons(service)
+        val actual = TelegramBotKeyboardHelper.settingsButtons(service)
 
         assertNotNull(actual)
         assertDoesNotThrow { actual.validate() }
