@@ -146,7 +146,9 @@ tasks {
                         "**/TelegramBotConfig*",
                         "**/TimeConfig*",
                         // JPA entities: boilerplate managed by Hibernate, not application logic
-                        "**/*Entity*"
+                        "**/*Entity*",
+                        // Spring @ConfigurationProperties: no business logic, Kotlin data class boilerplate
+                        "**/*Properties*"
                     )
                 }
             })
