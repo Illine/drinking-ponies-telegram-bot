@@ -36,7 +36,24 @@ class TelegramBotKeyboardHelperTest {
         `when`(service.getData(SettingsType.TIMEZONE)).thenReturn(timezone)
     }
 
-    // ToDo Добавить проверку, что такие-то кнопки являются webApp
+    @Test
+    @DisplayName("settingsButtons(): web=true buttons use WebApp, web=false buttons use callbackData")
+    fun `settingsButtons buttons have correct type`() {
+        val actual = TelegramBotKeyboardHelper.settingsButtons(service)
+
+        val visibleTypes = SettingsType.entries.filter { it.visible }
+        visibleTypes.forEachIndexed { index, type ->
+            val button = actual.keyboard[index][0]
+            if (type.web) {
+                assertNotNull(button.webApp, "Expected webApp button for ${type.name}")
+                assertNull(button.callbackData, "Expected no callbackData for ${type.name}")
+            } else {
+                assertNotNull(button.callbackData, "Expected callbackData button for ${type.name}")
+                assertNull(button.webApp, "Expected no webApp for ${type.name}")
+            }
+        }
+    }
+
     @Test
     @DisplayName("settingsButtons(): returns valid keyboard without messageId")
     fun `successful settingsButtons`() {
