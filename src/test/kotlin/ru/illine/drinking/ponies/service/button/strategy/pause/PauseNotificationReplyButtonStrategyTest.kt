@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
 import org.mockito.ArgumentCaptor
@@ -46,8 +47,8 @@ class PauseNotificationReplyButtonStrategyTest {
 
     @ParameterizedTest
     @EnumSource(PauseNotificationType::class, names = ["RESET"], mode = EnumSource.Mode.EXCLUDE)
-    @DisplayName("pause(): deletes reply markup on original message")
-    fun `pause deletes reply markup`(pauseType: PauseNotificationType) {
+    @DisplayName("reply(): deletes reply markup on original message")
+    fun `reply deletes reply markup`(pauseType: PauseNotificationType) {
         val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = userId)
         `when`(notificationAccessService.findNotificationSettingByTelegramUserId(userId)).thenReturn(notificationDto)
 
@@ -58,8 +59,8 @@ class PauseNotificationReplyButtonStrategyTest {
 
     @ParameterizedTest
     @EnumSource(PauseNotificationType::class, names = ["RESET"], mode = EnumSource.Mode.EXCLUDE)
-    @DisplayName("pause(): updates notification time to now + pauseMinutes")
-    fun `pause updates notification time`(pauseType: PauseNotificationType) {
+    @DisplayName("reply(): updates notification time to now + pauseMinutes")
+    fun `reply updates notification time`(pauseType: PauseNotificationType) {
         val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = userId)
         `when`(notificationAccessService.findNotificationSettingByTelegramUserId(userId)).thenReturn(notificationDto)
 
@@ -70,8 +71,8 @@ class PauseNotificationReplyButtonStrategyTest {
 
     @ParameterizedTest
     @EnumSource(PauseNotificationType::class, names = ["RESET"], mode = EnumSource.Mode.EXCLUDE)
-    @DisplayName("pause(): sends confirmation message with pause displayName")
-    fun `pause sends confirmation message`(pauseType: PauseNotificationType) {
+    @DisplayName("reply(): sends confirmation message with pause displayName")
+    fun `reply sends confirmation message`(pauseType: PauseNotificationType) {
         val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = userId)
         `when`(notificationAccessService.findNotificationSettingByTelegramUserId(userId)).thenReturn(notificationDto)
 
@@ -88,8 +89,8 @@ class PauseNotificationReplyButtonStrategyTest {
     }
 
     @Test
-    @DisplayName("cancelPause(): deletes reply markup on original message")
-    fun `cancelPause deletes reply markup`() {
+    @DisplayName("reply(): deletes reply markup on original message")
+    fun `reply deletes reply markup`() {
         val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = userId)
         `when`(notificationAccessService.findNotificationSettingByTelegramUserId(userId)).thenReturn(notificationDto)
 
@@ -99,8 +100,8 @@ class PauseNotificationReplyButtonStrategyTest {
     }
 
     @Test
-    @DisplayName("cancelPause(): resets notification time to now + interval minutes")
-    fun `cancelPause updates notification time`() {
+    @DisplayName("reply(): resets notification time to now + interval minutes")
+    fun `reply updates notification time`() {
         val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = userId)
         `when`(notificationAccessService.findNotificationSettingByTelegramUserId(userId)).thenReturn(notificationDto)
 
@@ -110,8 +111,8 @@ class PauseNotificationReplyButtonStrategyTest {
     }
 
     @Test
-    @DisplayName("cancelPause(): sends reset message with interval displayName")
-    fun `cancelPause sends reset message`() {
+    @DisplayName("reply(): sends reset message with interval displayName")
+    fun `reply sends reset message`() {
         val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = userId)
         `when`(notificationAccessService.findNotificationSettingByTelegramUserId(userId)).thenReturn(notificationDto)
 
@@ -122,6 +123,16 @@ class PauseNotificationReplyButtonStrategyTest {
         val sent = captor.value
         assertEquals(chatId.toString(), sent.chatId)
         assertTrue(sent.text.contains(notificationDto.notificationInterval.displayName))
+    }
+
+    @Test
+    @DisplayName("reply(): throws IllegalArgumentException when queryData is not correct")
+    fun `reply throws IllegalArgumentException`() {
+        assertThrows<IllegalArgumentException> {
+            strategy.reply(buildCallbackQuery("00000000-0000-0000-0000-000000000000"))
+        }
+
+        verify(sender, never()).execute(any<SendMessage>())
     }
 
     @ParameterizedTest

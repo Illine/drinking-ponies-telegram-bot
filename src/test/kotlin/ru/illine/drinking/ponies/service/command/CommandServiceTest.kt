@@ -20,18 +20,6 @@ class CommandServiceTest {
     private lateinit var sender: TelegramClient
     private lateinit var properties: TelegramBotProperties
 
-    private fun buildService(autoUpdateCommands: Boolean): CommandServiceImpl {
-        properties = TelegramBotProperties(
-            version = "1.0.0",
-            token = "token",
-            username = "username",
-            creatorId = 1L,
-            autoUpdateCommands = autoUpdateCommands,
-            http = TelegramBotProperties.Http(connectionTimeToLiveInSec = 30, maxConnectionTotal = 10)
-        )
-        return CommandServiceImpl(properties, sender)
-    }
-
     @BeforeEach
     fun setUp() {
         sender = mock(TelegramClient::class.java)
@@ -62,5 +50,17 @@ class CommandServiceTest {
         service.register()
 
         verifyNoInteractions(sender)
+    }
+
+    private fun buildService(autoUpdateCommands: Boolean): CommandServiceImpl {
+        properties = TelegramBotProperties(
+            version = "1.0.0",
+            token = "token",
+            username = "username",
+            creatorId = 1L,
+            autoUpdateCommands = autoUpdateCommands,
+            http = TelegramBotProperties.Http(connectionTimeToLiveInSec = 30, maxConnectionTotal = 10)
+        )
+        return CommandServiceImpl(properties, sender)
     }
 }
