@@ -12,16 +12,16 @@ import ru.illine.drinking.ponies.service.telegram.MessageEditorService
 import ru.illine.drinking.ponies.util.telegram.TelegramMessageConstants
 
 @Service
-class IntervalApplyReplayButtonStrategy(
+class IntervalApplyReplyButtonStrategy(
     private val sender: TelegramClient,
     private val notificationAccessService: NotificationAccessService,
     private val messageEditorService: MessageEditorService
 ) : ReplyButtonStrategy {
 
-    private val log = LoggerFactory.getLogger("REPLAY-STRATEGY")
+    private val logger = LoggerFactory.getLogger("REPLY-STRATEGY")
 
     override fun reply(callbackQuery: CallbackQuery) {
-        deleteOldReplayMarkup(callbackQuery)
+        deleteOldReplyMarkup(callbackQuery)
 
         val userId = callbackQuery.from.id
         val chatId = callbackQuery.message.chatId
@@ -29,17 +29,17 @@ class IntervalApplyReplayButtonStrategy(
 
         val notificationInterval = IntervalNotificationType.typeOf(queryData) ?: IntervalNotificationType.TWO_HOURS
 
-        log.info(
+        logger.info(
             "A telegram user [{}] for telegram chat [{}] with interval setting [{}] will be stored to a database",
             userId,
             chatId,
             notificationInterval
         )
 
-        log.info("A notification settings for user [{}] with interval setting [{}] will be saved", userId, notificationInterval)
+        logger.info("A notification settings for user [{}] with interval setting [{}] will be saved", userId, notificationInterval)
         val updatedNotificationSettings =
             notificationAccessService.updateNotificationSettings(userId, chatId, notificationInterval)
-        log.info("The notification settings (id: [{}]) has updated", updatedNotificationSettings.id)
+        logger.info("The notification settings (id: [{}]) has updated", updatedNotificationSettings.id)
 
         SendMessage(
             chatId.toString(),
@@ -49,7 +49,7 @@ class IntervalApplyReplayButtonStrategy(
 
     override fun isQueryData(queryData: String): Boolean = IntervalNotificationType.typeOf(queryData) != null
 
-    private fun deleteOldReplayMarkup(callbackQuery: CallbackQuery) {
+    private fun deleteOldReplyMarkup(callbackQuery: CallbackQuery) {
         messageEditorService.deleteReplyMarkup(
             callbackQuery.message.chatId,
             callbackQuery.message.messageId,

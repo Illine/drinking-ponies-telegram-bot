@@ -23,8 +23,8 @@ import ru.illine.drinking.ponies.test.tag.UnitTest
 import ru.illine.drinking.ponies.util.telegram.TelegramMessageConstants
 
 @UnitTest
-@DisplayName("IntervalMenuReplayButtonStrategy Unit Test")
-class IntervalMenuReplayButtonStrategyTest {
+@DisplayName("IntervalMenuReplyButtonStrategy Unit Test")
+class IntervalMenuReplyButtonStrategyTest {
 
     private val userId = 1L
     private val chatId = 3L
@@ -34,7 +34,7 @@ class IntervalMenuReplayButtonStrategyTest {
     private lateinit var notificationAccessService: NotificationAccessService
     private lateinit var messageEditorService: MessageEditorService
     private lateinit var settingsButtonDataService: ButtonDataService<SettingsType>
-    private lateinit var strategy: IntervalMenuReplayButtonStrategy
+    private lateinit var strategy: IntervalMenuReplyButtonStrategy
 
     @BeforeEach
     fun setUp() {
@@ -43,7 +43,7 @@ class IntervalMenuReplayButtonStrategyTest {
         messageEditorService = mock(MessageEditorService::class.java)
         @Suppress("UNCHECKED_CAST")
         settingsButtonDataService = mock(ButtonDataService::class.java) as ButtonDataService<SettingsType>
-        strategy = IntervalMenuReplayButtonStrategy(
+        strategy = IntervalMenuReplyButtonStrategy(
             sender, notificationAccessService, messageEditorService, settingsButtonDataService
         )
     }

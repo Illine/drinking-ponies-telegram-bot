@@ -1,4 +1,4 @@
-package ru.illine.drinking.ponies.service.button.strategy.pause
+package ru.illine.drinking.ponies.service.button.strategy.snooze
 
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
@@ -8,128 +8,113 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
 import org.mockito.ArgumentCaptor
 import org.mockito.Mockito.*
-import org.mockito.kotlin.any
-import org.mockito.kotlin.eq
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.api.objects.User
 import org.telegram.telegrambots.meta.api.objects.message.Message
 import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
-import ru.illine.drinking.ponies.model.base.PauseNotificationType
+import ru.illine.drinking.ponies.model.base.SnoozeNotificationType
 import ru.illine.drinking.ponies.service.telegram.MessageEditorService
 import ru.illine.drinking.ponies.test.generator.DtoGenerator
 import ru.illine.drinking.ponies.test.tag.UnitTest
 import ru.illine.drinking.ponies.util.telegram.TelegramMessageConstants
+import java.time.Clock
 import java.time.LocalDateTime
+import java.time.ZoneOffset
 
 @UnitTest
-@DisplayName("PauseNotificationReplayButtonStrategy Unit Test")
-class PauseNotificationReplayButtonStrategyTest {
+@DisplayName("SnoozeApplyReplyButtonStrategy Unit Test")
+class SnoozeApplyReplyButtonStrategyTest {
 
     private val userId = 1L
     private val chatId = 2L
     private val messageId = 3
+    private val fixedNow = LocalDateTime.of(2025, 1, 1, 14, 0, 0)
+    private val fixedClock = Clock.fixed(fixedNow.toInstant(ZoneOffset.UTC), ZoneOffset.UTC)
 
     private lateinit var sender: TelegramClient
     private lateinit var notificationAccessService: NotificationAccessService
     private lateinit var messageEditorService: MessageEditorService
-    private lateinit var strategy: PauseNotificationReplayButtonStrategy
+    private lateinit var strategy: SnoozeApplyReplyButtonStrategy
 
     @BeforeEach
     fun setUp() {
         sender = mock(TelegramClient::class.java)
         notificationAccessService = mock(NotificationAccessService::class.java)
         messageEditorService = mock(MessageEditorService::class.java)
-        strategy = PauseNotificationReplayButtonStrategy(sender, notificationAccessService, messageEditorService)
+        strategy = SnoozeApplyReplyButtonStrategy(sender, notificationAccessService, messageEditorService, fixedClock)
     }
 
     @ParameterizedTest
-    @EnumSource(PauseNotificationType::class, names = ["RESET"], mode = EnumSource.Mode.EXCLUDE)
-    @DisplayName("pause(): deletes reply markup on original message")
-    fun `pause deletes reply markup`(pauseType: PauseNotificationType) {
+    @EnumSource(SnoozeNotificationType::class)
+    @DisplayName("reply(): deletes reply markup on original message")
+    fun `reply deletes reply markup`(snoozeType: SnoozeNotificationType) {
         val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = userId)
         `when`(notificationAccessService.findNotificationSettingByTelegramUserId(userId)).thenReturn(notificationDto)
 
-        strategy.reply(buildCallbackQuery(pauseType.queryData.toString()))
+        val callbackQuery = buildCallbackQuery(snoozeType.queryData.toString())
+        strategy.reply(callbackQuery)
 
         verify(messageEditorService).deleteReplyMarkup(chatId, messageId)
     }
 
     @ParameterizedTest
-    @EnumSource(PauseNotificationType::class, names = ["RESET"], mode = EnumSource.Mode.EXCLUDE)
-    @DisplayName("pause(): updates notification time to now + pauseMinutes")
-    fun `pause updates notification time`(pauseType: PauseNotificationType) {
+    @EnumSource(SnoozeNotificationType::class)
+    @DisplayName("reply(): next notification fires exactly snoozeMinutes from now")
+    fun `reply updates notification time`(snoozeType: SnoozeNotificationType) {
         val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = userId)
         `when`(notificationAccessService.findNotificationSettingByTelegramUserId(userId)).thenReturn(notificationDto)
 
-        strategy.reply(buildCallbackQuery(pauseType.queryData.toString()))
+        val callbackQuery = buildCallbackQuery(snoozeType.queryData.toString())
+        strategy.reply(callbackQuery)
 
-        verify(notificationAccessService).updateTimeOfLastNotification(eq(userId), any<LocalDateTime>())
+        val interval = notificationDto.notificationInterval.minutes
+        val expectedTime = fixedNow.minusMinutes(interval).plusMinutes(snoozeType.minutes)
+        verify(notificationAccessService).updateTimeOfLastNotification(userId, expectedTime)
     }
 
     @ParameterizedTest
-    @EnumSource(PauseNotificationType::class, names = ["RESET"], mode = EnumSource.Mode.EXCLUDE)
-    @DisplayName("pause(): sends confirmation message with pause displayName")
-    fun `pause sends confirmation message`(pauseType: PauseNotificationType) {
+    @EnumSource(SnoozeNotificationType::class)
+    @DisplayName("reply(): sends confirmation message with snooze display name")
+    fun `reply sends confirmation message`(snoozeType: SnoozeNotificationType) {
         val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = userId)
         `when`(notificationAccessService.findNotificationSettingByTelegramUserId(userId)).thenReturn(notificationDto)
 
+        val callbackQuery = buildCallbackQuery(snoozeType.queryData.toString())
         val captor = ArgumentCaptor.forClass(SendMessage::class.java)
-        strategy.reply(buildCallbackQuery(pauseType.queryData.toString()))
+
+        strategy.reply(callbackQuery)
 
         verify(sender).execute(captor.capture())
         val sent = captor.value
         assertEquals(chatId.toString(), sent.chatId)
         assertEquals(
-            TelegramMessageConstants.PAUSE_BUTTON_RESULT_MESSAGE.format(pauseType.displayName),
+            TelegramMessageConstants.NOTIFICATION_SUSPEND_MESSAGE.format(snoozeType.displayName),
             sent.text
         )
     }
 
-    @Test
-    @DisplayName("cancelPause(): deletes reply markup on original message")
-    fun `cancelPause deletes reply markup`() {
-        val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = userId)
-        `when`(notificationAccessService.findNotificationSettingByTelegramUserId(userId)).thenReturn(notificationDto)
-
-        strategy.reply(buildCallbackQuery(PauseNotificationType.RESET.queryData.toString()))
-
-        verify(messageEditorService).deleteReplyMarkup(chatId, messageId)
-    }
-
-    @Test
-    @DisplayName("cancelPause(): resets notification time to now + interval minutes")
-    fun `cancelPause updates notification time`() {
-        val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = userId)
-        `when`(notificationAccessService.findNotificationSettingByTelegramUserId(userId)).thenReturn(notificationDto)
-
-        strategy.reply(buildCallbackQuery(PauseNotificationType.RESET.queryData.toString()))
-
-        verify(notificationAccessService).updateTimeOfLastNotification(eq(userId), any<LocalDateTime>())
-    }
-
-    @Test
-    @DisplayName("cancelPause(): sends reset message with interval displayName")
-    fun `cancelPause sends reset message`() {
-        val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = userId)
-        `when`(notificationAccessService.findNotificationSettingByTelegramUserId(userId)).thenReturn(notificationDto)
-
-        val captor = ArgumentCaptor.forClass(SendMessage::class.java)
-        strategy.reply(buildCallbackQuery(PauseNotificationType.RESET.queryData.toString()))
-
-        verify(sender).execute(captor.capture())
-        val sent = captor.value
-        assertEquals(chatId.toString(), sent.chatId)
-        assertTrue(sent.text.contains(notificationDto.notificationInterval.displayName))
-    }
-
     @ParameterizedTest
-    @EnumSource(PauseNotificationType::class)
-    @DisplayName("isQueryData(): returns true for each PauseNotificationType queryData")
-    fun `isQueryData returns true for pause types`(pauseType: PauseNotificationType) {
-        val result = strategy.isQueryData(pauseType.queryData.toString())
+    @EnumSource(SnoozeNotificationType::class)
+    @DisplayName("isQueryData(): returns true for each SnoozeNotificationType queryData")
+    fun `isQueryData returns true for snooze types`(snoozeType: SnoozeNotificationType) {
+        val result = strategy.isQueryData(snoozeType.queryData.toString())
         assertTrue(result)
+    }
+
+    @Test
+    @DisplayName("reply(): falls back to TEN_MINS when queryData doesn't match any SnoozeNotificationType")
+    fun `reply falls back to TEN_MINS for unknown queryData`() {
+        val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = userId)
+        `when`(notificationAccessService.findNotificationSettingByTelegramUserId(userId)).thenReturn(notificationDto)
+
+        val callbackQuery = buildCallbackQuery("00000000-0000-0000-0000-000000000000")
+        strategy.reply(callbackQuery)
+
+        val interval = notificationDto.notificationInterval.minutes
+        val expectedTime = fixedNow.minusMinutes(interval).plusMinutes(SnoozeNotificationType.TEN_MINS.minutes)
+        verify(notificationAccessService).updateTimeOfLastNotification(userId, expectedTime)
     }
 
     @Test
@@ -160,4 +145,5 @@ class PauseNotificationReplayButtonStrategyTest {
         `when`(callbackQuery.data).thenReturn(queryData)
         return callbackQuery
     }
+
 }

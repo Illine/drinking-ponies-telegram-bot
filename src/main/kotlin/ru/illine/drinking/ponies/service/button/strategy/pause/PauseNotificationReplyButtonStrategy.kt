@@ -17,22 +17,23 @@ import java.time.ZoneId
 import java.time.ZonedDateTime
 
 @Service
-class PauseNotificationReplayButtonStrategy(
+class PauseNotificationReplyButtonStrategy(
     private val sender: TelegramClient,
     private val notificationAccessService: NotificationAccessService,
     private val messageEditorService: MessageEditorService
 ) : ReplyButtonStrategy {
 
-    private val log = LoggerFactory.getLogger("REPLAY-STRATEGY")
+    private val logger = LoggerFactory.getLogger("REPLY-STRATEGY")
 
     override fun reply(callbackQuery: CallbackQuery) {
-        deleteOldReplayMarkup(callbackQuery)
+        deleteOldReplyMarkup(callbackQuery)
 
         val userId = callbackQuery.from.id
         val chatId = callbackQuery.message.chatId
         val queryData = callbackQuery.data
 
-        val pauseNotification = PauseNotificationType.typeOf(queryData)!!
+        val pauseNotification =
+            PauseNotificationType.typeOf(queryData) ?: throw IllegalArgumentException("Unknown query data: $queryData")
 
         if (pauseNotification != PauseNotificationType.RESET) {
             pause(pauseNotification, userId, chatId)
@@ -49,12 +50,12 @@ class PauseNotificationReplayButtonStrategy(
         val savedNotificationSetting =
             notificationAccessService.findNotificationSettingByTelegramUserId(userId)
         val nextNotificationTime = calculateNextNotificationTime(savedNotificationSetting, pauseNotification)
-        log.info(
+        logger.info(
             "A notification will be postponed to [{}] for a user [{}]",
             pauseNotification,
             userId
         )
-        log.info("The new notification will be at [{}]", nextNotificationTime)
+        logger.info("The new notification will be at [{}]", nextNotificationTime)
 
         notificationAccessService.updateTimeOfLastNotification(userId, nextNotificationTime)
 
@@ -68,14 +69,14 @@ class PauseNotificationReplayButtonStrategy(
         userId: Long,
         chatId: Long
     ) {
-        log.info("A notification will be reset to user's notification interval for a user [{}]", userId)
+        logger.info("A notification will be reset to user's notification interval for a user [{}]", userId)
         val savedNotificationSetting =
             notificationAccessService.findNotificationSettingByTelegramUserId(userId)
         val notificationInterval = savedNotificationSetting.notificationInterval
-        log.info("User's notification interval: [{}]", notificationInterval)
+        logger.info("User's notification interval: [{}]", notificationInterval)
         val nextNotificationTime =
             calculateNextNotificationTime(savedNotificationSetting, notificationInterval.minutes)
-        log.info("The new notification will be at [{}]", nextNotificationTime)
+        logger.info("The new notification will be at [{}]", nextNotificationTime)
 
         notificationAccessService.updateTimeOfLastNotification(userId, nextNotificationTime)
 
@@ -108,7 +109,7 @@ class PauseNotificationReplayButtonStrategy(
 
     override fun isQueryData(queryData: String): Boolean = PauseNotificationType.typeOf(queryData) != null
 
-    private fun deleteOldReplayMarkup(callbackQuery: CallbackQuery) {
+    private fun deleteOldReplyMarkup(callbackQuery: CallbackQuery) {
         messageEditorService.deleteReplyMarkup(
             callbackQuery.message.chatId,
             callbackQuery.message.messageId,

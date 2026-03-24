@@ -37,10 +37,10 @@ abstract class AbstractAnswerNotificationReplyButtonStrategy<T>(
         )
     }
 
-    abstract protected fun updateLastNotificationTime(callbackQuery: CallbackQuery): () -> T
+    protected abstract fun updateLastNotificationTime(callbackQuery: CallbackQuery): () -> T
 
-    abstract protected fun getMessageText(): String
+    protected abstract fun getMessageText(): String
 
-    abstract protected fun getAnswerType(): AnswerNotificationType
+    protected abstract fun getAnswerType(): AnswerNotificationType
 
 }

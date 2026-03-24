@@ -21,8 +21,8 @@ import ru.illine.drinking.ponies.test.tag.UnitTest
 import ru.illine.drinking.ponies.util.telegram.TelegramMessageConstants
 
 @UnitTest
-@DisplayName("IntervalApplyReplayButtonStrategy Unit Test")
-class IntervalApplyReplayButtonStrategyTest {
+@DisplayName("IntervalApplyReplyButtonStrategy Unit Test")
+class IntervalApplyReplyButtonStrategyTest {
 
     private val userId = 1L
     private val chatId = 2L
@@ -31,14 +31,14 @@ class IntervalApplyReplayButtonStrategyTest {
     private lateinit var sender: TelegramClient
     private lateinit var notificationAccessService: NotificationAccessService
     private lateinit var messageEditorService: MessageEditorService
-    private lateinit var strategy: IntervalApplyReplayButtonStrategy
+    private lateinit var strategy: IntervalApplyReplyButtonStrategy
 
     @BeforeEach
     fun setUp() {
         sender = mock(TelegramClient::class.java)
         notificationAccessService = mock(NotificationAccessService::class.java)
         messageEditorService = mock(MessageEditorService::class.java)
-        strategy = IntervalApplyReplayButtonStrategy(sender, notificationAccessService, messageEditorService)
+        strategy = IntervalApplyReplyButtonStrategy(sender, notificationAccessService, messageEditorService)
     }
 
     @ParameterizedTest

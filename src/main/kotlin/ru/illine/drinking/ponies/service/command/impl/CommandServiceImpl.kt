@@ -16,11 +16,11 @@ class CommandServiceImpl(
     private val sender: TelegramClient
 ) : CommandService {
 
-    private val log = LoggerFactory.getLogger("SERVICE")
+    private val logger = LoggerFactory.getLogger("SERVICE")
 
     override fun register() {
         if (telegramBotProperties.autoUpdateCommands) {
-            log.warn("Telegram Commands will be updated!")
+            logger.warn("Telegram Commands will be updated!")
             val availabilityCommands = TelegramCommandType.entries
                 .asIterable()
                 .filter { it.visible }
@@ -28,7 +28,7 @@ class CommandServiceImpl(
                 .map { BotCommand(it.command, it.descriptions) }
                 .toList()
 
-            log.debug("Created commands: {}", availabilityCommands)
+            logger.debug("Created commands: {}", availabilityCommands)
 
             availabilityCommands.let {
                 SetMyCommands(it)
@@ -37,9 +37,9 @@ class CommandServiceImpl(
                     }
             }.apply { sender.execute(this) }
 
-            log.info("The commands have updated")
+            logger.info("The commands have updated")
         } else {
-            log.warn("Telegram Commands will not be updated!")
+            logger.warn("Telegram Commands will not be updated!")
         }
     }
 }

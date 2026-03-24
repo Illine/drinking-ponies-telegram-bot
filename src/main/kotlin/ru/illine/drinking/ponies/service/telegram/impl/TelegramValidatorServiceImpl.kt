@@ -26,7 +26,7 @@ class TelegramValidatorServiceImpl(
     override fun verifySignature(initData: String, expirationTime: Duration): Boolean {
         val token = telegramBotProperties.token
         val decodedData = decode(initData)
-        logger.info("Validate 'initDate' with query_id: {}", decodedData[QUERY_ID_FIELD_NAME])
+        logger.debug("Validate 'initDate' with query_id: {}", decodedData[QUERY_ID_FIELD_NAME])
 
         return validateAuthDate(decodedData, expirationTime) && validateHash(decodedData, token)
     }

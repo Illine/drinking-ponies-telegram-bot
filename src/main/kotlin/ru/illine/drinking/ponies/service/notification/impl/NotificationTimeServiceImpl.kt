@@ -11,19 +11,19 @@ import java.time.zone.ZoneRulesException
 @Service
 class NotificationTimeServiceImpl(private val clock: Clock) : NotificationTimeService {
 
-    private val log = LoggerFactory.getLogger("SERVICE")
+    private val logger = LoggerFactory.getLogger("SERVICE")
 
     override fun isOutsideQuietTime(dto: NotificationSettingDto): Boolean {
-        log.debug("Checking quiet mode for user id: [{}]", dto.id)
+        logger.debug("Checking quiet mode for user id: [{}]", dto.id)
 
         val quietStart = dto.quietModeStart
         val quietEnd = dto.quietModeEnd
 
         if (quietStart == null || quietEnd == null) {
-            log.debug("User has no quiet mode set, allowing notification")
+            logger.debug("User has no quiet mode set, allowing notification")
             return true
         } else if (quietStart == quietEnd) {
-            log.debug("Quiet mode start equals end ({}). Mode effectively disabled.", quietStart)
+            logger.debug("Quiet mode start equals end ({}). Mode effectively disabled.", quietStart)
             return true
         }
 
@@ -39,17 +39,16 @@ class NotificationTimeServiceImpl(private val clock: Clock) : NotificationTimeSe
     override fun isNotificationDue(dto: NotificationSettingDto): Boolean {
         val now = LocalDateTime.now(clock)
 
-        log.debug("Checking notification due time for user id: [{}]", dto.id)
+        logger.debug("Checking notification due time for user id: [{}]", dto.id)
 
-        log.debug("Current UTC time: [{}]", now)
-        log.debug("Last notification time (UTC): [{}]", dto.timeOfLastNotification)
+        logger.debug("Current UTC time: [{}]", now)
+        logger.debug("Last notification time (UTC): [{}]", dto.timeOfLastNotification)
 
         val nextNotificationTime = dto.timeOfLastNotification.plusMinutes(dto.notificationInterval.minutes)
-        log.debug("Next scheduled notification (UTC): [{}]", nextNotificationTime)
+        logger.debug("Next scheduled notification (UTC): [{}]", nextNotificationTime)
 
         val isDue =  nextNotificationTime <= now
-        log.debug("Notification due: [{}]", isDue)
-        nextNotificationTime.coerceAtLeast(now)
+        logger.debug("Notification due: [{}]", isDue)
 
         return isDue
     }
@@ -58,12 +57,12 @@ class NotificationTimeServiceImpl(private val clock: Clock) : NotificationTimeSe
         val userZoneId = try {
             ZoneId.of(dto.telegramUser.userTimeZone)
         } catch (e: ZoneRulesException) {
-            log.error("Invalid timezone for user [${dto.id}]: [${dto.telegramUser.userTimeZone}], error: ${e.message}. Fallback to UTC.")
+            logger.error("Invalid timezone for user [${dto.id}]: [${dto.telegramUser.userTimeZone}], error: ${e.message}. Fallback to UTC.")
             ZoneId.of("UTC")
         }
 
         val userTime = ZonedDateTime.now(clock).withZoneSameInstant(userZoneId).toLocalTime()
-        log.debug("User timezone: [{}], current user time: [{}]", userZoneId, userTime)
+        logger.debug("User timezone: [{}], current user time: [{}]", userZoneId, userTime)
 
         return userTime
     }

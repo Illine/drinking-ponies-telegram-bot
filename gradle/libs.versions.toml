@@ -4,7 +4,6 @@ spring-dependency-management-plugin = "1.1.7"
 liquibase-plugin = "2.2.1"
 kotlin-plugin = "2.1.21"
 
-jaxb-api = "2.3.0"
 validation-api = "2.0.1.Final"
 logbook = "3.9.0"
 telegram-bot = "9.2.0"
@@ -35,7 +34,6 @@ spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-start
 spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test" }
 spring-boot-configuration-processor = { module = "org.springframework.boot:spring-boot-configuration-processor" }
 
-jaxb-api = { module = "javax.xml.bind:jaxb-api", version.ref = "jaxb-api" }
 kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect" }
 jackson-module-kotlin = { module = "com.fasterxml.jackson.module:jackson-module-kotlin" }
 validation-api = { module = "javax.validation:validation-api", version.ref = "validation-api" }

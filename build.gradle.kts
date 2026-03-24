@@ -33,7 +33,6 @@ dependencies {
     implementation(libs.spring.boot.starter.validation)
     implementation(libs.spring.boot.starter.web)
 
-    implementation(libs.jaxb.api)
     implementation(libs.kotlin.reflect)
     implementation(libs.jackson.module.kotlin)
     implementation(libs.validation.api)
@@ -56,7 +55,6 @@ dependencies {
     liquibaseRuntime(libs.postgres)
     liquibaseRuntime(libs.snakeyaml)
     liquibaseRuntime(libs.picocli)
-    liquibaseRuntime(libs.jaxb.api)
 
     runtimeOnly(libs.postgres)
     runtimeOnly(libs.micrometer.exposition.formats)
@@ -113,8 +111,8 @@ tasks {
     }
 
     compileKotlin {
-        kotlinOptions {
-            freeCompilerArgs += "-Xjsr305=strict"
+        compilerOptions {
+            freeCompilerArgs.add("-Xjsr305=strict")
         }
     }
 
