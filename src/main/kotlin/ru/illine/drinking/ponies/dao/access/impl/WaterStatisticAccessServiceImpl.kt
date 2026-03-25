@@ -31,4 +31,20 @@ class WaterStatisticAccessServiceImpl(
             .let { WaterStatisticBuilder.toDto(it, TelegramUserBuilder.toDto(it.telegramUser)) }
     }
 
+    @Transactional
+    override fun saveAll(statistics: Collection<WaterStatisticDto>): List<WaterStatisticDto> {
+        logger.debug("Saving [${statistics.size}] water statistic records")
+
+        return statistics
+            .map {
+                val userEntity = requireNotNull(
+                    userRepository.findByExternalUserId(it.telegramUser.externalUserId),
+                    { "Not found a Telegram User by externalUserId [${it.telegramUser.externalUserId}]" }
+                )
+                WaterStatisticBuilder.toEntity(it, userEntity)
+            }
+            .let { waterStatisticRepository.saveAll(it) }
+            .map { WaterStatisticBuilder.toDto(it, TelegramUserBuilder.toDto(it.telegramUser)) }
+    }
+
 }

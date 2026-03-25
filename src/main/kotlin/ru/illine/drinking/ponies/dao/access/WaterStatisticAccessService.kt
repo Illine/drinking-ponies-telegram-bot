@@ -6,4 +6,6 @@ interface WaterStatisticAccessService {
 
     fun save(dto: WaterStatisticDto): WaterStatisticDto
 
+    fun saveAll(statistics: Collection<WaterStatisticDto>): List<WaterStatisticDto>
+
 }
