@@ -17,8 +17,10 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiRequestException
 import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.illine.drinking.ponies.config.property.TelegramBotProperties
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
+import ru.illine.drinking.ponies.dao.access.WaterStatisticAccessService
 import ru.illine.drinking.ponies.model.base.IntervalNotificationType
 import ru.illine.drinking.ponies.model.base.SettingsType
+import ru.illine.drinking.ponies.model.dto.internal.WaterStatisticDto
 import ru.illine.drinking.ponies.service.button.ButtonDataService
 import ru.illine.drinking.ponies.service.notification.impl.NotificationServiceImpl
 import ru.illine.drinking.ponies.service.telegram.MessageEditorService
@@ -52,6 +54,7 @@ class NotificationServiceTest {
     private lateinit var messageEditorService: MessageEditorService
     private lateinit var notificationAccessService: NotificationAccessService
     private lateinit var settingsButtonDataService: ButtonDataService<SettingsType>
+    private lateinit var waterStatisticAccessService: WaterStatisticAccessService
     private lateinit var clock: Clock
     private lateinit var service: NotificationServiceImpl
 
@@ -62,6 +65,7 @@ class NotificationServiceTest {
         notificationAccessService = mock(NotificationAccessService::class.java)
         @Suppress("UNCHECKED_CAST")
         settingsButtonDataService = mock(ButtonDataService::class.java) as ButtonDataService<SettingsType>
+        waterStatisticAccessService = mock(WaterStatisticAccessService::class.java)
         clock = Clock.fixed(Instant.now(), ZoneOffset.UTC)
         service = NotificationServiceImpl(
             sender,
@@ -69,6 +73,7 @@ class NotificationServiceTest {
             notificationAccessService,
             settingsButtonDataService,
             botProperties,
+            waterStatisticAccessService,
             clock
         )
     }
@@ -263,6 +268,16 @@ class NotificationServiceTest {
         verify(notificationAccessService).updateNotificationSettings(anyCollection())
         assertEquals(0, dto.notificationAttempts)
         assertNull(dto.telegramChat.previousNotificationMessageId)
+    }
+
+    @Test
+    @DisplayName("suspendNotifications(): saves water statistic for each sent notification")
+    fun `suspendNotifications saves water statistics`() {
+        val dto = DtoGenerator.generateNotificationDto(externalUserId = userId, externalChatId = chatId)
+
+        service.suspendNotifications(listOf(dto))
+
+        verify(waterStatisticAccessService).saveAll(any<Collection<WaterStatisticDto>>())
     }
 
     @Test

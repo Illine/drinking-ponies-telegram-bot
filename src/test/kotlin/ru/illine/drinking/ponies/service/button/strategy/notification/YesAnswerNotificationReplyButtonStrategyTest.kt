@@ -16,8 +16,11 @@ import org.telegram.telegrambots.meta.api.objects.User
 import org.telegram.telegrambots.meta.api.objects.message.Message
 import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
+import ru.illine.drinking.ponies.dao.access.WaterStatisticAccessService
 import ru.illine.drinking.ponies.model.base.AnswerNotificationType
+import ru.illine.drinking.ponies.model.dto.internal.WaterStatisticDto
 import ru.illine.drinking.ponies.service.telegram.MessageEditorService
+import ru.illine.drinking.ponies.test.generator.DtoGenerator
 import ru.illine.drinking.ponies.test.tag.UnitTest
 import ru.illine.drinking.ponies.util.telegram.TelegramMessageConstants
 import java.time.Clock
@@ -37,6 +40,7 @@ class YesAnswerNotificationReplyButtonStrategyTest {
     private lateinit var sender: TelegramClient
     private lateinit var messageEditorService: MessageEditorService
     private lateinit var notificationAccessService: NotificationAccessService
+    private lateinit var waterStatisticAccessService: WaterStatisticAccessService
     private lateinit var strategy: YesAnswerNotificationReplyButtonStrategy
 
     @BeforeEach
@@ -44,14 +48,22 @@ class YesAnswerNotificationReplyButtonStrategyTest {
         sender = mock(TelegramClient::class.java)
         messageEditorService = mock(MessageEditorService::class.java)
         notificationAccessService = mock(NotificationAccessService::class.java)
+        waterStatisticAccessService = mock(WaterStatisticAccessService::class.java)
         strategy = YesAnswerNotificationReplyButtonStrategy(
-            sender, messageEditorService, notificationAccessService, fixedClock
+            sender,
+            messageEditorService,
+            notificationAccessService,
+            waterStatisticAccessService,
+            fixedClock
         )
     }
 
     @Test
     @DisplayName("reply(): edits original message with YES display name")
     fun `reply edits original message`() {
+        val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = userId)
+        `when`(notificationAccessService.updateTimeOfLastNotification(userId, fixedNow)).thenReturn(notificationDto)
+
         strategy.reply(buildCallbackQuery())
 
         val expectedText = TelegramMessageConstants.NOTIFICATION_QUESTION_EDITED_MESSAGE_PATTERN
@@ -62,6 +74,9 @@ class YesAnswerNotificationReplyButtonStrategyTest {
     @Test
     @DisplayName("reply(): updates last notification time to now()")
     fun `reply updates notification time`() {
+        val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = userId)
+        `when`(notificationAccessService.updateTimeOfLastNotification(userId, fixedNow)).thenReturn(notificationDto)
+
         strategy.reply(buildCallbackQuery())
 
         verify(notificationAccessService).updateTimeOfLastNotification(eq(userId), any<LocalDateTime>())
@@ -70,6 +85,9 @@ class YesAnswerNotificationReplyButtonStrategyTest {
     @Test
     @DisplayName("reply(): sends YES confirmation message")
     fun `reply sends confirmation message`() {
+        val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = userId)
+        `when`(notificationAccessService.updateTimeOfLastNotification(userId, fixedNow)).thenReturn(notificationDto)
+
         val captor = ArgumentCaptor.forClass(SendMessage::class.java)
         strategy.reply(buildCallbackQuery())
 
@@ -77,6 +95,17 @@ class YesAnswerNotificationReplyButtonStrategyTest {
         val sent = captor.value
         assertEquals(chatId.toString(), sent.chatId)
         assertEquals(TelegramMessageConstants.NOTIFICATION_ANSWER_YES_MESSAGE, sent.text)
+    }
+
+    @Test
+    @DisplayName("reply(): saves new water statistic")
+    fun `reply saves statistic`() {
+        val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = userId)
+        `when`(notificationAccessService.updateTimeOfLastNotification(userId, fixedNow)).thenReturn(notificationDto)
+
+        strategy.reply(buildCallbackQuery())
+
+        verify(waterStatisticAccessService).save(any<WaterStatisticDto>())
     }
 
     @Test

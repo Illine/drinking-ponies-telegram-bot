@@ -6,17 +6,22 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
+import ru.illine.drinking.ponies.dao.access.WaterStatisticAccessService
+import ru.illine.drinking.ponies.model.base.AnswerNotificationType
 import ru.illine.drinking.ponies.model.base.SnoozeNotificationType
+import ru.illine.drinking.ponies.model.dto.internal.WaterStatisticDto
 import ru.illine.drinking.ponies.service.button.ReplyButtonStrategy
 import ru.illine.drinking.ponies.service.telegram.MessageEditorService
 import ru.illine.drinking.ponies.util.TimeHelper
 import ru.illine.drinking.ponies.util.telegram.TelegramMessageConstants
 import java.time.Clock
+import java.time.LocalDateTime
 
 @Service
 class SnoozeApplyReplyButtonStrategy(
     private val sender: TelegramClient,
     private val notificationAccessService: NotificationAccessService,
+    private val waterStatisticAccessService: WaterStatisticAccessService,
     private val messageEditorService: MessageEditorService,
     private val clock: Clock
 ) : ReplyButtonStrategy {
@@ -50,6 +55,14 @@ class SnoozeApplyReplyButtonStrategy(
                 snoozeType.minutes
             )
         notificationAccessService.updateTimeOfLastNotification(userId, nextNotificationTime)
+
+        waterStatisticAccessService.save(
+            WaterStatisticDto(
+                telegramUser = notificationSetting.telegramUser,
+                eventTime = LocalDateTime.now(clock),
+                eventType = AnswerNotificationType.SNOOZE
+            )
+        )
 
         SendMessage(
             chatId.toString(),

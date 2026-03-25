@@ -10,6 +10,7 @@ import org.junit.jupiter.params.provider.EnumSource
 import org.mockito.Mockito.mock
 import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
+import ru.illine.drinking.ponies.dao.access.WaterStatisticAccessService
 import ru.illine.drinking.ponies.model.base.SnoozeNotificationType
 import ru.illine.drinking.ponies.service.button.impl.ReplyButtonFactoryImpl
 import ru.illine.drinking.ponies.service.button.strategy.snooze.SnoozeApplyReplyButtonStrategy
@@ -28,6 +29,7 @@ class ReplyButtonFactoryTest {
         val strategy = SnoozeApplyReplyButtonStrategy(
             mock(TelegramClient::class.java),
             mock(NotificationAccessService::class.java),
+            mock(WaterStatisticAccessService::class.java),
             mock(MessageEditorService::class.java),
             Clock.systemUTC()
         )
