@@ -1,0 +1,100 @@
+variables:
+  IMAGE_ANSIBLE_NAME: "ansible"
+  IMAGE_ANSIBLE_TAG: "1.1.0"
+  ANSIBLE_LIMIT: "test"
+
+build-ansible-image:
+  extends: .default-tags
+  stage: pre
+  allow_failure: true
+  image: docker:27
+  rules:
+    - if: '$PIPELINE_TYPE == "version-tag"'
+      when: never
+    - when: manual
+  before_script:
+    - docker login -u "${CI_REGISTRY_USER}" -p "${CI_REGISTRY_PASSWORD}" "${CI_REGISTRY}"
+  script:
+    - docker build -f .ansible/Dockerfile -t "${CI_REGISTRY_IMAGE}/${IMAGE_ANSIBLE_NAME}:${IMAGE_ANSIBLE_TAG}" .
+    - docker push "${CI_REGISTRY_IMAGE}/${IMAGE_ANSIBLE_NAME}:${IMAGE_ANSIBLE_TAG}"
+  after_script:
+    - docker rmi "${CI_REGISTRY_IMAGE}/${IMAGE_ANSIBLE_NAME}:${IMAGE_ANSIBLE_TAG}" || true
+
+.run-ansible:
+  extends: .default-tags
+  stage: deploy
+  image: ${CI_REGISTRY_IMAGE}/${IMAGE_ANSIBLE_NAME}:${IMAGE_ANSIBLE_TAG}
+  when: manual
+  variables:
+    ANSIBLE_PLAYBOOK: .ansible/playbooks/deploy.yml
+    ANSIBLE_INVENTORIES: .ansible/inventories/all.yml
+  before_script:
+    - chmod 600 ${ANSIBLE_SSH_PRIVATE_KEY} || true
+  script:
+    - |
+      ansible-playbook \
+        -i ${ANSIBLE_INVENTORIES} \
+        ${ANSIBLE_PLAYBOOK} \
+        ${ANSIBLE_LIMIT:+--limit=$ANSIBLE_LIMIT} \
+        -v
+
+update-database:
+  extends:
+    - .run-ansible
+  stage: migration
+  variables:
+    ANSIBLE_PLAYBOOK: .ansible/playbooks/migration.yml
+    LIQUIBASE_COMMAND: update
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "develop"'
+      when: on_success
+    - if: '$CI_COMMIT_BRANCH == "master"'
+      when: on_success
+      variables:
+        ANSIBLE_LIMIT: "prod"
+    - if: '$CI_COMMIT_BRANCH'
+      when: manual
+      allow_failure: true
+  before_script:
+    - !reference [.run-ansible, before_script]
+
+rollback-database:
+  extends:
+    - .run-ansible
+  stage: migration
+  variables:
+    ANSIBLE_PLAYBOOK: ".ansible/playbooks/migration.yml"
+    LIQUIBASE_COMMAND: "rollback"
+    LIQUIBASE_ROLLBACK_TAG: "" # must be overridden when the job will be run
+  rules:
+    - if: '$PIPELINE_TYPE == "version-tag"'
+      when: never
+    - if: '$CI_COMMIT_BRANCH == "master"'
+      when: manual
+      variables:
+        ANSIBLE_LIMIT: "prod"
+    - when: manual
+  before_script:
+    - !reference [.run-ansible, before_script]
+
+deploy-service:
+  extends:
+    - .run-ansible
+  needs:
+    - job: generate-version
+      artifacts: true
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "develop"'
+      when: on_success
+    - if: '$CI_COMMIT_BRANCH == "master"'
+      when: on_success
+      variables:
+        ANSIBLE_LIMIT: "prod"
+    - if: '$CI_COMMIT_BRANCH'
+      when: manual
+      allow_failure: true
+  variables:
+    ANSIBLE_PLAYBOOK: .ansible/playbooks/deploy.yml
+    DPTB_VERSION: ${GitVersion_SemVer}
+  before_script:
+    - !reference [.run-ansible, before_script]
