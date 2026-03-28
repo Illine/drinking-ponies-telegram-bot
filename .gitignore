@@ -7,6 +7,9 @@ build/
 .jpb
 .env
 
+### macOS ###
+**/.DS_Store
+
 ### IntelliJ IDEA ###
 .idea
 *.iws
