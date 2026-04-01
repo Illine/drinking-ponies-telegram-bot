@@ -12,8 +12,10 @@ import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
 import ru.illine.drinking.ponies.service.statistic.WaterStatisticService
 import ru.illine.drinking.ponies.model.base.SnoozeNotificationType
+import ru.illine.drinking.ponies.model.base.WaterAmountType
 import ru.illine.drinking.ponies.service.button.impl.ReplyButtonFactoryImpl
 import ru.illine.drinking.ponies.service.button.strategy.snooze.SnoozeApplyReplyButtonStrategy
+import ru.illine.drinking.ponies.service.button.strategy.wateramount.WaterAmountApplyReplyButtonStrategy
 import ru.illine.drinking.ponies.service.telegram.MessageEditorService
 import ru.illine.drinking.ponies.test.tag.UnitTest
 import java.time.Clock
@@ -26,14 +28,21 @@ class ReplyButtonFactoryTest {
 
     @BeforeEach
     fun setUp() {
-        val strategy = SnoozeApplyReplyButtonStrategy(
+        val snoozeStrategy = SnoozeApplyReplyButtonStrategy(
             mock(TelegramClient::class.java),
             mock(NotificationAccessService::class.java),
             mock(WaterStatisticService::class.java),
             mock(MessageEditorService::class.java),
             Clock.systemUTC()
         )
-        factory = ReplyButtonFactoryImpl(listOf(strategy))
+        val waterAmountStrategy = WaterAmountApplyReplyButtonStrategy(
+            mock(TelegramClient::class.java),
+            mock(NotificationAccessService::class.java),
+            mock(WaterStatisticService::class.java),
+            mock(MessageEditorService::class.java),
+            Clock.systemUTC()
+        )
+        factory = ReplyButtonFactoryImpl(listOf(snoozeStrategy, waterAmountStrategy))
     }
 
     @ParameterizedTest
@@ -41,6 +50,15 @@ class ReplyButtonFactoryTest {
     @DisplayName("getStrategy(): returns strategy for each SnoozeNotificationType queryData")
     fun `getStrategy returns strategy for snooze queryData`(snoozeType: SnoozeNotificationType) {
         val result = factory.getStrategy(snoozeType.queryData.toString())
+
+        assertNotNull(result)
+    }
+
+    @ParameterizedTest
+    @EnumSource(WaterAmountType::class)
+    @DisplayName("getStrategy(): returns strategy for each WaterAmountType queryData")
+    fun `getStrategy returns strategy for water amount queryData`(waterAmountType: WaterAmountType) {
+        val result = factory.getStrategy(waterAmountType.queryData.toString())
 
         assertNotNull(result)
     }
