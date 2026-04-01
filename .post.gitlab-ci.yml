@@ -13,6 +13,7 @@ tag-build:
   needs:
     - job: generate-version
       artifacts: true
+    - job: deploy-service
   variables:
     GIT_DEPTH: 0
   rules:
@@ -54,46 +55,26 @@ update-youtrack-build:
     - job: generate-version
       artifacts: true
     - job: tag-build
-  variables:
-    GIT_DEPTH: 0
   rules:
     - if: '$CI_COMMIT_BRANCH == "develop"'
       when: on_success
     - when: never
   before_script:
-    - apk add --no-cache curl git jq
-    - git fetch --tags
+    - apk add --no-cache curl jq
   script:
     - |
       TAG_NAME="build-${GitVersion_SemVer}"
       echo "Tag: ${TAG_NAME}"
 
-      # Find previous build tag (exclude current)
-      PREV_TAG=""
-      for TAG in $(git tag --sort=-v:creatordate --list "build-*"); do
-        if [ "${TAG}" != "build-${GitVersion_SemVer}" ]; then
-          PREV_TAG="${TAG}"
-          break
-        fi
-      done
+      # Extract issue ID from current commit message
+      ISSUE_ID=$(echo "${CI_COMMIT_MESSAGE}" | grep -oE "${YOUTRACK_PROJECT}-[0-9]+" | head -1) || true
 
-      if [ -z "${PREV_TAG}" ]; then
-        echo "Error: no previous build tag found. Is this the first run? Set build field manually."
-        exit 1
-      fi
-
-      echo "Previous tag: ${PREV_TAG}"
-      COMMITS=$(git log "${PREV_TAG}..HEAD" --oneline)
-
-      # Extract unique issue IDs
-      ISSUES=$(echo "${COMMITS}" | grep -oE "${YOUTRACK_PROJECT}-[0-9]+" | sort -u) || true
-
-      if [ -z "${ISSUES}" ]; then
-        echo "No ${YOUTRACK_PROJECT} issues found in commits"
+      if [ -z "${ISSUE_ID}" ]; then
+        echo "No ${YOUTRACK_PROJECT} issue found in commit message"
         exit 0
       fi
 
-      echo "Found issues: ${ISSUES}"
+      echo "Found issue: ${ISSUE_ID}"
 
       # Create build value
       echo "Creating build value '${TAG_NAME}'"
@@ -123,49 +104,47 @@ update-youtrack-build:
         echo "No unreleased version found, skipping version assignment"
       fi
 
-      # Update each issue
-      for ISSUE_ID in ${ISSUES}; do
-        echo "Updating ${ISSUE_ID}"
+      # Update issue
+      echo "Updating ${ISSUE_ID}"
 
-        # Build custom fields payload
-        FIELDS_JSON="[{\"id\": \"${YOUTRACK_BUILD_FIELD_ID}\", \"\$type\": \"SingleBuildIssueCustomField\", \"value\": {\"name\": \"${TAG_NAME}\"}}]"
-        if [ -n "${VERSION_NAME}" ]; then
-          FIELDS_JSON="[{\"id\": \"${YOUTRACK_BUILD_FIELD_ID}\", \"\$type\": \"SingleBuildIssueCustomField\", \"value\": {\"name\": \"${TAG_NAME}\"}}, {\"id\": \"${YOUTRACK_VERSION_FIELD_ID}\", \"\$type\": \"SingleVersionIssueCustomField\", \"value\": {\"name\": \"${VERSION_NAME}\"}}]"
-        fi
+      # Build custom fields payload
+      FIELDS_JSON="[{\"id\": \"${YOUTRACK_BUILD_FIELD_ID}\", \"\$type\": \"SingleBuildIssueCustomField\", \"value\": {\"name\": \"${TAG_NAME}\"}}]"
+      if [ -n "${VERSION_NAME}" ]; then
+        FIELDS_JSON="[{\"id\": \"${YOUTRACK_BUILD_FIELD_ID}\", \"\$type\": \"SingleBuildIssueCustomField\", \"value\": {\"name\": \"${TAG_NAME}\"}}, {\"id\": \"${YOUTRACK_VERSION_FIELD_ID}\", \"\$type\": \"SingleVersionIssueCustomField\", \"value\": {\"name\": \"${VERSION_NAME}\"}}]"
+      fi
 
-        # Set fields
+      # Set fields
+      curl -sf -o /dev/null -X POST \
+        -H "Authorization: Bearer ${YOUTRACK_TOKEN}" \
+        -H "Content-Type: application/json" \
+        "${YOUTRACK_URL}/api/issues/${ISSUE_ID}" \
+        -d "{\"customFields\": ${FIELDS_JSON}}" || echo "Warning: failed to update fields for ${ISSUE_ID}"
+
+      # Unpin existing pipeline comments
+      PINNED_IDS=$(curl -sf \
+        -H "Authorization: Bearer ${YOUTRACK_TOKEN}" \
+        "${YOUTRACK_URL}/api/issues/${ISSUE_ID}/comments?fields=id,text,pinned" \
+        | jq -r '.[] | select(.pinned == true and (.text | test("GitLab Pipeline:"))) | .id') || PINNED_IDS=""
+
+      for COMMENT_ID in ${PINNED_IDS}; do
         curl -sf -o /dev/null -X POST \
           -H "Authorization: Bearer ${YOUTRACK_TOKEN}" \
           -H "Content-Type: application/json" \
-          "${YOUTRACK_URL}/api/issues/${ISSUE_ID}" \
-          -d "{\"customFields\": ${FIELDS_JSON}}" || echo "Warning: failed to update fields for ${ISSUE_ID}"
-
-        # Unpin existing pipeline comments
-        PINNED_IDS=$(curl -sf \
-          -H "Authorization: Bearer ${YOUTRACK_TOKEN}" \
-          "${YOUTRACK_URL}/api/issues/${ISSUE_ID}/comments?fields=id,text,pinned" \
-          | jq -r '.[] | select(.pinned == true and (.text | test("GitLab Pipeline:"))) | .id') || PINNED_IDS=""
-
-        for COMMENT_ID in ${PINNED_IDS}; do
-          curl -sf -o /dev/null -X POST \
-            -H "Authorization: Bearer ${YOUTRACK_TOKEN}" \
-            -H "Content-Type: application/json" \
-            "${YOUTRACK_URL}/api/issues/${ISSUE_ID}/comments/${COMMENT_ID}" \
-            -d '{"pinned": false}' || echo "Warning: failed to unpin comment ${COMMENT_ID}"
-        done
-
-        # Add new pinned comment
-        curl -sf -o /dev/null -X POST \
-          -H "Authorization: Bearer ${YOUTRACK_TOKEN}" \
-          -H "Content-Type: application/json" \
-          "${YOUTRACK_URL}/api/issues/${ISSUE_ID}/comments" \
-          -d "{
-            \"text\": \"GitLab Pipeline: [#${CI_PIPELINE_ID}](${CI_PIPELINE_URL}) | Success ✅\",
-            \"pinned\": true
-          }" || echo "Warning: failed to add comment for ${ISSUE_ID}"
-
-        echo "${ISSUE_ID} done"
+          "${YOUTRACK_URL}/api/issues/${ISSUE_ID}/comments/${COMMENT_ID}" \
+          -d '{"pinned": false}' || echo "Warning: failed to unpin comment ${COMMENT_ID}"
       done
+
+      # Add new pinned comment
+      curl -sf -o /dev/null -X POST \
+        -H "Authorization: Bearer ${YOUTRACK_TOKEN}" \
+        -H "Content-Type: application/json" \
+        "${YOUTRACK_URL}/api/issues/${ISSUE_ID}/comments" \
+        -d "{
+          \"text\": \"GitLab Pipeline: [#${CI_PIPELINE_ID}](${CI_PIPELINE_URL}) | Success ✅\",
+          \"pinned\": true
+        }" || echo "Warning: failed to add comment for ${ISSUE_ID}"
+
+      echo "${ISSUE_ID} done"
 
 close-youtrack-version:
   extends: .default-tags
