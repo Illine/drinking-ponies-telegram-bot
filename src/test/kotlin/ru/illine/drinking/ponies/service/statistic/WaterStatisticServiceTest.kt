@@ -74,6 +74,8 @@ class WaterStatisticServiceTest {
         verify(waterStatisticAccessService).saveAll(captor.capture())
         val saved = captor.firstValue.toList()
         assertEquals(2, saved.size)
+        assertEquals(users[0], saved[0].telegramUser)
+        assertEquals(users[1], saved[1].telegramUser)
         saved.forEach {
             assertEquals(AnswerNotificationType.CANCEL, it.eventType)
             assertEquals(0, it.waterAmountMl)
