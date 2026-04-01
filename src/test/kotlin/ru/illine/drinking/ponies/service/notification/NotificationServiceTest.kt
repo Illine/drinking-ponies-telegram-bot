@@ -277,7 +277,7 @@ class NotificationServiceTest {
 
         service.suspendNotifications(listOf(dto))
 
-        verify(waterStatisticService).recordEvents(anyCollection(), any<AnswerNotificationType>())
+        verify(waterStatisticService).recordEvents(listOf(dto.telegramUser), AnswerNotificationType.CANCEL)
     }
 
     @Test
