@@ -8,15 +8,14 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiRequestException
 import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.illine.drinking.ponies.config.property.TelegramBotProperties
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
-import ru.illine.drinking.ponies.dao.access.WaterStatisticAccessService
 import ru.illine.drinking.ponies.model.base.AnswerNotificationType
 import ru.illine.drinking.ponies.model.base.SettingsType
 import ru.illine.drinking.ponies.model.dto.internal.NotificationSettingDto
 import ru.illine.drinking.ponies.model.dto.internal.TelegramChatDto
 import ru.illine.drinking.ponies.model.dto.internal.TelegramUserDto
-import ru.illine.drinking.ponies.model.dto.internal.WaterStatisticDto
 import ru.illine.drinking.ponies.service.button.ButtonDataService
 import ru.illine.drinking.ponies.service.notification.NotificationService
+import ru.illine.drinking.ponies.service.statistic.WaterStatisticService
 import ru.illine.drinking.ponies.service.telegram.MessageEditorService
 import ru.illine.drinking.ponies.util.FunctionHelper.check
 import ru.illine.drinking.ponies.util.TimeHelper
@@ -32,7 +31,7 @@ class NotificationServiceImpl(
     private val notificationAccessService: NotificationAccessService,
     private val settingsButtonDataService: ButtonDataService<SettingsType>,
     private val telegramBotProperties: TelegramBotProperties,
-    private val waterStatisticAccessService: WaterStatisticAccessService,
+    private val waterStatisticService: WaterStatisticService,
     private val clock: Clock,
 ) : NotificationService {
 
@@ -178,14 +177,9 @@ class NotificationServiceImpl(
         }
 
         notificationAccessService.updateNotificationSettings(sent)
-        waterStatisticAccessService.saveAll(
-            sent.map {
-                WaterStatisticDto(
-                    telegramUser = it.telegramUser,
-                    eventTime = LocalDateTime.now(clock),
-                    eventType = AnswerNotificationType.CANCEL
-                )
-            }
+        waterStatisticService.recordEvents(
+            sent.map { it.telegramUser },
+            AnswerNotificationType.CANCEL
         )
     }
 

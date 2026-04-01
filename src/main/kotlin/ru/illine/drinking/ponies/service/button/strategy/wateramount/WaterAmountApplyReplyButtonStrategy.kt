@@ -1,4 +1,4 @@
-package ru.illine.drinking.ponies.service.button.strategy.snooze
+package ru.illine.drinking.ponies.service.button.strategy.wateramount
 
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
@@ -7,16 +7,16 @@ import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
 import ru.illine.drinking.ponies.model.base.AnswerNotificationType
-import ru.illine.drinking.ponies.model.base.SnoozeNotificationType
+import ru.illine.drinking.ponies.model.base.WaterAmountType
 import ru.illine.drinking.ponies.service.button.ReplyButtonStrategy
 import ru.illine.drinking.ponies.service.statistic.WaterStatisticService
 import ru.illine.drinking.ponies.service.telegram.MessageEditorService
-import ru.illine.drinking.ponies.util.TimeHelper
 import ru.illine.drinking.ponies.util.telegram.TelegramMessageConstants
 import java.time.Clock
+import java.time.LocalDateTime
 
 @Service
-class SnoozeApplyReplyButtonStrategy(
+class WaterAmountApplyReplyButtonStrategy(
     private val sender: TelegramClient,
     private val notificationAccessService: NotificationAccessService,
     private val waterStatisticService: WaterStatisticService,
@@ -36,32 +36,29 @@ class SnoozeApplyReplyButtonStrategy(
         val chatId = callbackQuery.message.chatId
         val queryData = callbackQuery.data
 
-        val snoozeType = SnoozeNotificationType.typeOf(queryData) ?: SnoozeNotificationType.TEN_MINS
+        val waterAmountType = WaterAmountType.typeOf(queryData) ?: WaterAmountType.ML_250
 
         logger.info(
-            "A telegram user [{}] for telegram chat [{}] will snooze notification for [{}] minutes",
+            "A telegram user [{}] for telegram chat [{}] drank [{}] ml of water",
             userId,
             chatId,
-            snoozeType.minutes
+            waterAmountType.amountMl
         )
 
-        val notificationSetting = notificationAccessService.findNotificationSettingByTelegramUserId(userId)
-        val nextNotificationTime =
-            TimeHelper.nextNotificationTimeByNow(
-                clock,
-                notificationSetting.notificationInterval.minutes,
-                snoozeType.minutes
-            )
-        notificationAccessService.updateTimeOfLastNotification(userId, nextNotificationTime)
+        val notificationSetting = notificationAccessService.updateTimeOfLastNotification(userId, LocalDateTime.now(clock))
 
-        waterStatisticService.recordEvent(notificationSetting.telegramUser, AnswerNotificationType.SNOOZE)
+        waterStatisticService.recordEvent(
+            notificationSetting.telegramUser,
+            AnswerNotificationType.YES,
+            waterAmountType.amountMl
+        )
 
         SendMessage(
             chatId.toString(),
-            TelegramMessageConstants.NOTIFICATION_SUSPEND_MESSAGE.format(snoozeType.displayName)
+            TelegramMessageConstants.NOTIFICATION_ANSWER_YES_MESSAGE
         ).apply { sender.execute(this) }
     }
 
-    override fun isQueryData(queryData: String): Boolean = SnoozeNotificationType.typeOf(queryData) != null
+    override fun isQueryData(queryData: String): Boolean = WaterAmountType.typeOf(queryData) != null
 
 }

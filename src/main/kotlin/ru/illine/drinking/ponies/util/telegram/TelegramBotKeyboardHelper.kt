@@ -7,6 +7,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKe
 import org.telegram.telegrambots.meta.api.objects.webapp.WebAppInfo
 import ru.illine.drinking.ponies.model.base.*
 import ru.illine.drinking.ponies.service.button.ButtonDataService
+import java.util.*
 
 object TelegramBotKeyboardHelper {
 
@@ -37,68 +38,67 @@ object TelegramBotKeyboardHelper {
     }
 
     fun intervalTimeButtons(intervalTime: IntervalNotificationType? = null): ReplyKeyboard {
-        val rows = IntervalNotificationType.entries
-            .filter { it != intervalTime }
-            .map {
-                InlineKeyboardRow(
-                    InlineKeyboardButton.builder()
-                        .text(it.displayName)
-                        .callbackData(it.queryData.toString())
-                        .build()
-                )
-            }
-
-        return InlineKeyboardMarkup.builder()
-            .keyboard(rows)
-            .build()
+        return buildInlineKeyboard(
+            IntervalNotificationType.entries.filter { it != intervalTime },
+            IntervalNotificationType::displayName,
+            IntervalNotificationType::queryData
+        )
     }
 
     fun pauseTimeButtons(currentIntervalTime: IntervalNotificationType): ReplyKeyboard {
-        val rows = PauseNotificationType.entries
-            .filter { it == PauseNotificationType.RESET || it.minutes > currentIntervalTime.minutes }
-            .map {
-                InlineKeyboardRow(
-                    InlineKeyboardButton.builder()
-                        .text(it.displayName)
-                        .callbackData(it.queryData.toString())
-                        .build()
-                )
-            }
-
-        return InlineKeyboardMarkup.builder()
-            .keyboard(rows)
-            .build()
+        return buildInlineKeyboard(
+            PauseNotificationType.entries.filter { it == PauseNotificationType.RESET || it.minutes > currentIntervalTime.minutes },
+            PauseNotificationType::displayName,
+            PauseNotificationType::queryData
+        )
     }
 
     fun snoozeTimeButtons(): ReplyKeyboard {
-        val rows = SnoozeNotificationType.entries
-            .map {
-                InlineKeyboardRow(
-                    InlineKeyboardButton.builder()
-                        .text(it.displayName)
-                        .callbackData(it.queryData.toString())
-                        .build()
-                )
-            }
+        return buildInlineKeyboard(
+            SnoozeNotificationType.entries,
+            SnoozeNotificationType::displayName,
+            SnoozeNotificationType::queryData
+        )
+    }
 
-        return InlineKeyboardMarkup.builder()
-            .keyboard(rows)
-            .build()
+    fun waterAmountButtons(): ReplyKeyboard {
+        return buildInlineKeyboard(
+            WaterAmountType.entries,
+            WaterAmountType::displayName,
+            WaterAmountType::queryData
+        )
     }
 
     fun notifyButtons(): ReplyKeyboard {
-        val buttons = AnswerNotificationType.entries
-            .map {
-                InlineKeyboardButton.builder()
-                    .text(it.displayName)
-                    .callbackData(it.queryData.toString())
-                    .build()
-            }
+        return buildInlineKeyboard(
+            AnswerNotificationType.entries,
+            AnswerNotificationType::displayName,
+            AnswerNotificationType::queryData,
+            singleRow = true
+        )
+    }
 
-        val row = InlineKeyboardRow(buttons)
+    private fun <T> buildInlineKeyboard(
+        entries: List<T>,
+        displayName: (T) -> String,
+        queryData: (T) -> UUID,
+        singleRow: Boolean = false
+    ): ReplyKeyboard {
+        val buttons = entries.map {
+            InlineKeyboardButton.builder()
+                .text(displayName(it))
+                .callbackData(queryData(it).toString())
+                .build()
+        }
+
+        val keyboard = if (singleRow) {
+            listOf(InlineKeyboardRow(buttons))
+        } else {
+            buttons.map { InlineKeyboardRow(it) }
+        }
 
         return InlineKeyboardMarkup.builder()
-            .keyboard(listOf(row))
+            .keyboard(keyboard)
             .build()
     }
 

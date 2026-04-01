@@ -8,16 +8,15 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
 import org.mockito.ArgumentCaptor
 import org.mockito.Mockito.*
-import org.mockito.kotlin.any
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.api.objects.User
 import org.telegram.telegrambots.meta.api.objects.message.Message
 import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
-import ru.illine.drinking.ponies.dao.access.WaterStatisticAccessService
+import ru.illine.drinking.ponies.model.base.AnswerNotificationType
 import ru.illine.drinking.ponies.model.base.SnoozeNotificationType
-import ru.illine.drinking.ponies.model.dto.internal.WaterStatisticDto
+import ru.illine.drinking.ponies.service.statistic.WaterStatisticService
 import ru.illine.drinking.ponies.service.telegram.MessageEditorService
 import ru.illine.drinking.ponies.test.generator.DtoGenerator
 import ru.illine.drinking.ponies.test.tag.UnitTest
@@ -39,7 +38,7 @@ class SnoozeApplyReplyButtonStrategyTest {
     private lateinit var sender: TelegramClient
     private lateinit var notificationAccessService: NotificationAccessService
     private lateinit var messageEditorService: MessageEditorService
-    private lateinit var waterStatisticAccessService: WaterStatisticAccessService
+    private lateinit var waterStatisticService: WaterStatisticService
     private lateinit var strategy: SnoozeApplyReplyButtonStrategy
 
     @BeforeEach
@@ -47,11 +46,11 @@ class SnoozeApplyReplyButtonStrategyTest {
         sender = mock(TelegramClient::class.java)
         notificationAccessService = mock(NotificationAccessService::class.java)
         messageEditorService = mock(MessageEditorService::class.java)
-        waterStatisticAccessService = mock(WaterStatisticAccessService::class.java)
+        waterStatisticService = mock(WaterStatisticService::class.java)
         strategy = SnoozeApplyReplyButtonStrategy(
             sender,
             notificationAccessService,
-            waterStatisticAccessService,
+            waterStatisticService,
             messageEditorService,
             fixedClock
         )
@@ -122,8 +121,8 @@ class SnoozeApplyReplyButtonStrategyTest {
 
     @ParameterizedTest
     @EnumSource(SnoozeNotificationType::class)
-    @DisplayName("reply(): saves new water statistic with any snooze type")
-    fun `reply saves statistic any type`(snoozeType: SnoozeNotificationType) {
+    @DisplayName("reply(): records water statistic with SNOOZE event type")
+    fun `reply records statistic any type`(snoozeType: SnoozeNotificationType) {
         val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = userId)
         `when`(notificationAccessService.findNotificationSettingByTelegramUserId(userId)).thenReturn(notificationDto)
 
@@ -131,7 +130,7 @@ class SnoozeApplyReplyButtonStrategyTest {
 
         strategy.reply(callbackQuery)
 
-        verify(waterStatisticAccessService).save(any<WaterStatisticDto>())
+        verify(waterStatisticService).recordEvent(notificationDto.telegramUser, AnswerNotificationType.SNOOZE)
     }
 
     @ParameterizedTest
