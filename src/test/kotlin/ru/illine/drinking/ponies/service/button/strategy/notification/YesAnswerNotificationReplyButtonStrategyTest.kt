@@ -8,6 +8,8 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
 import org.mockito.ArgumentCaptor
 import org.mockito.Mockito.*
+import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.api.objects.message.Message
@@ -60,6 +62,17 @@ class YesAnswerNotificationReplyButtonStrategyTest {
         assertEquals(TelegramMessageConstants.NOTIFICATION_WATER_AMOUNT_MENU_MESSAGE, sent.text)
         val buttons = (sent.replyMarkup as InlineKeyboardMarkup).keyboard
         assertEquals(WaterAmountType.entries.size, buttons.size)
+    }
+
+    @Test
+    @DisplayName("reply(): only interacts with sender and messageEditorService")
+    fun `reply has no side effects beyond menu display`() {
+        strategy.reply(buildCallbackQuery())
+
+        verify(messageEditorService).editReplyMarkup(any<String>(), any<Long>(), any<Int>(), any<Boolean>(), anyOrNull())
+        verify(sender).execute(any<SendMessage>())
+        verifyNoMoreInteractions(messageEditorService)
+        verifyNoMoreInteractions(sender)
     }
 
     @Test
