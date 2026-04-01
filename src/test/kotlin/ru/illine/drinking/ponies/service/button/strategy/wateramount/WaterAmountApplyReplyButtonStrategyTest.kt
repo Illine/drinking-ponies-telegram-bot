@@ -8,17 +8,15 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
 import org.mockito.ArgumentCaptor
 import org.mockito.Mockito.*
-import org.mockito.kotlin.argumentCaptor
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.api.objects.User
 import org.telegram.telegrambots.meta.api.objects.message.Message
 import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
-import ru.illine.drinking.ponies.dao.access.WaterStatisticAccessService
 import ru.illine.drinking.ponies.model.base.AnswerNotificationType
 import ru.illine.drinking.ponies.model.base.WaterAmountType
-import ru.illine.drinking.ponies.model.dto.internal.WaterStatisticDto
+import ru.illine.drinking.ponies.service.statistic.WaterStatisticService
 import ru.illine.drinking.ponies.service.telegram.MessageEditorService
 import ru.illine.drinking.ponies.test.generator.DtoGenerator
 import ru.illine.drinking.ponies.test.tag.UnitTest
@@ -39,7 +37,7 @@ class WaterAmountApplyReplyButtonStrategyTest {
 
     private lateinit var sender: TelegramClient
     private lateinit var notificationAccessService: NotificationAccessService
-    private lateinit var waterStatisticAccessService: WaterStatisticAccessService
+    private lateinit var waterStatisticService: WaterStatisticService
     private lateinit var messageEditorService: MessageEditorService
     private lateinit var strategy: WaterAmountApplyReplyButtonStrategy
 
@@ -47,12 +45,12 @@ class WaterAmountApplyReplyButtonStrategyTest {
     fun setUp() {
         sender = mock(TelegramClient::class.java)
         notificationAccessService = mock(NotificationAccessService::class.java)
-        waterStatisticAccessService = mock(WaterStatisticAccessService::class.java)
+        waterStatisticService = mock(WaterStatisticService::class.java)
         messageEditorService = mock(MessageEditorService::class.java)
         strategy = WaterAmountApplyReplyButtonStrategy(
             sender,
             notificationAccessService,
-            waterStatisticAccessService,
+            waterStatisticService,
             messageEditorService,
             fixedClock
         )
@@ -100,18 +98,18 @@ class WaterAmountApplyReplyButtonStrategyTest {
 
     @ParameterizedTest
     @EnumSource(WaterAmountType::class)
-    @DisplayName("reply(): saves water statistic with correct water amount")
-    fun `reply saves statistic with correct water amount`(waterAmountType: WaterAmountType) {
+    @DisplayName("reply(): records water statistic with correct water amount")
+    fun `reply records statistic with correct water amount`(waterAmountType: WaterAmountType) {
         val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = userId)
         `when`(notificationAccessService.updateTimeOfLastNotification(userId, fixedNow)).thenReturn(notificationDto)
 
-        val captor = argumentCaptor<WaterStatisticDto>()
         strategy.reply(buildCallbackQuery(waterAmountType.queryData.toString()))
 
-        verify(waterStatisticAccessService).save(captor.capture())
-        val saved = captor.firstValue
-        assertEquals(waterAmountType.amountMl, saved.waterAmountMl)
-        assertEquals(AnswerNotificationType.YES, saved.eventType)
+        verify(waterStatisticService).recordEvent(
+            notificationDto.telegramUser,
+            AnswerNotificationType.YES,
+            waterAmountType.amountMl
+        )
     }
 
     @Test
@@ -120,11 +118,13 @@ class WaterAmountApplyReplyButtonStrategyTest {
         val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = userId)
         `when`(notificationAccessService.updateTimeOfLastNotification(userId, fixedNow)).thenReturn(notificationDto)
 
-        val captor = argumentCaptor<WaterStatisticDto>()
         strategy.reply(buildCallbackQuery("00000000-0000-0000-0000-000000000000"))
 
-        verify(waterStatisticAccessService).save(captor.capture())
-        assertEquals(WaterAmountType.ML_250.amountMl, captor.firstValue.waterAmountMl)
+        verify(waterStatisticService).recordEvent(
+            notificationDto.telegramUser,
+            AnswerNotificationType.YES,
+            WaterAmountType.ML_250.amountMl
+        )
     }
 
     @ParameterizedTest

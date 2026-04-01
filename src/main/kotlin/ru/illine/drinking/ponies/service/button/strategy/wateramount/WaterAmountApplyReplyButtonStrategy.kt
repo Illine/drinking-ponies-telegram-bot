@@ -6,11 +6,10 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
-import ru.illine.drinking.ponies.dao.access.WaterStatisticAccessService
 import ru.illine.drinking.ponies.model.base.AnswerNotificationType
 import ru.illine.drinking.ponies.model.base.WaterAmountType
-import ru.illine.drinking.ponies.model.dto.internal.WaterStatisticDto
 import ru.illine.drinking.ponies.service.button.ReplyButtonStrategy
+import ru.illine.drinking.ponies.service.statistic.WaterStatisticService
 import ru.illine.drinking.ponies.service.telegram.MessageEditorService
 import ru.illine.drinking.ponies.util.telegram.TelegramMessageConstants
 import java.time.Clock
@@ -20,7 +19,7 @@ import java.time.LocalDateTime
 class WaterAmountApplyReplyButtonStrategy(
     private val sender: TelegramClient,
     private val notificationAccessService: NotificationAccessService,
-    private val waterStatisticAccessService: WaterStatisticAccessService,
+    private val waterStatisticService: WaterStatisticService,
     private val messageEditorService: MessageEditorService,
     private val clock: Clock
 ) : ReplyButtonStrategy {
@@ -48,13 +47,10 @@ class WaterAmountApplyReplyButtonStrategy(
 
         val notificationSetting = notificationAccessService.updateTimeOfLastNotification(userId, LocalDateTime.now(clock))
 
-        waterStatisticAccessService.save(
-            WaterStatisticDto(
-                telegramUser = notificationSetting.telegramUser,
-                eventTime = LocalDateTime.now(clock),
-                eventType = AnswerNotificationType.YES,
-                waterAmountMl = waterAmountType.amountMl
-            )
+        waterStatisticService.recordEvent(
+            notificationSetting.telegramUser,
+            AnswerNotificationType.YES,
+            waterAmountType.amountMl
         )
 
         SendMessage(
