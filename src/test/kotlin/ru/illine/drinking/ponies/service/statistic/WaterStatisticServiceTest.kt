@@ -61,6 +61,19 @@ class WaterStatisticServiceTest {
     }
 
     @Test
+    @DisplayName("recordEvent(): explicit waterAmountMl=0 produces same result as default")
+    fun `recordEvent explicit zero waterAmountMl`() {
+        val telegramUser = DtoGenerator.generateNotificationDto().telegramUser
+        val captor = argumentCaptor<WaterStatisticDto>()
+
+        service.recordEvent(telegramUser, AnswerNotificationType.CANCEL, 0)
+
+        verify(waterStatisticAccessService).save(captor.capture())
+        assertEquals(0, captor.firstValue.waterAmountMl)
+        assertEquals(AnswerNotificationType.CANCEL, captor.firstValue.eventType)
+    }
+
+    @Test
     @DisplayName("recordEvents(): saves all statistics with correct eventType")
     fun `recordEvents saves all statistics`() {
         val users = listOf(
