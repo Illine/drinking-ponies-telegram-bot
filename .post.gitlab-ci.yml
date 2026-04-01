@@ -13,6 +13,7 @@ tag-build:
   needs:
     - job: generate-version
       artifacts: true
+    - job: deploy-service
   variables:
     GIT_DEPTH: 0
   rules:
