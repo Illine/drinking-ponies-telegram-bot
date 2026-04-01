@@ -8,6 +8,7 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
 import org.mockito.ArgumentCaptor
 import org.mockito.Mockito.*
+import org.mockito.kotlin.any
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.api.objects.User
@@ -125,6 +126,25 @@ class WaterAmountApplyReplyButtonStrategyTest {
             AnswerNotificationType.YES,
             WaterAmountType.ML_250.amountMl
         )
+    }
+
+    @Test
+    @DisplayName("reply(): executes operations in correct order")
+    fun `reply executes in correct order`() {
+        val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = userId)
+        `when`(notificationAccessService.updateTimeOfLastNotification(userId, fixedNow)).thenReturn(notificationDto)
+
+        strategy.reply(buildCallbackQuery(WaterAmountType.ML_250.queryData.toString()))
+
+        val inOrder = inOrder(messageEditorService, notificationAccessService, waterStatisticService, sender)
+        inOrder.verify(messageEditorService).deleteReplyMarkup(chatId, messageId)
+        inOrder.verify(notificationAccessService).updateTimeOfLastNotification(userId, fixedNow)
+        inOrder.verify(waterStatisticService).recordEvent(
+            notificationDto.telegramUser,
+            AnswerNotificationType.YES,
+            WaterAmountType.ML_250.amountMl
+        )
+        inOrder.verify(sender).execute(any<SendMessage>())
     }
 
     @ParameterizedTest
