@@ -79,4 +79,6 @@ object TelegramMessageConstants {
 
     val NOTIFICATION_SNOOZE_MENU_MESSAGE = "Выбери, на сколько хочешь отложить уведомление"
 
+    val NOTIFICATION_WATER_AMOUNT_MENU_MESSAGE = "Сколько водицы ты выпил(а)?"
+
 }
