@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.context.jdbc.SqlConfig
 import ru.illine.drinking.ponies.model.base.AnswerNotificationType
+import ru.illine.drinking.ponies.model.base.WaterAmountType
 import ru.illine.drinking.ponies.test.generator.DtoGenerator
 import ru.illine.drinking.ponies.test.tag.SpringIntegrationTest
 
@@ -35,14 +36,19 @@ class WaterStatisticAccessServiceTest @Autowired constructor(
     @Test
     @DisplayName("save(): returns a saved record with id")
     fun `successful save`() {
-        val dto = DtoGenerator.generateWaterStatisticDto(externalUserId = DEFAULT_EXTERNAL_USER_ID)
+        val expectedWaterAmount = WaterAmountType.ML_150.amountMl
+        val dto = DtoGenerator.generateWaterStatisticDto(
+            externalUserId = DEFAULT_EXTERNAL_USER_ID,
+            waterAmountMl = expectedWaterAmount
+        )
 
         val actual = assertDoesNotThrow(ThrowingSupplier { accessService.save(dto) })
 
         assertNotNull(actual.id)
+        assertNotNull(actual.eventTime)
         assertEquals(DEFAULT_EXTERNAL_USER_ID, actual.telegramUser.externalUserId)
         assertEquals(AnswerNotificationType.YES, actual.eventType)
-        assertEquals(250, actual.waterAmountMl)
+        assertEquals(expectedWaterAmount, actual.waterAmountMl)
     }
 
     @Test
