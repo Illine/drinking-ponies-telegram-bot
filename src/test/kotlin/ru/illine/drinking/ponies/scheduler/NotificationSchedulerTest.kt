@@ -5,7 +5,7 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.*
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
-import ru.illine.drinking.ponies.service.notification.NotificationService
+import ru.illine.drinking.ponies.service.notification.NotificationSenderService
 import ru.illine.drinking.ponies.service.notification.NotificationTimeService
 import ru.illine.drinking.ponies.test.generator.DtoGenerator
 import ru.illine.drinking.ponies.test.tag.UnitTest
@@ -15,16 +15,16 @@ import ru.illine.drinking.ponies.test.tag.UnitTest
 class NotificationSchedulerTest {
 
     private lateinit var notificationAccessService: NotificationAccessService
-    private lateinit var notificationService: NotificationService
+    private lateinit var notificationSenderService: NotificationSenderService
     private lateinit var notificationTimeService: NotificationTimeService
     private lateinit var scheduler: NotificationScheduler
 
     @BeforeEach
     fun setUp() {
         notificationAccessService = mock(NotificationAccessService::class.java)
-        notificationService = mock(NotificationService::class.java)
+        notificationSenderService = mock(NotificationSenderService::class.java)
         notificationTimeService = mock(NotificationTimeService::class.java)
-        scheduler = NotificationScheduler(notificationAccessService, notificationService, notificationTimeService)
+        scheduler = NotificationScheduler(notificationAccessService, notificationSenderService, notificationTimeService)
     }
 
     @Test
@@ -34,8 +34,8 @@ class NotificationSchedulerTest {
 
         scheduler.sendDrinkingReminders()
 
-        verify(notificationService, never()).sendNotifications(anyCollection())
-        verify(notificationService, never()).suspendNotifications(anyCollection())
+        verify(notificationSenderService, never()).sendNotifications(anyCollection())
+        verify(notificationSenderService, never()).suspendNotifications(anyCollection())
     }
 
     @Test
@@ -46,8 +46,8 @@ class NotificationSchedulerTest {
 
         scheduler.sendDrinkingReminders()
 
-        verify(notificationService, never()).sendNotifications(anyCollection())
-        verify(notificationService, never()).suspendNotifications(anyCollection())
+        verify(notificationSenderService, never()).sendNotifications(anyCollection())
+        verify(notificationSenderService, never()).suspendNotifications(anyCollection())
     }
 
     @Test
@@ -59,8 +59,8 @@ class NotificationSchedulerTest {
 
         scheduler.sendDrinkingReminders()
 
-        verify(notificationService, never()).sendNotifications(anyCollection())
-        verify(notificationService, never()).suspendNotifications(anyCollection())
+        verify(notificationSenderService, never()).sendNotifications(anyCollection())
+        verify(notificationSenderService, never()).suspendNotifications(anyCollection())
     }
 
     @Test
@@ -73,8 +73,8 @@ class NotificationSchedulerTest {
 
         scheduler.sendDrinkingReminders()
 
-        verify(notificationService, never()).sendNotifications(anyCollection())
-        verify(notificationService, never()).suspendNotifications(anyCollection())
+        verify(notificationSenderService, never()).sendNotifications(anyCollection())
+        verify(notificationSenderService, never()).suspendNotifications(anyCollection())
     }
 
     @Test
@@ -87,8 +87,8 @@ class NotificationSchedulerTest {
 
         scheduler.sendDrinkingReminders()
 
-        verify(notificationService).sendNotifications(listOf(dto))
-        verify(notificationService, never()).suspendNotifications(anyCollection())
+        verify(notificationSenderService).sendNotifications(listOf(dto))
+        verify(notificationSenderService, never()).suspendNotifications(anyCollection())
     }
 
     @Test
@@ -101,8 +101,8 @@ class NotificationSchedulerTest {
 
         scheduler.sendDrinkingReminders()
 
-        verify(notificationService).suspendNotifications(listOf(dto))
-        verify(notificationService, never()).sendNotifications(anyCollection())
+        verify(notificationSenderService).suspendNotifications(listOf(dto))
+        verify(notificationSenderService, never()).sendNotifications(anyCollection())
     }
 
     @Test
@@ -118,8 +118,8 @@ class NotificationSchedulerTest {
 
         scheduler.sendDrinkingReminders()
 
-        verify(notificationService).sendNotifications(listOf(active))
-        verify(notificationService).suspendNotifications(listOf(exhausted))
+        verify(notificationSenderService).sendNotifications(listOf(active))
+        verify(notificationSenderService).suspendNotifications(listOf(exhausted))
     }
 
     @Test
@@ -129,7 +129,7 @@ class NotificationSchedulerTest {
 
         scheduler.sendDrinkingReminders()
 
-        verify(notificationService, never()).sendNotifications(anyCollection())
-        verify(notificationService, never()).suspendNotifications(anyCollection())
+        verify(notificationSenderService, never()).sendNotifications(anyCollection())
+        verify(notificationSenderService, never()).suspendNotifications(anyCollection())
     }
 }
