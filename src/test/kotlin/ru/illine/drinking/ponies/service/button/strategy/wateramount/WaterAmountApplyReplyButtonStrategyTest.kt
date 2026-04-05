@@ -169,6 +169,23 @@ class WaterAmountApplyReplyButtonStrategyTest {
         assertFalse(result)
     }
 
+    @Test
+    @DisplayName("reply(): sends YES confirmation message even when recordEvent throws an exception")
+    fun `reply sends confirmation message when recordEvent throws`() {
+        val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = userId)
+        `when`(notificationAccessService.updateTimeOfLastNotification(userId, fixedNow)).thenReturn(notificationDto)
+        doThrow(RuntimeException("statistic error")).`when`(waterStatisticService)
+            .recordEvent(any(), any(), anyInt())
+
+        val captor = ArgumentCaptor.forClass(SendMessage::class.java)
+        strategy.reply(buildCallbackQuery(WaterAmountType.ML_250.queryData.toString()))
+
+        verify(sender).execute(captor.capture())
+        val sent = captor.value
+        assertEquals(chatId.toString(), sent.chatId)
+        assertEquals(TelegramMessageConstants.NOTIFICATION_ANSWER_YES_MESSAGE, sent.text)
+    }
+
     private fun buildCallbackQuery(queryData: String): CallbackQuery {
         val user = mock(User::class.java)
         `when`(user.id).thenReturn(userId)

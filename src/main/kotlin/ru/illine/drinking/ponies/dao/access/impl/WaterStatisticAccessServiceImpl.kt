@@ -35,16 +35,18 @@ class WaterStatisticAccessServiceImpl(
     override fun saveAll(statistics: Collection<WaterStatisticDto>): List<WaterStatisticDto> {
         logger.debug("Saving [${statistics.size}] water statistic records")
 
+        val userIds = statistics.map { it.telegramUser.externalUserId }.toSet()
+        val userMap = userRepository.findAllByExternalUserIdIn(userIds).associateBy { it.externalUserId }
+
         return statistics
-            .map {
-                val userEntity = requireNotNull(
-                    userRepository.findByExternalUserId(it.telegramUser.externalUserId),
-                    { "Not found a Telegram User by externalUserId [${it.telegramUser.externalUserId}]" }
-                )
-                WaterStatisticBuilder.toEntity(it, userEntity)
+            .mapNotNull { statistic ->
+                val userEntity = userMap[statistic.telegramUser.externalUserId]
+                if (userEntity == null) {
+                    logger.warn("Not found user by external id: [{}], skipping", statistic.telegramUser.externalUserId)
+                }
+                userEntity?.let { WaterStatisticBuilder.toEntity(statistic, userEntity) }
             }
             .let { waterStatisticRepository.saveAll(it) }
             .map { WaterStatisticBuilder.toDto(it, TelegramUserBuilder.toDto(it.telegramUser)) }
     }
-
 }

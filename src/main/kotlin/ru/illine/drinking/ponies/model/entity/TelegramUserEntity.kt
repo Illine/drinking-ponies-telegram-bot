@@ -45,13 +45,13 @@ class TelegramUserEntity(
     )
     val telegramChats: MutableSet<TelegramChatEntity> = mutableSetOf(),
 
-    @OneToMany(
+    @OneToOne(
         fetch = FetchType.LAZY,
         mappedBy = "telegramUser",
         orphanRemoval = true,
         cascade = [CascadeType.ALL],
     )
-    val notificationSettings: MutableSet<NotificationSettingEntity> = mutableSetOf()
+    var notificationSettings: NotificationSettingEntity? = null
 ) {
     @PreRemove
     private fun onDelete() {
@@ -84,10 +84,5 @@ class TelegramUserEntity(
     fun addTelegramChat(chat: TelegramChatEntity) {
         telegramChats.add(chat)
         chat.telegramUser = this
-    }
-
-    fun addNotificationSetting(setting: NotificationSettingEntity) {
-        notificationSettings.add(setting)
-        setting.telegramUser = this
     }
 }

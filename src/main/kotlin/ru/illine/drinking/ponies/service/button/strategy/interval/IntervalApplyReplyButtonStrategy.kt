@@ -18,7 +18,7 @@ class IntervalApplyReplyButtonStrategy(
     private val messageEditorService: MessageEditorService
 ) : ReplyButtonStrategy {
 
-    private val logger = LoggerFactory.getLogger("REPLY-STRATEGY")
+    private val logger = LoggerFactory.getLogger("STRATEGY")
 
     override fun reply(callbackQuery: CallbackQuery) {
         deleteOldReplyMarkup(callbackQuery)

@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.context.jdbc.SqlConfig
 import ru.illine.drinking.ponies.model.base.AnswerNotificationType
+import ru.illine.drinking.ponies.model.base.WaterAmountType
 import ru.illine.drinking.ponies.test.generator.DtoGenerator
 import ru.illine.drinking.ponies.test.tag.SpringIntegrationTest
 
@@ -35,14 +36,19 @@ class WaterStatisticAccessServiceTest @Autowired constructor(
     @Test
     @DisplayName("save(): returns a saved record with id")
     fun `successful save`() {
-        val dto = DtoGenerator.generateWaterStatisticDto(externalUserId = DEFAULT_EXTERNAL_USER_ID)
+        val expectedWaterAmount = WaterAmountType.ML_150.amountMl
+        val dto = DtoGenerator.generateWaterStatisticDto(
+            externalUserId = DEFAULT_EXTERNAL_USER_ID,
+            waterAmountMl = expectedWaterAmount
+        )
 
         val actual = assertDoesNotThrow(ThrowingSupplier { accessService.save(dto) })
 
         assertNotNull(actual.id)
+        assertNotNull(actual.eventTime)
         assertEquals(DEFAULT_EXTERNAL_USER_ID, actual.telegramUser.externalUserId)
         assertEquals(AnswerNotificationType.YES, actual.eventType)
-        assertEquals(250, actual.waterAmountMl)
+        assertEquals(expectedWaterAmount, actual.waterAmountMl)
     }
 
     @Test
@@ -54,17 +60,25 @@ class WaterStatisticAccessServiceTest @Autowired constructor(
     }
 
     @Test
-    @DisplayName("saveAll(): returns a list of saved records")
+    @DisplayName("saveAll(): returns a list of saved records with correct data")
     fun `successful saveAll`() {
         val statistics = listOf(
             DtoGenerator.generateWaterStatisticDto(externalUserId = DEFAULT_EXTERNAL_USER_ID, eventType = AnswerNotificationType.YES, waterAmountMl = 250),
             DtoGenerator.generateWaterStatisticDto(externalUserId = SECOND_EXTERNAL_USER_ID, eventType = AnswerNotificationType.CANCEL, waterAmountMl = 0)
         )
 
-        val actual = assertDoesNotThrow(ThrowingSupplier<List<*>> { accessService.saveAll(statistics) })
+        val actual = assertDoesNotThrow(ThrowingSupplier { accessService.saveAll(statistics) })
 
         assertEquals(2, actual.size)
-        assertTrue(actual.all { it != null })
+
+        val sorted = actual.sortedBy { it.telegramUser.externalUserId }
+        
+        assertEquals(DEFAULT_EXTERNAL_USER_ID, sorted[0].telegramUser.externalUserId)
+        assertEquals(AnswerNotificationType.YES, sorted[0].eventType)
+        assertEquals(250, sorted[0].waterAmountMl)
+        assertEquals(SECOND_EXTERNAL_USER_ID, sorted[1].telegramUser.externalUserId)
+        assertEquals(AnswerNotificationType.CANCEL, sorted[1].eventType)
+        assertEquals(0, sorted[1].waterAmountMl)
     }
 
     @Test
@@ -76,11 +90,27 @@ class WaterStatisticAccessServiceTest @Autowired constructor(
     }
 
     @Test
-    @DisplayName("saveAll(): throws IllegalArgumentException when user not found")
-    fun `failure saveAll user not found`() {
+    @DisplayName("saveAll(): skips unknown users and returns empty list")
+    fun `successful saveAll skips unknown users`() {
         val statistics = listOf(DtoGenerator.generateWaterStatisticDto(externalUserId = NOT_EXISTED_USER_ID))
 
-        assertThrows<IllegalArgumentException> { accessService.saveAll(statistics) }
+        val actual = assertDoesNotThrow(ThrowingSupplier<List<*>> { accessService.saveAll(statistics) })
+
+        assertTrue(actual.isEmpty())
+    }
+
+    @Test
+    @DisplayName("saveAll(): saves only known users and skips unknown")
+    fun `successful saveAll partial`() {
+        val statistics = listOf(
+            DtoGenerator.generateWaterStatisticDto(externalUserId = DEFAULT_EXTERNAL_USER_ID),
+            DtoGenerator.generateWaterStatisticDto(externalUserId = NOT_EXISTED_USER_ID)
+        )
+
+        val actual = assertDoesNotThrow(ThrowingSupplier { accessService.saveAll(statistics) })
+
+        assertEquals(1, actual.size)
+        assertEquals(DEFAULT_EXTERNAL_USER_ID, actual[0].telegramUser.externalUserId)
     }
 
 }

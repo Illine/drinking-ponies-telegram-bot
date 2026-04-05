@@ -5,7 +5,10 @@ import ru.illine.drinking.ponies.model.base.AnswerNotificationType
 import java.time.LocalDateTime
 
 @Entity
-@Table(name = "water_statistics")
+@Table(
+    name = "water_statistics",
+    indexes = [Index(name = "water_statistics_user_id_event_time_index", columnList = "user_id, event_time")]
+)
 class WaterStatisticEntity(
 
     @Id

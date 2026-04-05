@@ -43,7 +43,7 @@ object NotificationSettingBuilder {
             enabled = setting.enabled,
         )
 
-        user.notificationSettings += setting
+        user.notificationSettings = setting
         user.telegramChats += chat
 
         return setting

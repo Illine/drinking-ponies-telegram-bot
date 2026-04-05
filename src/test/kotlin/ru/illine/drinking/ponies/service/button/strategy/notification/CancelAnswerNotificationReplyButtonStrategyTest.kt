@@ -8,6 +8,7 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
 import org.mockito.ArgumentCaptor
 import org.mockito.Mockito.*
+import org.mockito.kotlin.any
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.api.objects.User
@@ -125,6 +126,23 @@ class CancelAnswerNotificationReplyButtonStrategyTest {
     fun `isQueryData returns false for random string`() {
         val result = strategy.isQueryData("not-a-uuid")
         assertFalse(result)
+    }
+
+    @Test
+    @DisplayName("reply(): sends CANCEL confirmation message even when recordEvent throws an exception")
+    fun `reply sends confirmation message when recordEvent throws`() {
+        val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = userId)
+        `when`(notificationAccessService.updateTimeOfLastNotification(userId, fixedNow)).thenReturn(notificationDto)
+        doThrow(RuntimeException("statistic error")).`when`(waterStatisticService)
+            .recordEvent(any(), any(), anyInt())
+
+        val captor = ArgumentCaptor.forClass(SendMessage::class.java)
+        strategy.reply(buildCallbackQuery())
+
+        verify(sender).execute(captor.capture())
+        val sent = captor.value
+        assertEquals(chatId.toString(), sent.chatId)
+        assertEquals(TelegramMessageConstants.NOTIFICATION_ANSWER_CANCEL_MESSAGE, sent.text)
     }
 
     private fun buildCallbackQuery(): CallbackQuery {

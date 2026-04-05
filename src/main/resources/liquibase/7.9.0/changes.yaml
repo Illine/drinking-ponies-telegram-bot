@@ -14,3 +14,6 @@ databaseChangeLog:
   - include:
       file: ddl/02_grants.sql
       relativeToChangelogFile: true
+  - include:
+      file: ddl/03_create_necessary_indexes.sql
+      relativeToChangelogFile: true

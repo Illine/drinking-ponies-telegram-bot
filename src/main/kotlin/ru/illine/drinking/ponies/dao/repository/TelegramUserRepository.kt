@@ -9,6 +9,8 @@ interface TelegramUserRepository : JpaRepository<TelegramUserEntity, Long> {
 
     fun findByExternalUserId(telegramUserId: Long): TelegramUserEntity?
 
+    fun findAllByExternalUserIdIn(telegramUserId: Collection<Long>): Set<TelegramUserEntity>
+
     fun existsByExternalUserId(telegramUserId: Long): Boolean
 
     @Query(
