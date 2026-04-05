@@ -21,6 +21,8 @@ import ru.illine.drinking.ponies.test.config.TestTimeConfig
         TestTimeConfig::class,
     ]
 )
+// These library beans must be mocked via @MockitoBean (not @Bean @Primary) 
+// to prevent real instantiation and network connections
 @MockitoBean(types = [TelegramBotsLongPollingApplication::class, BaseAbilityBot::class])
 @ActiveProfiles("integration-test")
 annotation class SpringIntegrationTest
