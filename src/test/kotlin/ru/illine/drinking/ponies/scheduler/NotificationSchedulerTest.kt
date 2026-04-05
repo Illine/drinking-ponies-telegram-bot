@@ -4,8 +4,8 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.*
-import ru.illine.drinking.ponies.dao.access.NotificationAccessService
 import ru.illine.drinking.ponies.service.notification.NotificationSenderService
+import ru.illine.drinking.ponies.service.notification.NotificationSettingsService
 import ru.illine.drinking.ponies.service.notification.NotificationTimeService
 import ru.illine.drinking.ponies.test.generator.DtoGenerator
 import ru.illine.drinking.ponies.test.tag.UnitTest
@@ -14,23 +14,23 @@ import ru.illine.drinking.ponies.test.tag.UnitTest
 @DisplayName("NotificationScheduler Unit Test")
 class NotificationSchedulerTest {
 
-    private lateinit var notificationAccessService: NotificationAccessService
+    private lateinit var notificationSettingsService: NotificationSettingsService
     private lateinit var notificationSenderService: NotificationSenderService
     private lateinit var notificationTimeService: NotificationTimeService
     private lateinit var scheduler: NotificationScheduler
 
     @BeforeEach
     fun setUp() {
-        notificationAccessService = mock(NotificationAccessService::class.java)
+        notificationSettingsService = mock(NotificationSettingsService::class.java)
         notificationSenderService = mock(NotificationSenderService::class.java)
         notificationTimeService = mock(NotificationTimeService::class.java)
-        scheduler = NotificationScheduler(notificationAccessService, notificationSenderService, notificationTimeService)
+        scheduler = NotificationScheduler(notificationSettingsService, notificationSenderService, notificationTimeService)
     }
 
     @Test
     @DisplayName("sendDrinkingReminders(): no interactions when no notifications exist")
     fun `sendDrinkingReminders does nothing when no notifications`() {
-        `when`(notificationAccessService.findAllNotificationSettings()).thenReturn(emptySet())
+        `when`(notificationSettingsService.getAllNotificationSettings()).thenReturn(emptySet())
 
         scheduler.sendDrinkingReminders()
 
@@ -42,7 +42,7 @@ class NotificationSchedulerTest {
     @DisplayName("sendDrinkingReminders(): skips disabled notifications")
     fun `sendDrinkingReminders filters out disabled notifications`() {
         val disabled = DtoGenerator.generateNotificationDto().copy(enabled = false)
-        `when`(notificationAccessService.findAllNotificationSettings()).thenReturn(setOf(disabled))
+        `when`(notificationSettingsService.getAllNotificationSettings()).thenReturn(setOf(disabled))
 
         scheduler.sendDrinkingReminders()
 
@@ -54,7 +54,7 @@ class NotificationSchedulerTest {
     @DisplayName("sendDrinkingReminders(): skips notifications inside quiet time")
     fun `sendDrinkingReminders filters out quiet time notifications`() {
         val dto = DtoGenerator.generateNotificationDto()
-        `when`(notificationAccessService.findAllNotificationSettings()).thenReturn(setOf(dto))
+        `when`(notificationSettingsService.getAllNotificationSettings()).thenReturn(setOf(dto))
         doReturn(false).`when`(notificationTimeService).isOutsideQuietTime(dto)
 
         scheduler.sendDrinkingReminders()
@@ -67,7 +67,7 @@ class NotificationSchedulerTest {
     @DisplayName("sendDrinkingReminders(): skips notifications not yet due")
     fun `sendDrinkingReminders filters out not due notifications`() {
         val dto = DtoGenerator.generateNotificationDto()
-        `when`(notificationAccessService.findAllNotificationSettings()).thenReturn(setOf(dto))
+        `when`(notificationSettingsService.getAllNotificationSettings()).thenReturn(setOf(dto))
         doReturn(true).`when`(notificationTimeService).isOutsideQuietTime(dto)
         doReturn(false).`when`(notificationTimeService).isNotificationDue(dto)
 
@@ -81,7 +81,7 @@ class NotificationSchedulerTest {
     @DisplayName("sendDrinkingReminders(): sends active notification (attempts < 3)")
     fun `sendDrinkingReminders sends active notification`() {
         val dto = DtoGenerator.generateNotificationDto(notificationAttempts = 0)
-        `when`(notificationAccessService.findAllNotificationSettings()).thenReturn(setOf(dto))
+        `when`(notificationSettingsService.getAllNotificationSettings()).thenReturn(setOf(dto))
         doReturn(true).`when`(notificationTimeService).isOutsideQuietTime(dto)
         doReturn(true).`when`(notificationTimeService).isNotificationDue(dto)
 
@@ -95,7 +95,7 @@ class NotificationSchedulerTest {
     @DisplayName("sendDrinkingReminders(): suspends exhausted notification (attempts == 3)")
     fun `sendDrinkingReminders suspends exhausted notification`() {
         val dto = DtoGenerator.generateNotificationDto(notificationAttempts = 3)
-        `when`(notificationAccessService.findAllNotificationSettings()).thenReturn(setOf(dto))
+        `when`(notificationSettingsService.getAllNotificationSettings()).thenReturn(setOf(dto))
         doReturn(true).`when`(notificationTimeService).isOutsideQuietTime(dto)
         doReturn(true).`when`(notificationTimeService).isNotificationDue(dto)
 
@@ -110,7 +110,7 @@ class NotificationSchedulerTest {
     fun `sendDrinkingReminders partitions exhausted and active`() {
         val active = DtoGenerator.generateNotificationDto(notificationAttempts = 1)
         val exhausted = DtoGenerator.generateNotificationDto(notificationAttempts = 3)
-        `when`(notificationAccessService.findAllNotificationSettings()).thenReturn(setOf(active, exhausted))
+        `when`(notificationSettingsService.getAllNotificationSettings()).thenReturn(setOf(active, exhausted))
         doReturn(true).`when`(notificationTimeService).isOutsideQuietTime(active)
         doReturn(true).`when`(notificationTimeService).isOutsideQuietTime(exhausted)
         doReturn(true).`when`(notificationTimeService).isNotificationDue(active)
@@ -125,7 +125,7 @@ class NotificationSchedulerTest {
     @Test
     @DisplayName("sendDrinkingReminders(): throws an error")
     fun `scheduler failed`() {
-        `when`(notificationAccessService.findAllNotificationSettings()).thenThrow(RuntimeException("Scheduler Failed"))
+        `when`(notificationSettingsService.getAllNotificationSettings()).thenThrow(RuntimeException("Scheduler Failed"))
 
         scheduler.sendDrinkingReminders()
 

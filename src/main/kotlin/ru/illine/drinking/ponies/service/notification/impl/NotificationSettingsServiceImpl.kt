@@ -5,9 +5,12 @@ import org.springframework.stereotype.Service
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
+import ru.illine.drinking.ponies.model.base.IntervalNotificationType
+import ru.illine.drinking.ponies.model.dto.internal.NotificationSettingDto
 import ru.illine.drinking.ponies.service.notification.NotificationSettingsService
 import ru.illine.drinking.ponies.service.telegram.MessageEditorService
 import ru.illine.drinking.ponies.util.telegram.TelegramMessageConstants
+import java.time.LocalDateTime
 import java.time.LocalTime
 
 @Service
@@ -18,6 +21,30 @@ class NotificationSettingsServiceImpl(
 ) : NotificationSettingsService {
 
     private val logger = LoggerFactory.getLogger("SERVICE")
+
+    override fun getNotificationSettings(telegramUserId: Long): NotificationSettingDto {
+        logger.info("Getting notification settings for telegram user [$telegramUserId]")
+        return notificationAccessService.findNotificationSettingByTelegramUserId(telegramUserId)
+    }
+
+    override fun getAllNotificationSettings(): Collection<NotificationSettingDto> {
+        logger.info("Getting all notification settings")
+        return notificationAccessService.findAllNotificationSettings()
+    }
+
+    override fun resetNotificationTimer(telegramUserId: Long, time: LocalDateTime): NotificationSettingDto {
+        logger.info("Resetting notification timer for telegram user [$telegramUserId] to [$time]")
+        return notificationAccessService.updateTimeOfLastNotification(telegramUserId, time)
+    }
+
+    override fun changeInterval(
+        telegramUserId: Long,
+        telegramChatId: Long,
+        notificationInterval: IntervalNotificationType
+    ): NotificationSettingDto {
+        logger.info("Changing notification interval for telegram user [$telegramUserId] to [$notificationInterval]")
+        return notificationAccessService.updateNotificationSettings(telegramUserId, telegramChatId, notificationInterval)
+    }
 
     override fun changeQuietMode(userId: Long, messageId: Int, start: LocalTime, end: LocalTime) {
         logger.info("Change time of quiet mode for telegram user [$userId], start: [$start], end: [$end]")

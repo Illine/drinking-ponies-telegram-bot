@@ -9,7 +9,7 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
 import org.mockito.Mockito.mock
 import org.telegram.telegrambots.meta.generics.TelegramClient
-import ru.illine.drinking.ponies.dao.access.NotificationAccessService
+import ru.illine.drinking.ponies.service.notification.NotificationSettingsService
 import ru.illine.drinking.ponies.model.base.SnoozeNotificationType
 import ru.illine.drinking.ponies.model.base.WaterAmountType
 import ru.illine.drinking.ponies.service.button.impl.ReplyButtonFactoryImpl
@@ -30,14 +30,14 @@ class ReplyButtonFactoryTest {
     fun setUp() {
         val snoozeStrategy = SnoozeApplyReplyButtonStrategy(
             mock(TelegramClient::class.java),
-            mock(NotificationAccessService::class.java),
+            mock(NotificationSettingsService::class.java),
             mock(WaterStatisticService::class.java),
             mock(MessageEditorService::class.java),
             Clock.systemUTC()
         )
         val waterAmountStrategy = WaterAmountApplyReplyButtonStrategy(
             mock(TelegramClient::class.java),
-            mock(NotificationAccessService::class.java),
+            mock(NotificationSettingsService::class.java),
             mock(WaterStatisticService::class.java),
             mock(MessageEditorService::class.java),
             Clock.systemUTC()
