@@ -21,7 +21,7 @@ class MessageEditorServiceTest {
     private val messageId = 2
 
     private lateinit var sender: TelegramClient
-    private lateinit var service: MessageEditorServiceImpl
+    private lateinit var service: MessageEditorService
 
     @BeforeEach
     fun setUp() {

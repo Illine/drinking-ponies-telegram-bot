@@ -10,12 +10,12 @@ import org.junit.jupiter.params.provider.EnumSource
 import org.mockito.Mockito.mock
 import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
-import ru.illine.drinking.ponies.service.statistic.WaterStatisticService
 import ru.illine.drinking.ponies.model.base.SnoozeNotificationType
 import ru.illine.drinking.ponies.model.base.WaterAmountType
 import ru.illine.drinking.ponies.service.button.impl.ReplyButtonFactoryImpl
 import ru.illine.drinking.ponies.service.button.strategy.snooze.SnoozeApplyReplyButtonStrategy
 import ru.illine.drinking.ponies.service.button.strategy.wateramount.WaterAmountApplyReplyButtonStrategy
+import ru.illine.drinking.ponies.service.statistic.WaterStatisticService
 import ru.illine.drinking.ponies.service.telegram.MessageEditorService
 import ru.illine.drinking.ponies.test.tag.UnitTest
 import java.time.Clock
@@ -24,7 +24,7 @@ import java.time.Clock
 @DisplayName("ReplyButtonFactory Unit Test")
 class ReplyButtonFactoryTest {
 
-    private lateinit var factory: ReplyButtonFactoryImpl
+    private lateinit var factory: ReplyButtonFactory
 
     @BeforeEach
     fun setUp() {

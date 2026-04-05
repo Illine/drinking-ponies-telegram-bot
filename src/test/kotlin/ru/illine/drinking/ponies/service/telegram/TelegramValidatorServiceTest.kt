@@ -21,7 +21,7 @@ class TelegramValidatorServiceTest {
     private val userJson = """{"id":1,"first_name":"First Name"}"""
     private val queryId = "query"
 
-    private lateinit var service: TelegramValidatorServiceImpl
+    private lateinit var service: TelegramValidatorService
 
     @BeforeEach
     fun setUp() {
