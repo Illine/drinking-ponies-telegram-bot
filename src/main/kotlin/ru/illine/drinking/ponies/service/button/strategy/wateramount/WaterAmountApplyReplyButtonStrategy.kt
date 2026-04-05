@@ -36,7 +36,11 @@ class WaterAmountApplyReplyButtonStrategy(
         val chatId = callbackQuery.message.chatId
         val queryData = callbackQuery.data
 
-        val waterAmountType = WaterAmountType.typeOf(queryData) ?: WaterAmountType.ML_250
+        var waterAmountType = WaterAmountType.typeOf(queryData)
+        if (waterAmountType == null) {
+            waterAmountType = WaterAmountType.ML_250
+            logger.warn("Unknown an queryData: [{}], will be set up default value: [{}]", queryData, waterAmountType)
+        }
 
         logger.info(
             "A telegram user [{}] for telegram chat [{}] drank [{}] ml of water",
