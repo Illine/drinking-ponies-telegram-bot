@@ -27,7 +27,7 @@ class NotificationSettingsServiceTest {
     private lateinit var notificationAccessService: NotificationAccessService
     private lateinit var messageEditorService: MessageEditorService
     private lateinit var sender: TelegramClient
-    private lateinit var service: NotificationSettingsServiceImpl
+    private lateinit var service: NotificationSettingsService
 
     @BeforeEach
     fun setUp() {

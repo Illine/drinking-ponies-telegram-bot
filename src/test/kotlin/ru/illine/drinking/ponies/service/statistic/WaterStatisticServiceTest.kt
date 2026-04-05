@@ -1,11 +1,12 @@
 package ru.illine.drinking.ponies.service.statistic
 
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
-import org.mockito.Mockito.*
+import org.mockito.Mockito.mock
+import org.mockito.Mockito.verify
 import org.mockito.kotlin.argumentCaptor
-import org.junit.jupiter.api.Assertions.assertEquals
 import ru.illine.drinking.ponies.dao.access.WaterStatisticAccessService
 import ru.illine.drinking.ponies.model.base.AnswerNotificationType
 import ru.illine.drinking.ponies.model.dto.internal.WaterStatisticDto
@@ -24,7 +25,7 @@ class WaterStatisticServiceTest {
     private val fixedClock = Clock.fixed(fixedNow.toInstant(ZoneOffset.UTC), ZoneOffset.UTC)
 
     private lateinit var waterStatisticAccessService: WaterStatisticAccessService
-    private lateinit var service: WaterStatisticServiceImpl
+    private lateinit var service: WaterStatisticService
 
     @BeforeEach
     fun setUp() {
