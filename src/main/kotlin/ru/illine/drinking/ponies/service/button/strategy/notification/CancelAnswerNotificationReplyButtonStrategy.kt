@@ -1,5 +1,6 @@
 package ru.illine.drinking.ponies.service.button.strategy.notification
 
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.generics.TelegramClient
@@ -22,10 +23,20 @@ class CancelAnswerNotificationReplyButtonStrategy(
     private val clock: Clock
 ) : AbstractAnswerNotificationReplyButtonStrategy<NotificationSettingDto>(sender, messageEditorService) {
 
+    private val logger = LoggerFactory.getLogger("STRATEGY")
+
     override fun updateLastNotificationTime(callbackQuery: CallbackQuery): () -> NotificationSettingDto = {
         notificationAccessService.updateTimeOfLastNotification(callbackQuery.from.id, LocalDateTime.now(clock))
             .also { setting ->
-                waterStatisticService.recordEvent(setting.telegramUser, getAnswerType())
+                runCatching {
+                    waterStatisticService.recordEvent(setting.telegramUser, getAnswerType())
+                }.onFailure { e ->
+                    logger.error(
+                        "Failed to record water statistic for user [{}]",
+                        setting.telegramUser.externalUserId,
+                        e
+                    )
+                }
             }
     }
 

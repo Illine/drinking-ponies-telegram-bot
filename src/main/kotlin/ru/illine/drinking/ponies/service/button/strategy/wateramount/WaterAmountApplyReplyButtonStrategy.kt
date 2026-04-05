@@ -24,7 +24,7 @@ class WaterAmountApplyReplyButtonStrategy(
     private val clock: Clock
 ) : ReplyButtonStrategy {
 
-    private val logger = LoggerFactory.getLogger("REPLY-STRATEGY")
+    private val logger = LoggerFactory.getLogger("STRATEGY")
 
     override fun reply(callbackQuery: CallbackQuery) {
         messageEditorService.deleteReplyMarkup(
@@ -49,13 +49,22 @@ class WaterAmountApplyReplyButtonStrategy(
             waterAmountType.amountMl
         )
 
-        val notificationSetting = notificationAccessService.updateTimeOfLastNotification(userId, LocalDateTime.now(clock))
-
-        waterStatisticService.recordEvent(
-            notificationSetting.telegramUser,
-            AnswerNotificationType.YES,
-            waterAmountType.amountMl
-        )
+        notificationAccessService.updateTimeOfLastNotification(userId, LocalDateTime.now(clock))
+            .also { setting ->
+                runCatching {
+                    waterStatisticService.recordEvent(
+                        setting.telegramUser,
+                        AnswerNotificationType.YES,
+                        waterAmountType.amountMl
+                    )
+                }.onFailure { e ->
+                    logger.error(
+                        "Failed to record water statistic for user [{}]",
+                        setting.telegramUser.externalUserId,
+                        e
+                    )
+                }
+            }
 
         SendMessage(
             chatId.toString(),

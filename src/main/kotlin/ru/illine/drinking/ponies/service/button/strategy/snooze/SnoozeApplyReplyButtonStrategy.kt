@@ -24,7 +24,7 @@ class SnoozeApplyReplyButtonStrategy(
     private val clock: Clock
 ) : ReplyButtonStrategy {
 
-    private val logger = LoggerFactory.getLogger("REPLY-STRATEGY")
+    private val logger = LoggerFactory.getLogger("STRATEGY")
 
     override fun reply(callbackQuery: CallbackQuery) {
         messageEditorService.deleteReplyMarkup(
@@ -52,9 +52,19 @@ class SnoozeApplyReplyButtonStrategy(
                 notificationSetting.notificationInterval.minutes,
                 snoozeType.minutes
             )
-        notificationAccessService.updateTimeOfLastNotification(userId, nextNotificationTime)
 
-        waterStatisticService.recordEvent(notificationSetting.telegramUser, AnswerNotificationType.SNOOZE)
+        notificationAccessService.updateTimeOfLastNotification(userId, nextNotificationTime)
+            .also { setting ->
+                runCatching {
+                    waterStatisticService.recordEvent(setting.telegramUser, AnswerNotificationType.SNOOZE)
+                }.onFailure { e ->
+                    logger.error(
+                        "Failed to record water statistic for user [{}]",
+                        setting.telegramUser.externalUserId,
+                        e
+                    )
+                }
+            }
 
         SendMessage(
             chatId.toString(),
