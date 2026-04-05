@@ -4,10 +4,10 @@ import org.springframework.stereotype.Service
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.generics.TelegramClient
-import ru.illine.drinking.ponies.dao.access.NotificationAccessService
 import ru.illine.drinking.ponies.model.base.SettingsType
 import ru.illine.drinking.ponies.service.button.ButtonDataService
 import ru.illine.drinking.ponies.service.button.ReplyButtonStrategy
+import ru.illine.drinking.ponies.service.notification.NotificationSettingsService
 import ru.illine.drinking.ponies.service.telegram.MessageEditorService
 import ru.illine.drinking.ponies.util.telegram.TelegramBotKeyboardHelper
 import ru.illine.drinking.ponies.util.telegram.TelegramMessageConstants
@@ -16,7 +16,7 @@ import java.util.*
 @Service
 class IntervalMenuReplyButtonStrategy(
     private val sender: TelegramClient,
-    private val notificationAccessService: NotificationAccessService,
+    private val notificationSettingsService: NotificationSettingsService,
     private val messageEditorService: MessageEditorService,
     private val settingsButtonDataService: ButtonDataService<SettingsType>
 ) : ReplyButtonStrategy {
@@ -28,7 +28,7 @@ class IntervalMenuReplyButtonStrategy(
         messageEditorService.deleteReplyMarkup(chatId, messageId)
 
         val currentNotificationSetting =
-            notificationAccessService.findNotificationSettingByTelegramUserId(callbackQuery.from.id).notificationInterval
+            notificationSettingsService.getNotificationSettings(callbackQuery.from.id).notificationInterval
 
         SendMessage(
             chatId.toString(),

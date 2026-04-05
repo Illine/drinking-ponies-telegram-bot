@@ -13,7 +13,7 @@ import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.api.objects.User
 import org.telegram.telegrambots.meta.api.objects.message.Message
 import org.telegram.telegrambots.meta.generics.TelegramClient
-import ru.illine.drinking.ponies.dao.access.NotificationAccessService
+import ru.illine.drinking.ponies.service.notification.NotificationSettingsService
 import ru.illine.drinking.ponies.model.base.IntervalNotificationType
 import ru.illine.drinking.ponies.model.base.SettingsType
 import ru.illine.drinking.ponies.service.button.ButtonDataService
@@ -31,7 +31,7 @@ class IntervalMenuReplyButtonStrategyTest {
     private val messageId = 3
 
     private lateinit var sender: TelegramClient
-    private lateinit var notificationAccessService: NotificationAccessService
+    private lateinit var notificationSettingsService: NotificationSettingsService
     private lateinit var messageEditorService: MessageEditorService
     private lateinit var settingsButtonDataService: ButtonDataService<SettingsType>
     private lateinit var strategy: IntervalMenuReplyButtonStrategy
@@ -39,12 +39,12 @@ class IntervalMenuReplyButtonStrategyTest {
     @BeforeEach
     fun setUp() {
         sender = mock(TelegramClient::class.java)
-        notificationAccessService = mock(NotificationAccessService::class.java)
+        notificationSettingsService = mock(NotificationSettingsService::class.java)
         messageEditorService = mock(MessageEditorService::class.java)
         @Suppress("UNCHECKED_CAST")
         settingsButtonDataService = mock(ButtonDataService::class.java) as ButtonDataService<SettingsType>
         strategy = IntervalMenuReplyButtonStrategy(
-            sender, notificationAccessService, messageEditorService, settingsButtonDataService
+            sender, notificationSettingsService, messageEditorService, settingsButtonDataService
         )
     }
 
@@ -53,7 +53,7 @@ class IntervalMenuReplyButtonStrategyTest {
     @DisplayName("reply(): deletes reply markup on original message")
     fun `reply deletes reply markup`(intervalType: IntervalNotificationType) {
         val dto = DtoGenerator.generateNotificationDto(externalUserId = userId, notificationInterval = intervalType)
-        `when`(notificationAccessService.findNotificationSettingByTelegramUserId(userId)).thenReturn(dto)
+        `when`(notificationSettingsService.getNotificationSettings(userId)).thenReturn(dto)
 
         strategy.reply(buildCallbackQuery())
 
@@ -65,7 +65,7 @@ class IntervalMenuReplyButtonStrategyTest {
     @DisplayName("reply(): sends current interval greeting message with markdown")
     fun `reply sends current interval greeting message`(intervalType: IntervalNotificationType) {
         val dto = DtoGenerator.generateNotificationDto(externalUserId = userId, notificationInterval = intervalType)
-        `when`(notificationAccessService.findNotificationSettingByTelegramUserId(userId)).thenReturn(dto)
+        `when`(notificationSettingsService.getNotificationSettings(userId)).thenReturn(dto)
 
         val captor = ArgumentCaptor.forClass(SendMessage::class.java)
         strategy.reply(buildCallbackQuery())
@@ -85,7 +85,7 @@ class IntervalMenuReplyButtonStrategyTest {
     @DisplayName("reply(): sends interval buttons message with keyboard excluding current interval")
     fun `reply sends interval buttons message with keyboard`(intervalType: IntervalNotificationType) {
         val dto = DtoGenerator.generateNotificationDto(externalUserId = userId, notificationInterval = intervalType)
-        `when`(notificationAccessService.findNotificationSettingByTelegramUserId(userId)).thenReturn(dto)
+        `when`(notificationSettingsService.getNotificationSettings(userId)).thenReturn(dto)
 
         val captor = ArgumentCaptor.forClass(SendMessage::class.java)
         strategy.reply(buildCallbackQuery())

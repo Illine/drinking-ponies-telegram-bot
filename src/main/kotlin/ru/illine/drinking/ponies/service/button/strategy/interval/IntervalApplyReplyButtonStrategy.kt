@@ -5,16 +5,16 @@ import org.springframework.stereotype.Service
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.generics.TelegramClient
-import ru.illine.drinking.ponies.dao.access.NotificationAccessService
 import ru.illine.drinking.ponies.model.base.IntervalNotificationType
 import ru.illine.drinking.ponies.service.button.ReplyButtonStrategy
+import ru.illine.drinking.ponies.service.notification.NotificationSettingsService
 import ru.illine.drinking.ponies.service.telegram.MessageEditorService
 import ru.illine.drinking.ponies.util.telegram.TelegramMessageConstants
 
 @Service
 class IntervalApplyReplyButtonStrategy(
     private val sender: TelegramClient,
-    private val notificationAccessService: NotificationAccessService,
+    private val notificationSettingsService: NotificationSettingsService,
     private val messageEditorService: MessageEditorService
 ) : ReplyButtonStrategy {
 
@@ -38,7 +38,7 @@ class IntervalApplyReplyButtonStrategy(
 
         logger.info("A notification settings for user [{}] with interval setting [{}] will be saved", userId, notificationInterval)
         val updatedNotificationSettings =
-            notificationAccessService.updateNotificationSettings(userId, chatId, notificationInterval)
+            notificationSettingsService.changeInterval(userId, chatId, notificationInterval)
         logger.info("The notification settings (id: [{}]) has updated", updatedNotificationSettings.id)
 
         SendMessage(

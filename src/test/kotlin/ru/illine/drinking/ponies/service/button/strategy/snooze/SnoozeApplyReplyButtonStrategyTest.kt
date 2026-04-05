@@ -14,7 +14,7 @@ import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.api.objects.User
 import org.telegram.telegrambots.meta.api.objects.message.Message
 import org.telegram.telegrambots.meta.generics.TelegramClient
-import ru.illine.drinking.ponies.dao.access.NotificationAccessService
+import ru.illine.drinking.ponies.service.notification.NotificationSettingsService
 import ru.illine.drinking.ponies.model.base.AnswerNotificationType
 import ru.illine.drinking.ponies.model.base.SnoozeNotificationType
 import ru.illine.drinking.ponies.service.statistic.WaterStatisticService
@@ -37,7 +37,7 @@ class SnoozeApplyReplyButtonStrategyTest {
     private val fixedClock = Clock.fixed(fixedNow.toInstant(ZoneOffset.UTC), ZoneOffset.UTC)
 
     private lateinit var sender: TelegramClient
-    private lateinit var notificationAccessService: NotificationAccessService
+    private lateinit var notificationSettingsService: NotificationSettingsService
     private lateinit var messageEditorService: MessageEditorService
     private lateinit var waterStatisticService: WaterStatisticService
     private lateinit var strategy: SnoozeApplyReplyButtonStrategy
@@ -45,12 +45,12 @@ class SnoozeApplyReplyButtonStrategyTest {
     @BeforeEach
     fun setUp() {
         sender = mock(TelegramClient::class.java)
-        notificationAccessService = mock(NotificationAccessService::class.java)
+        notificationSettingsService = mock(NotificationSettingsService::class.java)
         messageEditorService = mock(MessageEditorService::class.java)
         waterStatisticService = mock(WaterStatisticService::class.java)
         strategy = SnoozeApplyReplyButtonStrategy(
             sender,
-            notificationAccessService,
+            notificationSettingsService,
             waterStatisticService,
             messageEditorService,
             fixedClock
@@ -62,8 +62,8 @@ class SnoozeApplyReplyButtonStrategyTest {
     @DisplayName("reply(): deletes reply markup on original message")
     fun `reply deletes reply markup`(snoozeType: SnoozeNotificationType) {
         val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = userId)
-        `when`(notificationAccessService.findNotificationSettingByTelegramUserId(userId)).thenReturn(notificationDto)
-        `when`(notificationAccessService.updateTimeOfLastNotification(eq(userId), any())).thenReturn(notificationDto)
+        `when`(notificationSettingsService.getNotificationSettings(userId)).thenReturn(notificationDto)
+        `when`(notificationSettingsService.resetNotificationTimer(eq(userId), any())).thenReturn(notificationDto)
 
         val callbackQuery = buildCallbackQuery(snoozeType.queryData.toString())
         strategy.reply(callbackQuery)
@@ -76,15 +76,15 @@ class SnoozeApplyReplyButtonStrategyTest {
     @DisplayName("reply(): next notification fires exactly snoozeMinutes from now")
     fun `reply updates notification time`(snoozeType: SnoozeNotificationType) {
         val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = userId)
-        `when`(notificationAccessService.findNotificationSettingByTelegramUserId(userId)).thenReturn(notificationDto)
-        `when`(notificationAccessService.updateTimeOfLastNotification(eq(userId), any())).thenReturn(notificationDto)
+        `when`(notificationSettingsService.getNotificationSettings(userId)).thenReturn(notificationDto)
+        `when`(notificationSettingsService.resetNotificationTimer(eq(userId), any())).thenReturn(notificationDto)
 
         val callbackQuery = buildCallbackQuery(snoozeType.queryData.toString())
         strategy.reply(callbackQuery)
 
         val interval = notificationDto.notificationInterval.minutes
         val expectedTime = fixedNow.minusMinutes(interval).plusMinutes(snoozeType.minutes)
-        verify(notificationAccessService).updateTimeOfLastNotification(userId, expectedTime)
+        verify(notificationSettingsService).resetNotificationTimer(userId, expectedTime)
     }
 
     @ParameterizedTest
@@ -92,8 +92,8 @@ class SnoozeApplyReplyButtonStrategyTest {
     @DisplayName("reply(): sends confirmation message with snooze display name")
     fun `reply sends confirmation message`(snoozeType: SnoozeNotificationType) {
         val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = userId)
-        `when`(notificationAccessService.findNotificationSettingByTelegramUserId(userId)).thenReturn(notificationDto)
-        `when`(notificationAccessService.updateTimeOfLastNotification(eq(userId), any())).thenReturn(notificationDto)
+        `when`(notificationSettingsService.getNotificationSettings(userId)).thenReturn(notificationDto)
+        `when`(notificationSettingsService.resetNotificationTimer(eq(userId), any())).thenReturn(notificationDto)
 
         val callbackQuery = buildCallbackQuery(snoozeType.queryData.toString())
         val captor = ArgumentCaptor.forClass(SendMessage::class.java)
@@ -113,15 +113,15 @@ class SnoozeApplyReplyButtonStrategyTest {
     @DisplayName("reply(): falls back to TEN_MINS when queryData doesn't match any SnoozeNotificationType")
     fun `reply falls back to TEN_MINS for unknown queryData`() {
         val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = userId)
-        `when`(notificationAccessService.findNotificationSettingByTelegramUserId(userId)).thenReturn(notificationDto)
-        `when`(notificationAccessService.updateTimeOfLastNotification(eq(userId), any())).thenReturn(notificationDto)
+        `when`(notificationSettingsService.getNotificationSettings(userId)).thenReturn(notificationDto)
+        `when`(notificationSettingsService.resetNotificationTimer(eq(userId), any())).thenReturn(notificationDto)
 
         val callbackQuery = buildCallbackQuery("00000000-0000-0000-0000-000000000000")
         strategy.reply(callbackQuery)
 
         val interval = notificationDto.notificationInterval.minutes
         val expectedTime = fixedNow.minusMinutes(interval).plusMinutes(SnoozeNotificationType.TEN_MINS.minutes)
-        verify(notificationAccessService).updateTimeOfLastNotification(userId, expectedTime)
+        verify(notificationSettingsService).resetNotificationTimer(userId, expectedTime)
     }
 
     @ParameterizedTest
@@ -129,8 +129,8 @@ class SnoozeApplyReplyButtonStrategyTest {
     @DisplayName("reply(): records water statistic with SNOOZE event type")
     fun `reply records statistic any type`(snoozeType: SnoozeNotificationType) {
         val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = userId)
-        `when`(notificationAccessService.findNotificationSettingByTelegramUserId(userId)).thenReturn(notificationDto)
-        `when`(notificationAccessService.updateTimeOfLastNotification(eq(userId), any())).thenReturn(notificationDto)
+        `when`(notificationSettingsService.getNotificationSettings(userId)).thenReturn(notificationDto)
+        `when`(notificationSettingsService.resetNotificationTimer(eq(userId), any())).thenReturn(notificationDto)
 
         val callbackQuery = buildCallbackQuery(snoozeType.queryData.toString())
 
@@ -165,8 +165,8 @@ class SnoozeApplyReplyButtonStrategyTest {
     @DisplayName("reply(): sends snooze confirmation message even when recordEvent throws an exception")
     fun `reply sends confirmation message when recordEvent throws`() {
         val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = userId)
-        `when`(notificationAccessService.findNotificationSettingByTelegramUserId(userId)).thenReturn(notificationDto)
-        `when`(notificationAccessService.updateTimeOfLastNotification(any(), any())).thenReturn(notificationDto)
+        `when`(notificationSettingsService.getNotificationSettings(userId)).thenReturn(notificationDto)
+        `when`(notificationSettingsService.resetNotificationTimer(any(), any())).thenReturn(notificationDto)
         doThrow(RuntimeException("statistic error")).`when`(waterStatisticService)
             .recordEvent(any(), any(), anyInt())
 
