@@ -84,7 +84,7 @@ class NotificationAccessServiceImpl(
             ) ?: NotificationSettingBuilder.toEntity(setting, userEntity, chatEntity)
 
         userEntity.addTelegramChat(chatEntity)
-        userEntity.addNotificationSetting(settingEntity)
+        userEntity.notificationSettings = settingEntity
 
         return userRepository.save(userEntity).let { TelegramUserBuilder.toDto(it) }
     }
