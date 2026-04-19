@@ -23,18 +23,16 @@ class WebConfig(
     }
 
     override fun addCorsMappings(registry: CorsRegistry) {
-        corsProperties.allowedOrigins.forEach {
-            registry.addMapping(defaultAllowedMapping)
-                .allowedOrigins(it)
-                .allowedMethods(
-                    HttpMethod.GET.name(),
-                    HttpMethod.POST.name(),
-                    HttpMethod.PUT.name(),
-                    HttpMethod.PATCH.name(),
-                    HttpMethod.DELETE.name()
-                )
-                .allowedHeaders(defaultAllowedHeaders)
-                .allowCredentials(true)
-        }
+        registry.addMapping(defaultAllowedMapping)
+            .allowedOrigins(*corsProperties.allowedOrigins.toTypedArray())
+            .allowedMethods(
+                HttpMethod.GET.name(),
+                HttpMethod.POST.name(),
+                HttpMethod.PUT.name(),
+                HttpMethod.PATCH.name(),
+                HttpMethod.DELETE.name()
+            )
+            .allowedHeaders(defaultAllowedHeaders)
+            .allowCredentials(true)
     }
 }
