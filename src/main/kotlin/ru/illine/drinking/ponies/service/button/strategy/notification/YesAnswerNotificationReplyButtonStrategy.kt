@@ -1,30 +1,42 @@
 package ru.illine.drinking.ponies.service.button.strategy.notification
 
 import org.springframework.stereotype.Service
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.generics.TelegramClient
-import ru.illine.drinking.ponies.dao.access.NotificationAccessService
 import ru.illine.drinking.ponies.model.base.AnswerNotificationType
-import ru.illine.drinking.ponies.model.dto.internal.NotificationSettingDto
-import ru.illine.drinking.ponies.service.button.strategy.AbstractAnswerNotificationReplyButtonStrategy
+import ru.illine.drinking.ponies.service.button.ReplyButtonStrategy
 import ru.illine.drinking.ponies.service.telegram.MessageEditorService
+import ru.illine.drinking.ponies.util.telegram.TelegramBotKeyboardHelper
 import ru.illine.drinking.ponies.util.telegram.TelegramMessageConstants
-import java.time.Clock
-import java.time.LocalDateTime
+import java.util.*
 
 @Service
 class YesAnswerNotificationReplyButtonStrategy(
-    sender: TelegramClient,
-    messageEditorService: MessageEditorService,
-    private val notificationAccessService: NotificationAccessService,
-    private val clock: Clock
-) : AbstractAnswerNotificationReplyButtonStrategy<NotificationSettingDto>(sender, messageEditorService) {
+    private val sender: TelegramClient,
+    private val messageEditorService: MessageEditorService
+) : ReplyButtonStrategy {
 
-    override fun updateLastNotificationTime(callbackQuery: CallbackQuery): () -> NotificationSettingDto = {
-        notificationAccessService.updateTimeOfLastNotification(callbackQuery.from.id, LocalDateTime.now(clock))
+    override fun reply(callbackQuery: CallbackQuery) {
+        val chatId = callbackQuery.message.chatId
+        val messageId = callbackQuery.message.messageId
+        val messageText =
+            TelegramMessageConstants.NOTIFICATION_QUESTION_EDITED_MESSAGE_PATTERN.format(
+                AnswerNotificationType.YES.displayName
+            )
+
+        messageEditorService.editReplyMarkup(messageText, chatId, messageId, true)
+
+        SendMessage(
+            chatId.toString(),
+            TelegramMessageConstants.NOTIFICATION_WATER_AMOUNT_MENU_MESSAGE
+        ).apply {
+            replyMarkup = TelegramBotKeyboardHelper.waterAmountButtons()
+        }.apply { sender.execute(this) }
     }
 
-    override fun getMessageText(): String = TelegramMessageConstants.NOTIFICATION_ANSWER_YES_MESSAGE
+    override fun isQueryData(queryData: String): Boolean {
+        return Objects.equals(AnswerNotificationType.YES.queryData.toString(), queryData)
+    }
 
-    override fun getAnswerType(): AnswerNotificationType = AnswerNotificationType.YES
 }

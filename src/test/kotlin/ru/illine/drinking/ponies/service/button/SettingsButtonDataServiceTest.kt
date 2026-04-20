@@ -17,7 +17,7 @@ class SettingsButtonDataServiceTest {
     private val quietModeTimeUrl = "http://example.com/quiet"
     private val timezoneUrl = "http://example.com/timezone"
 
-    private lateinit var service: SettingsButtonDataServiceImpl
+    private lateinit var service: ButtonDataService<SettingsType>
 
     @BeforeEach
     fun setUp() {

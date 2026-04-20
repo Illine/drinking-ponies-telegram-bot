@@ -1,0 +1,19 @@
+databaseChangeLog:
+  - changeSet:
+      id: 7.9.0
+      author: illine
+      comment: Release 7.9.0
+      changes:
+        - tagDatabase:
+            tag: 7.9.0
+
+  # DDL
+  - include:
+      file: ddl/01_water_statistics.sql
+      relativeToChangelogFile: true
+  - include:
+      file: ddl/02_grants.sql
+      relativeToChangelogFile: true
+  - include:
+      file: ddl/03_create_necessary_indexes.sql
+      relativeToChangelogFile: true

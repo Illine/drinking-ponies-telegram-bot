@@ -8,13 +8,15 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
 import org.mockito.ArgumentCaptor
 import org.mockito.Mockito.*
+import org.mockito.kotlin.any
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.api.objects.User
 import org.telegram.telegrambots.meta.api.objects.message.Message
 import org.telegram.telegrambots.meta.generics.TelegramClient
-import ru.illine.drinking.ponies.dao.access.NotificationAccessService
+import ru.illine.drinking.ponies.service.notification.NotificationSettingsService
 import ru.illine.drinking.ponies.model.base.AnswerNotificationType
+import ru.illine.drinking.ponies.service.statistic.WaterStatisticService
 import ru.illine.drinking.ponies.service.telegram.MessageEditorService
 import ru.illine.drinking.ponies.test.generator.DtoGenerator
 import ru.illine.drinking.ponies.test.tag.UnitTest
@@ -35,22 +37,30 @@ class CancelAnswerNotificationReplyButtonStrategyTest {
 
     private lateinit var sender: TelegramClient
     private lateinit var messageEditorService: MessageEditorService
-    private lateinit var notificationAccessService: NotificationAccessService
+    private lateinit var notificationSettingsService: NotificationSettingsService
+    private lateinit var waterStatisticService: WaterStatisticService
     private lateinit var strategy: CancelAnswerNotificationReplyButtonStrategy
 
     @BeforeEach
     fun setUp() {
         sender = mock(TelegramClient::class.java)
         messageEditorService = mock(MessageEditorService::class.java)
-        notificationAccessService = mock(NotificationAccessService::class.java)
-        strategy = CancelAnswerNotificationReplyButtonStrategy(sender, messageEditorService, notificationAccessService, fixedClock)
+        notificationSettingsService = mock(NotificationSettingsService::class.java)
+        waterStatisticService = mock(WaterStatisticService::class.java)
+        strategy = CancelAnswerNotificationReplyButtonStrategy(
+            sender,
+            messageEditorService,
+            notificationSettingsService,
+            waterStatisticService,
+            fixedClock
+        )
     }
 
     @Test
     @DisplayName("reply(): edits original message with CANCEL display name")
     fun `reply edits original message`() {
         val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = userId)
-        `when`(notificationAccessService.updateTimeOfLastNotification(userId, fixedNow)).thenReturn(notificationDto)
+        `when`(notificationSettingsService.resetNotificationTimer(userId, fixedNow)).thenReturn(notificationDto)
 
         strategy.reply(buildCallbackQuery())
 
@@ -63,18 +73,29 @@ class CancelAnswerNotificationReplyButtonStrategyTest {
     @DisplayName("reply(): updates last notification time to now(clock)")
     fun `reply updates notification time`() {
         val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = userId)
-        `when`(notificationAccessService.updateTimeOfLastNotification(userId, fixedNow)).thenReturn(notificationDto)
+        `when`(notificationSettingsService.resetNotificationTimer(userId, fixedNow)).thenReturn(notificationDto)
 
         strategy.reply(buildCallbackQuery())
 
-        verify(notificationAccessService).updateTimeOfLastNotification(userId, fixedNow)
+        verify(notificationSettingsService).resetNotificationTimer(userId, fixedNow)
+    }
+
+    @Test
+    @DisplayName("reply(): records water statistic with CANCEL event type")
+    fun `reply records statistic`() {
+        val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = userId)
+        `when`(notificationSettingsService.resetNotificationTimer(userId, fixedNow)).thenReturn(notificationDto)
+
+        strategy.reply(buildCallbackQuery())
+
+        verify(waterStatisticService).recordEvent(notificationDto.telegramUser, AnswerNotificationType.CANCEL)
     }
 
     @Test
     @DisplayName("reply(): sends CANCEL confirmation message")
     fun `reply sends confirmation message`() {
         val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = userId)
-        `when`(notificationAccessService.updateTimeOfLastNotification(userId, fixedNow)).thenReturn(notificationDto)
+        `when`(notificationSettingsService.resetNotificationTimer(userId, fixedNow)).thenReturn(notificationDto)
 
         val captor = ArgumentCaptor.forClass(SendMessage::class.java)
         strategy.reply(buildCallbackQuery())
@@ -105,6 +126,23 @@ class CancelAnswerNotificationReplyButtonStrategyTest {
     fun `isQueryData returns false for random string`() {
         val result = strategy.isQueryData("not-a-uuid")
         assertFalse(result)
+    }
+
+    @Test
+    @DisplayName("reply(): sends CANCEL confirmation message even when recordEvent throws an exception")
+    fun `reply sends confirmation message when recordEvent throws`() {
+        val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = userId)
+        `when`(notificationSettingsService.resetNotificationTimer(userId, fixedNow)).thenReturn(notificationDto)
+        doThrow(RuntimeException("statistic error")).`when`(waterStatisticService)
+            .recordEvent(any(), any(), anyInt())
+
+        val captor = ArgumentCaptor.forClass(SendMessage::class.java)
+        strategy.reply(buildCallbackQuery())
+
+        verify(sender).execute(captor.capture())
+        val sent = captor.value
+        assertEquals(chatId.toString(), sent.chatId)
+        assertEquals(TelegramMessageConstants.NOTIFICATION_ANSWER_CANCEL_MESSAGE, sent.text)
     }
 
     private fun buildCallbackQuery(): CallbackQuery {

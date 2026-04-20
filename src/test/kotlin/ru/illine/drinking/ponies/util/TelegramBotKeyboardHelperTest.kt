@@ -13,6 +13,7 @@ import ru.illine.drinking.ponies.model.base.AnswerNotificationType
 import ru.illine.drinking.ponies.model.base.IntervalNotificationType
 import ru.illine.drinking.ponies.model.base.SettingsType
 import ru.illine.drinking.ponies.model.base.SnoozeNotificationType
+import ru.illine.drinking.ponies.model.base.WaterAmountType
 import ru.illine.drinking.ponies.service.button.ButtonDataService
 import ru.illine.drinking.ponies.test.tag.UnitTest
 import ru.illine.drinking.ponies.util.telegram.TelegramBotKeyboardHelper
@@ -121,6 +122,21 @@ class TelegramBotKeyboardHelperTest {
 
         val actual =
             TelegramBotKeyboardHelper.snoozeTimeButtons() as InlineKeyboardMarkup
+
+        assertNotNull(actual)
+        assertDoesNotThrow { actual.validate() }
+        assertEquals(expectedRowsSize, actual.keyboard.size)
+        assertEquals(expectedButtonsSize, actual.keyboard[0].size)
+    }
+
+    @Test
+    @DisplayName("waterAmountButtons(): returns valid keyboard")
+    fun `successful waterAmountButtons`() {
+        val expectedButtonsSize = 1
+        val expectedRowsSize = WaterAmountType.entries.size
+
+        val actual =
+            TelegramBotKeyboardHelper.waterAmountButtons() as InlineKeyboardMarkup
 
         assertNotNull(actual)
         assertDoesNotThrow { actual.validate() }

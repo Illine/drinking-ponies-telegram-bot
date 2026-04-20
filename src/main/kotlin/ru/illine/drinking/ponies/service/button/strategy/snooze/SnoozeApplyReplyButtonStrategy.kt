@@ -5,9 +5,11 @@ import org.springframework.stereotype.Service
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.generics.TelegramClient
-import ru.illine.drinking.ponies.dao.access.NotificationAccessService
+import ru.illine.drinking.ponies.model.base.AnswerNotificationType
 import ru.illine.drinking.ponies.model.base.SnoozeNotificationType
 import ru.illine.drinking.ponies.service.button.ReplyButtonStrategy
+import ru.illine.drinking.ponies.service.notification.NotificationSettingsService
+import ru.illine.drinking.ponies.service.statistic.WaterStatisticService
 import ru.illine.drinking.ponies.service.telegram.MessageEditorService
 import ru.illine.drinking.ponies.util.TimeHelper
 import ru.illine.drinking.ponies.util.telegram.TelegramMessageConstants
@@ -16,12 +18,13 @@ import java.time.Clock
 @Service
 class SnoozeApplyReplyButtonStrategy(
     private val sender: TelegramClient,
-    private val notificationAccessService: NotificationAccessService,
+    private val notificationSettingsService: NotificationSettingsService,
+    private val waterStatisticService: WaterStatisticService,
     private val messageEditorService: MessageEditorService,
     private val clock: Clock
 ) : ReplyButtonStrategy {
 
-    private val logger = LoggerFactory.getLogger("REPLY-STRATEGY")
+    private val logger = LoggerFactory.getLogger("STRATEGY")
 
     override fun reply(callbackQuery: CallbackQuery) {
         messageEditorService.deleteReplyMarkup(
@@ -42,14 +45,26 @@ class SnoozeApplyReplyButtonStrategy(
             snoozeType.minutes
         )
 
-        val notificationSetting = notificationAccessService.findNotificationSettingByTelegramUserId(userId)
+        val notificationSetting = notificationSettingsService.getNotificationSettings(userId)
         val nextNotificationTime =
             TimeHelper.nextNotificationTimeByNow(
                 clock,
                 notificationSetting.notificationInterval.minutes,
                 snoozeType.minutes
             )
-        notificationAccessService.updateTimeOfLastNotification(userId, nextNotificationTime)
+
+        notificationSettingsService.resetNotificationTimer(userId, nextNotificationTime)
+            .also { setting ->
+                runCatching {
+                    waterStatisticService.recordEvent(setting.telegramUser, AnswerNotificationType.SNOOZE)
+                }.onFailure { e ->
+                    logger.error(
+                        "Failed to record water statistic for user [{}]",
+                        setting.telegramUser.externalUserId,
+                        e
+                    )
+                }
+            }
 
         SendMessage(
             chatId.toString(),

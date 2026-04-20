@@ -6,6 +6,10 @@ build/
 .liquibase
 .jpb
 .env
+plans/
+
+### macOS ###
+**/.DS_Store
 
 ### IntelliJ IDEA ###
 .idea

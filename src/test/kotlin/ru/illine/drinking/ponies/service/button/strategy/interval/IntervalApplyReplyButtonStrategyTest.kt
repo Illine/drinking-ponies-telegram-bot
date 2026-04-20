@@ -13,7 +13,7 @@ import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.api.objects.User
 import org.telegram.telegrambots.meta.api.objects.message.Message
 import org.telegram.telegrambots.meta.generics.TelegramClient
-import ru.illine.drinking.ponies.dao.access.NotificationAccessService
+import ru.illine.drinking.ponies.service.notification.NotificationSettingsService
 import ru.illine.drinking.ponies.model.base.IntervalNotificationType
 import ru.illine.drinking.ponies.service.telegram.MessageEditorService
 import ru.illine.drinking.ponies.test.generator.DtoGenerator
@@ -29,16 +29,16 @@ class IntervalApplyReplyButtonStrategyTest {
     private val messageId = 3
 
     private lateinit var sender: TelegramClient
-    private lateinit var notificationAccessService: NotificationAccessService
+    private lateinit var notificationSettingsService: NotificationSettingsService
     private lateinit var messageEditorService: MessageEditorService
     private lateinit var strategy: IntervalApplyReplyButtonStrategy
 
     @BeforeEach
     fun setUp() {
         sender = mock(TelegramClient::class.java)
-        notificationAccessService = mock(NotificationAccessService::class.java)
+        notificationSettingsService = mock(NotificationSettingsService::class.java)
         messageEditorService = mock(MessageEditorService::class.java)
-        strategy = IntervalApplyReplyButtonStrategy(sender, notificationAccessService, messageEditorService)
+        strategy = IntervalApplyReplyButtonStrategy(sender, notificationSettingsService, messageEditorService)
     }
 
     @ParameterizedTest
@@ -47,7 +47,7 @@ class IntervalApplyReplyButtonStrategyTest {
     fun `reply deletes reply markup`(intervalType: IntervalNotificationType) {
         val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = userId)
         `when`(
-            notificationAccessService.updateNotificationSettings(userId, chatId, intervalType)
+            notificationSettingsService.changeInterval(userId, chatId, intervalType)
         ).thenReturn(notificationDto)
 
         val callbackQuery = buildCallbackQuery(intervalType.queryData.toString())
@@ -62,13 +62,13 @@ class IntervalApplyReplyButtonStrategyTest {
     fun `reply updates notification settings`(intervalType: IntervalNotificationType) {
         val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = userId)
         `when`(
-            notificationAccessService.updateNotificationSettings(userId, chatId, intervalType)
+            notificationSettingsService.changeInterval(userId, chatId, intervalType)
         ).thenReturn(notificationDto)
 
         val callbackQuery = buildCallbackQuery(intervalType.queryData.toString())
         strategy.reply(callbackQuery)
 
-        verify(notificationAccessService).updateNotificationSettings(userId, chatId, intervalType)
+        verify(notificationSettingsService).changeInterval(userId, chatId, intervalType)
     }
 
     @ParameterizedTest
@@ -77,7 +77,7 @@ class IntervalApplyReplyButtonStrategyTest {
     fun `reply sends confirmation message`(intervalType: IntervalNotificationType) {
         val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = userId)
         `when`(
-            notificationAccessService.updateNotificationSettings(userId, chatId, intervalType)
+            notificationSettingsService.changeInterval(userId, chatId, intervalType)
         ).thenReturn(notificationDto)
 
         val callbackQuery = buildCallbackQuery(intervalType.queryData.toString())
@@ -99,13 +99,13 @@ class IntervalApplyReplyButtonStrategyTest {
     fun `reply falls back to TWO_HOURS for unknown queryData`() {
         val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = userId)
         `when`(
-            notificationAccessService.updateNotificationSettings(userId, chatId, IntervalNotificationType.TWO_HOURS)
+            notificationSettingsService.changeInterval(userId, chatId, IntervalNotificationType.TWO_HOURS)
         ).thenReturn(notificationDto)
 
         val callbackQuery = buildCallbackQuery("00000000-0000-0000-0000-000000000000")
         strategy.reply(callbackQuery)
 
-        verify(notificationAccessService).updateNotificationSettings(userId, chatId, IntervalNotificationType.TWO_HOURS)
+        verify(notificationSettingsService).changeInterval(userId, chatId, IntervalNotificationType.TWO_HOURS)
     }
 
     @ParameterizedTest

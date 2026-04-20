@@ -3,15 +3,15 @@ package ru.illine.drinking.ponies.scheduler
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
-import ru.illine.drinking.ponies.dao.access.NotificationAccessService
 import ru.illine.drinking.ponies.model.dto.internal.NotificationSettingDto
-import ru.illine.drinking.ponies.service.notification.NotificationService
+import ru.illine.drinking.ponies.service.notification.NotificationSenderService
+import ru.illine.drinking.ponies.service.notification.NotificationSettingsService
 import ru.illine.drinking.ponies.service.notification.NotificationTimeService
 
 @Component
 class NotificationScheduler(
-    private val notificationAccessService: NotificationAccessService,
-    private val notificationService: NotificationService,
+    private val notificationSettingsService: NotificationSettingsService,
+    private val notificationSenderService: NotificationSenderService,
     private val notificationTimeService: NotificationTimeService
 ) {
 
@@ -24,7 +24,7 @@ class NotificationScheduler(
         logger.info("Starting drinking notification scheduler")
 
         try {
-            val (exhaustedNotifications, activeNotifications) = notificationAccessService.findAllNotificationSettings()
+            val (exhaustedNotifications, activeNotifications) = notificationSettingsService.getAllNotificationSettings()
                 .filter { it.enabled }
                 .filter(notificationTimeService::isOutsideQuietTime)
                 .filter { notificationTimeService.isNotificationDue(it) }
@@ -45,7 +45,7 @@ class NotificationScheduler(
         }
 
         logger.info("Sending notifications to [{}] users", notifications.size)
-        notificationService.sendNotifications(notifications)
+        notificationSenderService.sendNotifications(notifications)
     }
 
     private fun cancelAll(notifications: List<NotificationSettingDto>) {
@@ -54,6 +54,6 @@ class NotificationScheduler(
         }
 
         logger.info("Suspending notifications for [{}] users (max attempts reached)", notifications.size)
-        notificationService.suspendNotifications(notifications)
+        notificationSenderService.suspendNotifications(notifications)
     }
 }

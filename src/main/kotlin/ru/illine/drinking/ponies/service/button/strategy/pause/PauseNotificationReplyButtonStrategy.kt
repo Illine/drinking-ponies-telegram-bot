@@ -5,10 +5,10 @@ import org.springframework.stereotype.Service
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.generics.TelegramClient
-import ru.illine.drinking.ponies.dao.access.NotificationAccessService
 import ru.illine.drinking.ponies.model.base.PauseNotificationType
 import ru.illine.drinking.ponies.model.dto.internal.NotificationSettingDto
 import ru.illine.drinking.ponies.service.button.ReplyButtonStrategy
+import ru.illine.drinking.ponies.service.notification.NotificationSettingsService
 import ru.illine.drinking.ponies.service.telegram.MessageEditorService
 import ru.illine.drinking.ponies.util.TimeHelper
 import ru.illine.drinking.ponies.util.telegram.TelegramMessageConstants
@@ -19,11 +19,11 @@ import java.time.ZonedDateTime
 @Service
 class PauseNotificationReplyButtonStrategy(
     private val sender: TelegramClient,
-    private val notificationAccessService: NotificationAccessService,
+    private val notificationSettingsService: NotificationSettingsService,
     private val messageEditorService: MessageEditorService
 ) : ReplyButtonStrategy {
 
-    private val logger = LoggerFactory.getLogger("REPLY-STRATEGY")
+    private val logger = LoggerFactory.getLogger("STRATEGY")
 
     override fun reply(callbackQuery: CallbackQuery) {
         deleteOldReplyMarkup(callbackQuery)
@@ -48,7 +48,7 @@ class PauseNotificationReplyButtonStrategy(
         chatId: Long
     ) {
         val savedNotificationSetting =
-            notificationAccessService.findNotificationSettingByTelegramUserId(userId)
+            notificationSettingsService.getNotificationSettings(userId)
         val nextNotificationTime = calculateNextNotificationTime(savedNotificationSetting, pauseNotification)
         logger.info(
             "A notification will be postponed to [{}] for a user [{}]",
@@ -57,7 +57,7 @@ class PauseNotificationReplyButtonStrategy(
         )
         logger.info("The new notification will be at [{}]", nextNotificationTime)
 
-        notificationAccessService.updateTimeOfLastNotification(userId, nextNotificationTime)
+        notificationSettingsService.resetNotificationTimer(userId, nextNotificationTime)
 
         SendMessage(
             chatId.toString(),
@@ -71,14 +71,14 @@ class PauseNotificationReplyButtonStrategy(
     ) {
         logger.info("A notification will be reset to user's notification interval for a user [{}]", userId)
         val savedNotificationSetting =
-            notificationAccessService.findNotificationSettingByTelegramUserId(userId)
+            notificationSettingsService.getNotificationSettings(userId)
         val notificationInterval = savedNotificationSetting.notificationInterval
         logger.info("User's notification interval: [{}]", notificationInterval)
         val nextNotificationTime =
             calculateNextNotificationTime(savedNotificationSetting, notificationInterval.minutes)
         logger.info("The new notification will be at [{}]", nextNotificationTime)
 
-        notificationAccessService.updateTimeOfLastNotification(userId, nextNotificationTime)
+        notificationSettingsService.resetNotificationTimer(userId, nextNotificationTime)
 
         val timeNextNotification = TimeHelper.timeToString(nextNotificationTime)
         val message =

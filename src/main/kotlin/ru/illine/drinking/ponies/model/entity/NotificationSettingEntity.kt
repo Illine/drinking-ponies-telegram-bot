@@ -23,11 +23,11 @@ class NotificationSettingEntity(
     )
     var id: Long? = null,
 
-    @ManyToOne(
+    @OneToOne(
         fetch = FetchType.LAZY,
         cascade = [CascadeType.MERGE, CascadeType.REFRESH],
     )
-    @JoinColumn(name = "telegram_user_id", nullable = false)
+    @JoinColumn(name = "telegram_user_id", nullable = false, unique = true)
     var telegramUser: TelegramUserEntity,
 
     @ManyToOne(

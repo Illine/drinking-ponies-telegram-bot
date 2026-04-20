@@ -16,7 +16,7 @@ import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.api.objects.User
 import org.telegram.telegrambots.meta.api.objects.message.Message
 import org.telegram.telegrambots.meta.generics.TelegramClient
-import ru.illine.drinking.ponies.dao.access.NotificationAccessService
+import ru.illine.drinking.ponies.service.notification.NotificationSettingsService
 import ru.illine.drinking.ponies.model.base.PauseNotificationType
 import ru.illine.drinking.ponies.service.telegram.MessageEditorService
 import ru.illine.drinking.ponies.test.generator.DtoGenerator
@@ -33,16 +33,16 @@ class PauseNotificationReplyButtonStrategyTest {
     private val messageId = 3
 
     private lateinit var sender: TelegramClient
-    private lateinit var notificationAccessService: NotificationAccessService
+    private lateinit var notificationSettingsService: NotificationSettingsService
     private lateinit var messageEditorService: MessageEditorService
     private lateinit var strategy: PauseNotificationReplyButtonStrategy
 
     @BeforeEach
     fun setUp() {
         sender = mock(TelegramClient::class.java)
-        notificationAccessService = mock(NotificationAccessService::class.java)
+        notificationSettingsService = mock(NotificationSettingsService::class.java)
         messageEditorService = mock(MessageEditorService::class.java)
-        strategy = PauseNotificationReplyButtonStrategy(sender, notificationAccessService, messageEditorService)
+        strategy = PauseNotificationReplyButtonStrategy(sender, notificationSettingsService, messageEditorService)
     }
 
     @ParameterizedTest
@@ -50,7 +50,7 @@ class PauseNotificationReplyButtonStrategyTest {
     @DisplayName("reply(): deletes reply markup on original message")
     fun `reply deletes reply markup`(pauseType: PauseNotificationType) {
         val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = userId)
-        `when`(notificationAccessService.findNotificationSettingByTelegramUserId(userId)).thenReturn(notificationDto)
+        `when`(notificationSettingsService.getNotificationSettings(userId)).thenReturn(notificationDto)
 
         strategy.reply(buildCallbackQuery(pauseType.queryData.toString()))
 
@@ -62,11 +62,11 @@ class PauseNotificationReplyButtonStrategyTest {
     @DisplayName("reply(): updates notification time to now + pauseMinutes")
     fun `reply updates notification time`(pauseType: PauseNotificationType) {
         val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = userId)
-        `when`(notificationAccessService.findNotificationSettingByTelegramUserId(userId)).thenReturn(notificationDto)
+        `when`(notificationSettingsService.getNotificationSettings(userId)).thenReturn(notificationDto)
 
         strategy.reply(buildCallbackQuery(pauseType.queryData.toString()))
 
-        verify(notificationAccessService).updateTimeOfLastNotification(eq(userId), any<LocalDateTime>())
+        verify(notificationSettingsService).resetNotificationTimer(eq(userId), any<LocalDateTime>())
     }
 
     @ParameterizedTest
@@ -74,7 +74,7 @@ class PauseNotificationReplyButtonStrategyTest {
     @DisplayName("reply(): sends confirmation message with pause displayName")
     fun `reply sends confirmation message`(pauseType: PauseNotificationType) {
         val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = userId)
-        `when`(notificationAccessService.findNotificationSettingByTelegramUserId(userId)).thenReturn(notificationDto)
+        `when`(notificationSettingsService.getNotificationSettings(userId)).thenReturn(notificationDto)
 
         val captor = ArgumentCaptor.forClass(SendMessage::class.java)
         strategy.reply(buildCallbackQuery(pauseType.queryData.toString()))
@@ -92,7 +92,7 @@ class PauseNotificationReplyButtonStrategyTest {
     @DisplayName("reply(): deletes reply markup on original message")
     fun `reply deletes reply markup`() {
         val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = userId)
-        `when`(notificationAccessService.findNotificationSettingByTelegramUserId(userId)).thenReturn(notificationDto)
+        `when`(notificationSettingsService.getNotificationSettings(userId)).thenReturn(notificationDto)
 
         strategy.reply(buildCallbackQuery(PauseNotificationType.RESET.queryData.toString()))
 
@@ -103,18 +103,18 @@ class PauseNotificationReplyButtonStrategyTest {
     @DisplayName("reply(): resets notification time to now + interval minutes")
     fun `reply updates notification time`() {
         val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = userId)
-        `when`(notificationAccessService.findNotificationSettingByTelegramUserId(userId)).thenReturn(notificationDto)
+        `when`(notificationSettingsService.getNotificationSettings(userId)).thenReturn(notificationDto)
 
         strategy.reply(buildCallbackQuery(PauseNotificationType.RESET.queryData.toString()))
 
-        verify(notificationAccessService).updateTimeOfLastNotification(eq(userId), any<LocalDateTime>())
+        verify(notificationSettingsService).resetNotificationTimer(eq(userId), any<LocalDateTime>())
     }
 
     @Test
     @DisplayName("reply(): sends reset message with interval displayName")
     fun `reply sends reset message`() {
         val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = userId)
-        `when`(notificationAccessService.findNotificationSettingByTelegramUserId(userId)).thenReturn(notificationDto)
+        `when`(notificationSettingsService.getNotificationSettings(userId)).thenReturn(notificationDto)
 
         val captor = ArgumentCaptor.forClass(SendMessage::class.java)
         strategy.reply(buildCallbackQuery(PauseNotificationType.RESET.queryData.toString()))

@@ -1,0 +1,10 @@
+.default-tags:
+  tags:
+    - self-hosted
+    - docker
+
+.branch-only:
+  rules:
+    - if: '$PIPELINE_TYPE == "version-tag"'
+      when: never
+    - when: on_success
