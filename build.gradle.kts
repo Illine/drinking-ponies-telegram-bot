@@ -14,7 +14,7 @@ plugins {
 }
 
 group = "ru.illine"
-version = "7.9.0"
+version = "8.0.0"
 
 java {
     toolchain {
