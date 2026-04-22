@@ -48,6 +48,7 @@ dependencies {
     implementation(libs.logstash)
     implementation(libs.commons.codec)
     implementation(libs.commons.lang3)
+    implementation(libs.springdoc.openapi.starter.webmvc.ui)
 
     liquibaseRuntime(libs.liquibase.core)
     liquibaseRuntime(libs.liquibase.groovy.dsl)
@@ -101,6 +102,10 @@ liquibase {
     runList = "main"
 }
 
+springBoot {
+    buildInfo()
+}
+
 tasks {
     bootJar {
         archiveFileName = "drinking-ponies.jar"
@@ -143,6 +148,7 @@ tasks {
                         // Spring @Configuration classes: beans are mocked or overridden in tests
                         "**/TelegramBotConfig*",
                         "**/TimeConfig*",
+                        "**/OpenApiConfig*",
                         // JPA entities: boilerplate managed by Hibernate, not application logic
                         "**/*Entity*",
                         // Spring @ConfigurationProperties: no business logic, Kotlin data class boilerplate

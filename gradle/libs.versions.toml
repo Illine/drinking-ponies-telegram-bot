@@ -24,6 +24,7 @@ hibernate-micrometer = "6.5.2.Final"
 logstash = "7.0.1"
 commons-codec = "1.17.1"
 commons-lang3 = "3.20.0"
+springdoc = "2.8.6"
 xmlunit = "2.10.0"
 
 [libraries]
@@ -61,6 +62,7 @@ hibernate-micrometer = { module = "org.hibernate.orm:hibernate-micrometer", vers
 logstash = { module = "net.logstash.logback:logstash-logback-encoder", version.ref = "logstash" }
 commons-codec = { module = "commons-codec:commons-codec", version.ref = "commons-codec" }
 commons-lang3 = { module = "org.apache.commons:commons-lang3", version.ref = "commons-lang3" }
+springdoc-openapi-starter-webmvc-ui = { module = "org.springdoc:springdoc-openapi-starter-webmvc-ui", version.ref = "springdoc" }
 xmlunit = { module = "org.xmlunit:xmlunit-core", version.ref = "xmlunit" }
 
 [plugins]

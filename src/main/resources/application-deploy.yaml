@@ -10,6 +10,8 @@ spring:
       - org.springframework.boot.actuate.autoconfigure.web.mappings.MappingsEndpointAutoConfiguration
       - org.springframework.boot.actuate.autoconfigure.scheduling.ScheduledTasksEndpointAutoConfiguration
       - org.springframework.boot.actuate.autoconfigure.sbom.SbomEndpointAutoConfiguration
+      - org.springdoc.core.configuration.SpringDocConfiguration
+      - org.springdoc.webmvc.ui.SwaggerConfig
   jmx:
     enabled: false
 
