@@ -80,17 +80,6 @@ class DrinkingPoniesTelegramBot(
             .build()
 
     @Suppress("unused")
-    fun settingsCommand() =
-        Ability
-            .builder()
-            .name(TelegramCommandType.SETTINGS.command)
-            .info(TelegramCommandType.SETTINGS.info)
-            .locality(Locality.USER)
-            .privacy(Privacy.PUBLIC)
-            .action { notificationService.settings(it) }
-            .build()
-
-    @Suppress("unused")
     fun versionCommand() =
         Ability
             .builder()

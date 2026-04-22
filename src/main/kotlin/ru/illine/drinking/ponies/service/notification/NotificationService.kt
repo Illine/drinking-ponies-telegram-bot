@@ -12,6 +12,4 @@ interface NotificationService {
 
     fun pause(messageContext: MessageContext)
 
-    fun settings(messageContext: MessageContext)
-
 }

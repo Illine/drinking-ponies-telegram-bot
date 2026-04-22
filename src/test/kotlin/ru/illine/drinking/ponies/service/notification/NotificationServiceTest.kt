@@ -7,25 +7,16 @@ import org.junit.jupiter.api.Test
 import org.mockito.ArgumentCaptor
 import org.mockito.Mockito.*
 import org.mockito.kotlin.any
-import org.mockito.kotlin.anyOrNull
 import org.mockito.kotlin.doReturn
 import org.telegram.telegrambots.abilitybots.api.objects.MessageContext
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.User
-import org.telegram.telegrambots.meta.api.objects.message.Message
 import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
-import ru.illine.drinking.ponies.model.base.SettingsType
-import ru.illine.drinking.ponies.service.button.ButtonDataService
 import ru.illine.drinking.ponies.service.notification.impl.NotificationServiceImpl
-import ru.illine.drinking.ponies.service.statistic.WaterStatisticService
-import ru.illine.drinking.ponies.service.telegram.MessageEditorService
 import ru.illine.drinking.ponies.test.generator.DtoGenerator
 import ru.illine.drinking.ponies.test.tag.UnitTest
 import ru.illine.drinking.ponies.util.telegram.TelegramMessageConstants
-import java.time.Clock
-import java.time.Instant
-import java.time.ZoneOffset
 
 @UnitTest
 @DisplayName("NotificationService Unit Test")
@@ -35,23 +26,16 @@ class NotificationServiceTest {
     private val chatId = 2L
 
     private lateinit var sender: TelegramClient
-    private lateinit var messageEditorService: MessageEditorService
     private lateinit var notificationAccessService: NotificationAccessService
-    private lateinit var settingsButtonDataService: ButtonDataService<SettingsType>
     private lateinit var service: NotificationService
 
     @BeforeEach
     fun setUp() {
         sender = mock(TelegramClient::class.java)
-        messageEditorService = mock(MessageEditorService::class.java)
         notificationAccessService = mock(NotificationAccessService::class.java)
-        @Suppress("UNCHECKED_CAST")
-        settingsButtonDataService = mock(ButtonDataService::class.java) as ButtonDataService<SettingsType>
         service = NotificationServiceImpl(
             sender,
-            messageEditorService,
-            notificationAccessService,
-            settingsButtonDataService
+            notificationAccessService
         )
     }
 
@@ -134,36 +118,6 @@ class NotificationServiceTest {
         val captor = ArgumentCaptor.forClass(SendMessage::class.java)
         verify(sender).execute(captor.capture())
         assertEquals(chatId.toString(), captor.value.chatId)
-        assertTrue(captor.value.text.contains(TelegramMessageConstants.NOTIFICATION_NOT_ACTIVE_MESSAGE))
-    }
-
-    @Test
-    @DisplayName("settings(): when enabled - sends settings message and calls editReplyMarkup")
-    fun `settings when enabled sends menu and edits markup`() {
-        doReturn(true).`when`(notificationAccessService).isEnabledNotifications(userId)
-        `when`(settingsButtonDataService.getData(any())).thenReturn("http://example.com")
-
-        val returnedMessage = mock(Message::class.java)
-        `when`(returnedMessage.messageId).thenReturn(2)
-        `when`(returnedMessage.chatId).thenReturn(chatId)
-        `when`(returnedMessage.text).thenReturn(TelegramMessageConstants.SETTINGS_GREETING_MESSAGE)
-        doReturn(returnedMessage).`when`(sender).execute(any<SendMessage>())
-
-        service.settings(buildMessageContext())
-
-        verify(sender).execute(any<SendMessage>())
-        verify(messageEditorService).editReplyMarkup(any(), any(), any(), any(), anyOrNull())
-    }
-
-    @Test
-    @DisplayName("settings(): when disabled - sends not-active message")
-    fun `settings when disabled sends not active message`() {
-        doReturn(false).`when`(notificationAccessService).isEnabledNotifications(userId)
-
-        service.settings(buildMessageContext())
-
-        val captor = ArgumentCaptor.forClass(SendMessage::class.java)
-        verify(sender).execute(captor.capture())
         assertTrue(captor.value.text.contains(TelegramMessageConstants.NOTIFICATION_NOT_ACTIVE_MESSAGE))
     }
 

@@ -6,13 +6,10 @@ import org.telegram.telegrambots.abilitybots.api.objects.MessageContext
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
-import ru.illine.drinking.ponies.model.base.SettingsType
 import ru.illine.drinking.ponies.model.dto.internal.NotificationSettingDto
 import ru.illine.drinking.ponies.model.dto.internal.TelegramChatDto
 import ru.illine.drinking.ponies.model.dto.internal.TelegramUserDto
-import ru.illine.drinking.ponies.service.button.ButtonDataService
 import ru.illine.drinking.ponies.service.notification.NotificationService
-import ru.illine.drinking.ponies.service.telegram.MessageEditorService
 import ru.illine.drinking.ponies.util.FunctionHelper.check
 import ru.illine.drinking.ponies.util.telegram.TelegramBotKeyboardHelper
 import ru.illine.drinking.ponies.util.telegram.TelegramMessageConstants
@@ -20,9 +17,7 @@ import ru.illine.drinking.ponies.util.telegram.TelegramMessageConstants
 @Service
 class NotificationServiceImpl(
     private val sender: TelegramClient,
-    private val messageEditorService: MessageEditorService,
-    private val notificationAccessService: NotificationAccessService,
-    private val settingsButtonDataService: ButtonDataService<SettingsType>
+    private val notificationAccessService: NotificationAccessService
 ) : NotificationService {
 
     private val logger = LoggerFactory.getLogger("SERVICE")
@@ -85,34 +80,6 @@ class NotificationServiceImpl(
 
         sendIfNotificationEnabled(
             userId, chatId, sendMessageFunction
-        )
-    }
-
-    override fun settings(messageContext: MessageContext) {
-        val chatId = messageContext.chatId()
-        val sendMessageFunction: () -> Unit = {
-            SendMessage(
-                chatId.toString(),
-                TelegramMessageConstants.SETTINGS_GREETING_MESSAGE
-            ).apply {
-                replyMarkup = TelegramBotKeyboardHelper.settingsButtons(settingsButtonDataService)
-            }.let {
-                sender.execute(it)
-            }.let {
-                messageEditorService.editReplyMarkup(
-                    newText = it.text,
-                    chatId = it.chatId,
-                    messageId = it.messageId,
-                    replyKeyboard = TelegramBotKeyboardHelper.settingsButtons(
-                        settingsButtonDataService,
-                        it.messageId
-                    )
-                )
-            }
-        }
-
-        sendIfNotificationEnabled(
-            messageContext.user().id, messageContext.chatId(), sendMessageFunction
         )
     }
 

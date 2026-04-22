@@ -14,8 +14,6 @@ object TelegramMessageConstants {
                Периодичность уведомлений: %s
                Часовой пояс: Москва
                Время тихого режима: с 23:00 до 11:00
-               
-               Если хочешь изменить настройки, то нажми: /settings
             """.trimIndent()
 
     val RESUME_GREETING_MESSAGE =
@@ -30,23 +28,6 @@ object TelegramMessageConstants {
             """.trimIndent()
 
     val STOP_GREETING_MESSAGE = "Поняшки больше не будут напоминать тебе попить :("
-
-    val SETTINGS_GREETING_MESSAGE = "Выбери, какие настройки ты хочешь изменить"
-
-    val SETTINGS_NOTIFICATION_INTERVAL_GREETING_MESSAGE = "Сейчас периодичность отправки уведомлений: *%s*"
-
-    val SETTINGS_NOTIFICATION_INTERVAL_BUTTON_MESSAGE =
-        """
-                Помните, что пить - это очень важно и если ты забываешь, то я всегда напомню! 
-                Теперь выбери периодичность отправки напоминаний.
-            """.trimIndent()
-
-    val SETTINGS_QUIET_MODE_TIME_NOTIFICATION_CHANGING =
-        """
-                Теперь твой тихий установлен с *%s* до *%s*
-            """.trimIndent()
-
-    val TIME_BUTTON_RESULT_MESSAGE = "Тебе будут приходить напоминая, что нужно водицы напиться раз в %s!"
 
     val PAUSE_BUTTON_RESULT_MESSAGE = "Поняшки не будут тебя беспокоить следующие %s!"
 
