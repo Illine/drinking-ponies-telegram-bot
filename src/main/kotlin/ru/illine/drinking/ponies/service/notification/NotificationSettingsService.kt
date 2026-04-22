@@ -11,12 +11,18 @@ interface NotificationSettingsService {
 
     fun getAllNotificationSettings(): Collection<NotificationSettingDto>
 
+    fun getQuietMode(telegramUserId: Long): Pair<LocalTime, LocalTime>
+
     fun resetNotificationTimer(telegramUserId: Long, time: LocalDateTime): NotificationSettingDto
 
-    fun changeInterval(telegramUserId: Long, telegramChatId: Long, notificationInterval: IntervalNotificationType): NotificationSettingDto
+    fun changeInterval(telegramUserId: Long, notificationInterval: IntervalNotificationType): NotificationSettingDto
 
-    fun changeQuietMode(userId: Long, messageId: Int, start: LocalTime, end: LocalTime)
+    fun changeQuietMode(userId: Long, start: LocalTime, end: LocalTime)
 
     fun disableQuietMode(userId: Long)
+
+    fun isEnabledNotifications(telegramUserId: Long): Boolean
+
+    fun changeNotificationStatus(telegramUserId: Long, active: Boolean)
 
 }

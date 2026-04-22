@@ -180,7 +180,7 @@ class NotificationAccessServiceTest @Autowired constructor(
 
         val actual = assertDoesNotThrow(
             ThrowingSupplier {
-                accessService.updateNotificationSettings(DEFAULT_TELEGRAM_USER_ID, DEFAULT_TELEGRAM_USER_ID, newInterval)
+                accessService.updateNotificationSettings(DEFAULT_TELEGRAM_USER_ID, newInterval)
             }
         )
 
@@ -192,11 +192,13 @@ class NotificationAccessServiceTest @Autowired constructor(
     fun `successful updateNotificationSettings same interval`() {
         val sameInterval = IntervalNotificationType.TWO_HOURS
 
-        assertDoesNotThrow(
+        val actual = assertDoesNotThrow(
             ThrowingSupplier {
-                accessService.updateNotificationSettings(DEFAULT_TELEGRAM_USER_ID, DEFAULT_TELEGRAM_USER_ID, sameInterval)
+                accessService.updateNotificationSettings(DEFAULT_TELEGRAM_USER_ID, sameInterval)
             }
         )
+
+        assertEquals(sameInterval, actual.notificationInterval)
     }
 
     @Test
@@ -236,7 +238,7 @@ class NotificationAccessServiceTest @Autowired constructor(
     @DisplayName("updateNotificationSettings(): throws IllegalArgumentException when record not found by telegramUserId")
     fun `failure updateNotificationSettings not found`() {
         assertThrows<IllegalArgumentException> {
-            accessService.updateNotificationSettings(NOT_EXISTED_USER_ID, NOT_EXISTED_USER_ID, IntervalNotificationType.HOUR)
+            accessService.updateNotificationSettings(NOT_EXISTED_USER_ID, IntervalNotificationType.HOUR)
         }
     }
 }

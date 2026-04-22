@@ -91,23 +91,21 @@ class NotificationAccessServiceImpl(
 
     @Transactional
     override fun updateNotificationSettings(
-        telegramUserId: Long,
-        telegramChatId: Long,
-        notificationInterval: IntervalNotificationType
+        telegramUserId: Long, notificationInterval: IntervalNotificationType
     ): NotificationSettingDto {
         logger.debug("The Notification Settings will be updated for an existed entity by id: [${telegramUserId}]")
 
-        val setting = requireNotNull(
+        val settings = requireNotNull(
             settingRepository.findByTelegramUser_ExternalUserId(telegramUserId),
-            { "Not found a Notification Settings by telegramUserId: [$telegramUserId], telegramChatId: [$telegramChatId]" }
+            { "Not found a Notification Settings by telegramUserId: [$telegramUserId]" }
         )
 
-        if (setting.notificationInterval != notificationInterval) {
-            setting.notificationInterval = notificationInterval
-            settingRepository.save(setting)
+        if (settings.notificationInterval != notificationInterval) {
+            settings.notificationInterval = notificationInterval
+            settingRepository.save(settings)
         }
 
-        return setting.let {
+        return settings.let {
             val user = TelegramUserBuilder.toDto(it.telegramUser)
             val chat = TelegramChatBuilder.toDto(it.telegramChat, user)
             NotificationSettingBuilder.toDto(it, user, chat)

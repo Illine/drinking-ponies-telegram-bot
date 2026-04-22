@@ -22,7 +22,7 @@ interface NotificationAccessService {
     ): TelegramUserDto
 
     fun updateNotificationSettings(
-        telegramUserId: Long, telegramChatId: Long, notificationInterval: IntervalNotificationType
+        telegramUserId: Long, notificationInterval: IntervalNotificationType
     ): NotificationSettingDto
 
     fun updateTimeOfLastNotification(telegramUserId: Long, time: LocalDateTime): NotificationSettingDto

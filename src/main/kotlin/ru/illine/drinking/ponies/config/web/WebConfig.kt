@@ -19,7 +19,11 @@ class WebConfig(
 
     override fun addInterceptors(registry: InterceptorRegistry) {
         registry.addInterceptor(telegramAuthInterceptor)
-            .addPathPatterns("/settings/modes/silent")
+            .addPathPatterns(
+                "/settings/quiet-mode",
+                "/settings/intervals",
+                "/settings/notification-status"
+            )
     }
 
     override fun addCorsMappings(registry: CorsRegistry) {

@@ -8,10 +8,12 @@ import org.mockito.Mockito.mock
 import org.mockito.Mockito.`when`
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
+import org.springframework.http.converter.HttpMessageNotReadableException
 import org.springframework.validation.BindingResult
 import org.springframework.validation.FieldError
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.MissingServletRequestParameterException
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException
 import org.springframework.web.servlet.resource.NoResourceFoundException
 import ru.illine.drinking.ponies.test.tag.UnitTest
 
@@ -57,6 +59,28 @@ class DefaultExceptionHandlerTest {
     @DisplayName("handleValidationException(): IllegalArgumentException - returns 400 with 'validation failed'")
     fun `handleValidationException with IllegalArgumentException returns 400`() {
         val exception = IllegalArgumentException("invalid data")
+
+        val response = handler.handleValidationException(exception)
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
+        assertEquals("validation failed", response.body?.message)
+    }
+
+    @Test
+    @DisplayName("handleValidationException(): HttpMessageNotReadableException - returns 400 with 'validation failed'")
+    fun `handleValidationException with HttpMessageNotReadableException returns 400`() {
+        val exception = mock(HttpMessageNotReadableException::class.java)
+
+        val response = handler.handleValidationException(exception)
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
+        assertEquals("validation failed", response.body?.message)
+    }
+
+    @Test
+    @DisplayName("handleValidationException(): MethodArgumentTypeMismatchException - returns 400 with 'validation failed'")
+    fun `handleValidationException with MethodArgumentTypeMismatchException returns 400`() {
+        val exception = mock(MethodArgumentTypeMismatchException::class.java)
 
         val response = handler.handleValidationException(exception)
 
