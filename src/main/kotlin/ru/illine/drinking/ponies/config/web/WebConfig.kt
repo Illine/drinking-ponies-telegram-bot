@@ -21,7 +21,7 @@ class WebConfig(
         registry.addInterceptor(telegramAuthInterceptor)
             .addPathPatterns(
                 "/settings/quiet-mode",
-                "/settings/intervals",
+                "/settings/interval",
                 "/settings/notification-status"
             )
     }

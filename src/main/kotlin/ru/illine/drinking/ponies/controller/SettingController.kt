@@ -49,7 +49,7 @@ class SettingController(
         notificationSettingsService.changeQuietMode(telegramUser.telegramId, start, end)
     }
 
-    @GetMapping("/intervals")
+    @GetMapping("/interval")
     @Operation(summary = "Get current notification interval")
     fun getInterval(
         @Parameter(hidden = true)
@@ -63,15 +63,15 @@ class SettingController(
         )
     }
 
-    @PutMapping("/notification-status")
-    @Operation(summary = "Change notification enabled status")
-    fun changeNotificationStatus(
+    @PutMapping("/interval")
+    @Operation(summary = "Change notification interval")
+    fun changeInterval(
         @Parameter(hidden = true)
         @RequestAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) telegramUser: TelegramUserDto,
-        @Parameter(description = "Enable or disable notifications", example = "true")
-        @RequestParam("active") active: Boolean
+        @Parameter(description = "Notification interval enum value", example = "HOUR")
+        @RequestParam(value = "interval") interval: IntervalNotificationType
     ) {
-        notificationSettingsService.changeNotificationStatus(telegramUser.telegramId, active)
+        notificationSettingsService.changeInterval(telegramUser.telegramId, interval)
     }
 
     @GetMapping("/notification-status")
@@ -84,14 +84,14 @@ class SettingController(
         return NotificationStatusResponse(active = enabled)
     }
 
-    @PutMapping("/intervals")
-    @Operation(summary = "Change notification interval")
-    fun changeInterval(
+    @PutMapping("/notification-status")
+    @Operation(summary = "Change notification enabled status")
+    fun changeNotificationStatus(
         @Parameter(hidden = true)
         @RequestAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) telegramUser: TelegramUserDto,
-        @Parameter(description = "Notification interval enum value", example = "HOUR")
-        @RequestParam(value = "interval") interval: IntervalNotificationType
+        @Parameter(description = "Enable or disable notifications", example = "true")
+        @RequestParam("active") active: Boolean
     ) {
-        notificationSettingsService.changeInterval(telegramUser.telegramId, interval)
+        notificationSettingsService.changeNotificationStatus(telegramUser.telegramId, active)
     }
 }
