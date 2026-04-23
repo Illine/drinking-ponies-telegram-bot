@@ -25,7 +25,7 @@ class TelegramAuthInterceptor(
         }
 
         val initData = request.getHeader(defaultHeaderName)
-        if (initData == null) {
+        if (initData.isNullOrBlank()) {
             logger.error("Not found required header '$defaultHeaderName', return false")
             response.status = HttpServletResponse.SC_UNAUTHORIZED
             return false

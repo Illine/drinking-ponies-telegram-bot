@@ -58,6 +58,32 @@ class TelegramAuthInterceptorTest {
     }
 
     @Test
+    @DisplayName("preHandle(): empty header - returns false and sets 401")
+    fun `preHandle empty header returns false with 401`() {
+        `when`(request.method).thenReturn("GET")
+        `when`(request.getHeader(headerName)).thenReturn("")
+
+        val result = interceptor.preHandle(request, response, Any())
+
+        assertFalse(result)
+        verify(response).status = HttpServletResponse.SC_UNAUTHORIZED
+        verifyNoInteractions(validatorService)
+    }
+
+    @Test
+    @DisplayName("preHandle(): blank header - returns false and sets 401")
+    fun `preHandle blank header returns false with 401`() {
+        `when`(request.method).thenReturn("GET")
+        `when`(request.getHeader(headerName)).thenReturn("   ")
+
+        val result = interceptor.preHandle(request, response, Any())
+
+        assertFalse(result)
+        verify(response).status = HttpServletResponse.SC_UNAUTHORIZED
+        verifyNoInteractions(validatorService)
+    }
+
+    @Test
     @DisplayName("preHandle(): valid signature - returns true and sets telegramUser attribute")
     fun `preHandle valid signature returns true`() {
         val initData = "valid-init-data"
