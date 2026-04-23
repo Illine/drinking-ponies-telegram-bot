@@ -9,8 +9,7 @@ enum class TelegramCommandType(
 ) {
 
     START(1, "start", "Start command", "Начало взаимодействия с ботом", false),
-    RESUME(2, "resume", "Resuming of notifications for a user", "Возобновить отправку уведомления", true),
-    PAUSE(3, "pause", "Allows to delay the sending of notifications", "Позволяет отложить отправку уведомлений", true),
+    PAUSE(2, "pause", "Allows to delay the sending of notifications", "Позволяет отложить отправку уведомлений", true),
     VERSION(99, "version", "Shows a current version of the bot", "Показать текущую версию бота", false);
 
     override fun toString(): String = command

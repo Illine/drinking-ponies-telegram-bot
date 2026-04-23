@@ -46,15 +46,6 @@ class NotificationServiceImpl(
         ).apply { sender.execute(this) }
     }
 
-    override fun resume(messageContext: MessageContext) {
-        notificationAccessService.enableNotifications(messageContext.user().id)
-
-        SendMessage(
-            messageContext.chatId().toString(),
-            TelegramMessageConstants.RESUME_GREETING_MESSAGE.format(messageContext.user().userName)
-        ).apply { sender.execute(this) }
-    }
-
     override fun pause(messageContext: MessageContext) {
         val userId = messageContext.user().id
         val chatId = messageContext.chatId()

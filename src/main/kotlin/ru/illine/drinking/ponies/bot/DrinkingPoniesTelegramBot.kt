@@ -47,17 +47,6 @@ class DrinkingPoniesTelegramBot(
             .build()
 
     @Suppress("unused")
-    fun resumeCommand() =
-        Ability
-            .builder()
-            .name(TelegramCommandType.RESUME.command)
-            .info(TelegramCommandType.RESUME.info)
-            .locality(Locality.USER)
-            .privacy(Privacy.PUBLIC)
-            .action { notificationService.resume(it) }
-            .build()
-
-    @Suppress("unused")
     fun pauseCommand() =
         Ability
             .builder()

@@ -16,12 +16,6 @@ object TelegramMessageConstants {
                Время тихого режима: с 23:00 до 11:00
             """.trimIndent()
 
-    val RESUME_GREETING_MESSAGE =
-        """
-                Поняшки снова в деле!
-                Котик, тебе снова будут приходить уведомления.
-            """.trimIndent()
-
     val PAUSE_GREETING_MESSAGE =
         """
                 Выбери, пожалуйста, сколько времени тебя не будут беспокоить поняшки.

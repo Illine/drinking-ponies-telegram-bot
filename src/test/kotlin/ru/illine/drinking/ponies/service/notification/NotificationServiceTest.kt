@@ -68,17 +68,6 @@ class NotificationServiceTest {
     }
 
     @Test
-    @DisplayName("resume(): enables notifications and sends resume message")
-    fun `resume enables notifications and sends message`() {
-        service.resume(buildMessageContext())
-
-        verify(notificationAccessService).enableNotifications(userId)
-        val captor = ArgumentCaptor.forClass(SendMessage::class.java)
-        verify(sender).execute(captor.capture())
-        assertEquals(chatId.toString(), captor.value.chatId)
-    }
-
-    @Test
     @DisplayName("pause(): when enabled - sends pause menu with keyboard")
     fun `pause when enabled sends pause menu`() {
         val dto = DtoGenerator.generateNotificationDto(externalUserId = userId)
