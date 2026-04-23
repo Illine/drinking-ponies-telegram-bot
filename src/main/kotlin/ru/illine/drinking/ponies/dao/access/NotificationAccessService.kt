@@ -39,4 +39,6 @@ interface NotificationAccessService {
 
     fun disableQuietMode(userId: Long)
 
+    fun changeTimezone(telegramUserId: Long, timezone: String)
+
 }

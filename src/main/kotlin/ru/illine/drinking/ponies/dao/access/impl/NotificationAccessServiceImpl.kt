@@ -182,4 +182,15 @@ class NotificationAccessServiceImpl(
         logger.debug("The quiet mod will be disabled for a user [$userId]")
         settingRepository.updateQuietMode(userId)
     }
+
+    @Transactional
+    override fun changeTimezone(telegramUserId: Long, timezone: String) {
+        logger.debug("Changing timezone for user [$telegramUserId] to [$timezone]")
+        val user = requireNotNull(
+            userRepository.findByExternalUserId(telegramUserId),
+            { "Not found a Telegram User by telegramUserId [$telegramUserId]" }
+        )
+        user.userTimeZone = timezone
+        userRepository.save(user)
+    }
 }

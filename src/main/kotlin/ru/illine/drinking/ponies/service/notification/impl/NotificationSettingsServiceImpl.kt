@@ -8,6 +8,7 @@ import ru.illine.drinking.ponies.model.dto.internal.NotificationSettingDto
 import ru.illine.drinking.ponies.service.notification.NotificationSettingsService
 import java.time.LocalDateTime
 import java.time.LocalTime
+import java.time.ZoneId
 
 @Service
 class NotificationSettingsServiceImpl(
@@ -76,5 +77,15 @@ class NotificationSettingsServiceImpl(
         } else {
             notificationAccessService.disableNotifications(telegramUserId)
         }
+    }
+
+    override fun changeTimezone(telegramUserId: Long, timezone: String) {
+        logger.info("Changing timezone for telegram user [$telegramUserId] to [$timezone]")
+        try {
+            ZoneId.of(timezone)
+        } catch (e: Exception) {
+            throw IllegalArgumentException("Invalid timezone: $timezone", e)
+        }
+        notificationAccessService.changeTimezone(telegramUserId, timezone)
     }
 }

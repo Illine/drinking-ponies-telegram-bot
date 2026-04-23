@@ -25,4 +25,6 @@ interface NotificationSettingsService {
 
     fun changeNotificationStatus(telegramUserId: Long, active: Boolean)
 
+    fun changeTimezone(telegramUserId: Long, timezone: String)
+
 }

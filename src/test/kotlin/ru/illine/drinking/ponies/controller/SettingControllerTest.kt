@@ -287,6 +287,45 @@ class SettingControllerTest @Autowired constructor(
     }
 
     @Nested
+    @DisplayName("PUT /settings/timezone")
+    inner class ChangeTimezone {
+
+        @Test
+        @DisplayName("valid request - returns 200")
+        fun `returns 200`() {
+            val headers = buildHeaders()
+            val url = "/settings/timezone?timezone=Europe/Berlin"
+
+            val response = restTemplate.exchange(url, HttpMethod.PUT, HttpEntity<Void>(headers), Void::class.java)
+
+            assertEquals(HttpStatus.OK, response.statusCode)
+            verify(notificationSettingsService).changeTimezone(any(), any())
+        }
+
+        @Test
+        @DisplayName("missing auth header - returns 401")
+        fun `returns 401`() {
+            val url = "/settings/timezone?timezone=Europe/Berlin"
+
+            val response = restTemplate.exchange(url, HttpMethod.PUT, HttpEntity<Void>(HttpHeaders()), Void::class.java)
+
+            assertEquals(HttpStatus.UNAUTHORIZED, response.statusCode)
+            verifyNoInteractions(notificationSettingsService)
+        }
+
+        @Test
+        @DisplayName("missing timezone param - returns 400")
+        fun `returns 400 when missing param`() {
+            val headers = buildHeaders()
+            val url = "/settings/timezone"
+
+            val response = restTemplate.exchange(url, HttpMethod.PUT, HttpEntity<Void>(headers), Void::class.java)
+
+            assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
+        }
+    }
+
+    @Nested
     @DisplayName("GET /settings/notification-status")
     inner class GetNotificationStatus {
 

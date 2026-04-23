@@ -5,6 +5,8 @@ import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 import org.mockito.Mockito.*
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
 import ru.illine.drinking.ponies.model.base.IntervalNotificationType
@@ -183,5 +185,26 @@ class NotificationSettingsServiceTest {
 
         verify(notificationAccessService).disableNotifications(userId)
         verify(notificationAccessService, never()).enableNotifications(anyLong())
+    }
+
+    @Test
+    @DisplayName("changeTimezone(): updates timezone via access service")
+    fun `changeTimezone updates timezone`() {
+        val timezone = "America/New_York"
+
+        service.changeTimezone(userId, timezone)
+
+        verify(notificationAccessService).changeTimezone(userId, timezone)
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = ["Invalid", "ABC/XYZ", "123", ""])
+    @DisplayName("changeTimezone(): throws IllegalArgumentException for invalid timezone")
+    fun `changeTimezone throws when invalid timezone`(timezone: String) {
+        assertThrows(IllegalArgumentException::class.java) {
+            service.changeTimezone(userId, timezone)
+        }
+
+        verify(notificationAccessService, never()).changeTimezone(anyLong(), anyString())
     }
 }

@@ -60,6 +60,17 @@ class SettingController(
         return TimezoneResponse(timezone = settings.telegramUser.userTimeZone)
     }
 
+    @PutMapping("/timezone")
+    @Operation(summary = "Change user timezone")
+    fun changeTimezone(
+        @Parameter(hidden = true)
+        @RequestAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) telegramUser: TelegramUserDto,
+        @Parameter(description = "IANA timezone identifier", example = "Europe/Moscow")
+        @RequestParam(name = "timezone", required = true) timezone: String
+    ) {
+        notificationSettingsService.changeTimezone(telegramUser.telegramId, timezone)
+    }
+
     @GetMapping("/interval")
     @Operation(summary = "Get current notification interval")
     fun getInterval(
