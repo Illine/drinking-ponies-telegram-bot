@@ -202,23 +202,59 @@ class NotificationAccessServiceTest @Autowired constructor(
     }
 
     @Test
-    @DisplayName("changeQuietMode(): updates quiet mode without exception")
+    @DisplayName("changeQuietMode(): persists quiet mode start and end times")
     fun `successful changeQuietMode`() {
+        val expectedStart = LocalTime.of(22, 0)
+        val expectedEnd = LocalTime.of(8, 0)
+
         assertDoesNotThrow(
             ThrowingSupplier {
-                accessService.changeQuietMode(DEFAULT_TELEGRAM_USER_ID, LocalTime.of(22, 0), LocalTime.of(8, 0))
+                accessService.changeQuietMode(DEFAULT_TELEGRAM_USER_ID, expectedStart, expectedEnd)
             }
         )
+
+        val actual = accessService.findNotificationSettingByTelegramUserId(DEFAULT_TELEGRAM_USER_ID)
+        assertEquals(expectedStart, actual.quietModeStart)
+        assertEquals(expectedEnd, actual.quietModeEnd)
     }
 
     @Test
-    @DisplayName("disableQuietMode(): disables quiet mode without exception")
+    @DisplayName("disableQuietMode(): clears quiet mode start and end times")
     fun `successful disableQuietMode`() {
+        accessService.changeQuietMode(DEFAULT_TELEGRAM_USER_ID, LocalTime.of(22, 0), LocalTime.of(8, 0))
+
         assertDoesNotThrow(
             ThrowingSupplier {
                 accessService.disableQuietMode(DEFAULT_TELEGRAM_USER_ID)
             }
         )
+
+        val actual = accessService.findNotificationSettingByTelegramUserId(DEFAULT_TELEGRAM_USER_ID)
+        assertNull(actual.quietModeStart)
+        assertNull(actual.quietModeEnd)
+    }
+
+    @Test
+    @DisplayName("changeTimezone(): persists new timezone for existing user")
+    fun `successful changeTimezone`() {
+        val newTimezone = "America/New_York"
+
+        assertDoesNotThrow(
+            ThrowingSupplier {
+                accessService.changeTimezone(DEFAULT_TELEGRAM_USER_ID, newTimezone)
+            }
+        )
+
+        val actual = accessService.findNotificationSettingByTelegramUserId(DEFAULT_TELEGRAM_USER_ID)
+        assertEquals(newTimezone, actual.telegramUser.userTimeZone)
+    }
+
+    @Test
+    @DisplayName("changeTimezone(): throws IllegalArgumentException when user does not exist")
+    fun `failure changeTimezone not found`() {
+        assertThrows<IllegalArgumentException> {
+            accessService.changeTimezone(NOT_EXISTED_USER_ID, "Europe/Berlin")
+        }
     }
 
     @Test

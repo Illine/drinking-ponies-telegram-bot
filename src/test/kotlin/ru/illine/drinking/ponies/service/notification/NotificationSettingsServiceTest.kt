@@ -109,6 +109,17 @@ class NotificationSettingsServiceTest {
     }
 
     @Test
+    @DisplayName("isEnabledNotifications(): returns false when disabled")
+    fun `isEnabledNotifications returns false when disabled`() {
+        `when`(notificationAccessService.isEnabledNotifications(userId)).thenReturn(false)
+
+        val result = service.isEnabledNotifications(userId)
+
+        assertEquals(false, result)
+        verify(notificationAccessService).isEnabledNotifications(userId)
+    }
+
+    @Test
     @DisplayName("changeInterval(): delegates to access service and returns DTO")
     fun `changeInterval delegates to access service`() {
         val interval = IntervalNotificationType.TWO_HOURS

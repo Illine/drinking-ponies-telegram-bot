@@ -135,7 +135,7 @@ class SettingControllerTest @Autowired constructor(
         }
 
         @Test
-        @DisplayName("missing required param - returns 400")
+        @DisplayName("missing start param - returns 400")
         fun `returns 400`() {
             val headers = buildHeaders()
             val url = "/settings/quiet-mode?end=22:00"
@@ -143,6 +143,7 @@ class SettingControllerTest @Autowired constructor(
             val response = restTemplate.exchange(url, HttpMethod.PUT, HttpEntity<Void>(headers), Void::class.java)
 
             assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
+            verifyNoInteractions(notificationSettingsService)
         }
 
         @Test
@@ -154,6 +155,7 @@ class SettingControllerTest @Autowired constructor(
             val response = restTemplate.exchange(url, HttpMethod.PUT, HttpEntity<Void>(headers), Void::class.java)
 
             assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
+            verifyNoInteractions(notificationSettingsService)
         }
 
         @Test
@@ -165,6 +167,7 @@ class SettingControllerTest @Autowired constructor(
             val response = restTemplate.exchange(url, HttpMethod.PUT, HttpEntity<Void>(headers), Void::class.java)
 
             assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
+            verifyNoInteractions(notificationSettingsService)
         }
     }
 
@@ -323,6 +326,19 @@ class SettingControllerTest @Autowired constructor(
 
             assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
         }
+
+        @Test
+        @DisplayName("invalid timezone value - returns 400")
+        fun `returns 400 when invalid timezone value`() {
+            doThrow(IllegalArgumentException("Invalid timezone"))
+                .`when`(notificationSettingsService).changeTimezone(any(), any())
+            val headers = buildHeaders()
+            val url = "/settings/timezone?timezone=Invalid/Zone"
+
+            val response = restTemplate.exchange(url, HttpMethod.PUT, HttpEntity<Void>(headers), Void::class.java)
+
+            assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
+        }
     }
 
     @Nested
@@ -380,6 +396,18 @@ class SettingControllerTest @Autowired constructor(
         fun `returns 200`() {
             val headers = buildHeaders()
             val url = "/settings/notification-status?active=false"
+
+            val response = restTemplate.exchange(url, HttpMethod.PUT, HttpEntity<Void>(headers), Void::class.java)
+
+            assertEquals(HttpStatus.OK, response.statusCode)
+            verify(notificationSettingsService).changeNotificationStatus(any(), any())
+        }
+
+        @Test
+        @DisplayName("valid request with active=true - returns 200")
+        fun `returns 200 when active true`() {
+            val headers = buildHeaders()
+            val url = "/settings/notification-status?active=true"
 
             val response = restTemplate.exchange(url, HttpMethod.PUT, HttpEntity<Void>(headers), Void::class.java)
 
