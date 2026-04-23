@@ -46,15 +46,6 @@ class NotificationServiceImpl(
         ).apply { sender.execute(this) }
     }
 
-    override fun stop(messageContext: MessageContext) {
-        notificationAccessService.disableNotifications(messageContext.user().id)
-
-        SendMessage(
-            messageContext.chatId().toString(),
-            TelegramMessageConstants.STOP_GREETING_MESSAGE.format(messageContext.user().userName)
-        ).apply { sender.execute(this) }
-    }
-
     override fun resume(messageContext: MessageContext) {
         notificationAccessService.enableNotifications(messageContext.user().id)
 

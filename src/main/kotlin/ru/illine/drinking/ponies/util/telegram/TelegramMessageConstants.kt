@@ -27,8 +27,6 @@ object TelegramMessageConstants {
                 Выбери, пожалуйста, сколько времени тебя не будут беспокоить поняшки.
             """.trimIndent()
 
-    val STOP_GREETING_MESSAGE = "Поняшки больше не будут напоминать тебе попить :("
-
     val PAUSE_BUTTON_RESULT_MESSAGE = "Поняшки не будут тебя беспокоить следующие %s!"
 
     val PAUSE_RESET_BUTTON_RESULT_MESSAGE =

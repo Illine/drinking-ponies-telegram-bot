@@ -58,17 +58,6 @@ class DrinkingPoniesTelegramBot(
             .build()
 
     @Suppress("unused")
-    fun stopCommand() =
-        Ability
-            .builder()
-            .name(TelegramCommandType.STOP.command)
-            .info(TelegramCommandType.STOP.info)
-            .locality(Locality.USER)
-            .privacy(Privacy.PUBLIC)
-            .action { notificationService.stop(it) }
-            .build()
-
-    @Suppress("unused")
     fun pauseCommand() =
         Ability
             .builder()

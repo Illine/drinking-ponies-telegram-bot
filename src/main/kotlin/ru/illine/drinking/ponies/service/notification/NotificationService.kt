@@ -6,8 +6,6 @@ interface NotificationService {
 
     fun start(messageContext: MessageContext)
 
-    fun stop(messageContext: MessageContext)
-
     fun resume(messageContext: MessageContext)
 
     fun pause(messageContext: MessageContext)

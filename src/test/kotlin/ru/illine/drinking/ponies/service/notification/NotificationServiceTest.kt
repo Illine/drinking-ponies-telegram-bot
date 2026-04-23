@@ -68,18 +68,6 @@ class NotificationServiceTest {
     }
 
     @Test
-    @DisplayName("stop(): disables notifications and sends stop message")
-    fun `stop disables notifications and sends message`() {
-        service.stop(buildMessageContext())
-
-        verify(notificationAccessService).disableNotifications(userId)
-        val captor = ArgumentCaptor.forClass(SendMessage::class.java)
-        verify(sender).execute(captor.capture())
-        assertEquals(chatId.toString(), captor.value.chatId)
-        assertEquals(TelegramMessageConstants.STOP_GREETING_MESSAGE.format("testUser"), captor.value.text)
-    }
-
-    @Test
     @DisplayName("resume(): enables notifications and sends resume message")
     fun `resume enables notifications and sends message`() {
         service.resume(buildMessageContext())
