@@ -144,6 +144,28 @@ class SettingControllerTest @Autowired constructor(
 
             assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
         }
+
+        @Test
+        @DisplayName("missing end param - returns 400")
+        fun `returns 400 when missing end param`() {
+            val headers = buildHeaders()
+            val url = "/settings/quiet-mode?start=08:00"
+
+            val response = restTemplate.exchange(url, HttpMethod.PUT, HttpEntity<Void>(headers), Void::class.java)
+
+            assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
+        }
+
+        @Test
+        @DisplayName("invalid time format - returns 400")
+        fun `returns 400 when invalid time format`() {
+            val headers = buildHeaders()
+            val url = "/settings/quiet-mode?start=invalid&end=22:00"
+
+            val response = restTemplate.exchange(url, HttpMethod.PUT, HttpEntity<Void>(headers), Void::class.java)
+
+            assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
+        }
     }
 
     @Nested
@@ -342,6 +364,17 @@ class SettingControllerTest @Autowired constructor(
         fun `returns 400`() {
             val headers = buildHeaders()
             val url = "/settings/notification-status"
+
+            val response = restTemplate.exchange(url, HttpMethod.PUT, HttpEntity<Void>(headers), Void::class.java)
+
+            assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
+        }
+
+        @Test
+        @DisplayName("invalid active value - returns 400")
+        fun `returns 400 when invalid active value`() {
+            val headers = buildHeaders()
+            val url = "/settings/notification-status?active=INVALID"
 
             val response = restTemplate.exchange(url, HttpMethod.PUT, HttpEntity<Void>(headers), Void::class.java)
 

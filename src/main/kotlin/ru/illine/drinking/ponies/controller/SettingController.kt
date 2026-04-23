@@ -43,9 +43,9 @@ class SettingController(
         @Parameter(hidden = true)
         @RequestAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) telegramUser: TelegramUserDto,
         @Parameter(description = "Start time in HH:mm format", example = "23:00", schema = Schema(type = "string", pattern = "HH:mm"))
-        @RequestParam("start") @DateTimeFormat(pattern = "HH:mm") start: LocalTime,
+        @RequestParam(name = "start", required = true) @DateTimeFormat(pattern = "HH:mm") start: LocalTime,
         @Parameter(description = "End time in HH:mm format", example = "08:00", schema = Schema(type = "string", pattern = "HH:mm"))
-        @RequestParam("end") @DateTimeFormat(pattern = "HH:mm") end: LocalTime
+        @RequestParam(name = "end", required = true) @DateTimeFormat(pattern = "HH:mm") end: LocalTime
     ) {
         notificationSettingsService.changeQuietMode(telegramUser.telegramId, start, end)
     }
@@ -80,7 +80,7 @@ class SettingController(
         @Parameter(hidden = true)
         @RequestAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) telegramUser: TelegramUserDto,
         @Parameter(description = "Notification interval enum value", example = "HOUR")
-        @RequestParam(value = "interval") interval: IntervalNotificationType
+        @RequestParam(name = "interval", required = true) interval: IntervalNotificationType
     ) {
         notificationSettingsService.changeInterval(telegramUser.telegramId, interval)
     }
@@ -101,7 +101,7 @@ class SettingController(
         @Parameter(hidden = true)
         @RequestAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) telegramUser: TelegramUserDto,
         @Parameter(description = "Enable or disable notifications", example = "true")
-        @RequestParam("active") active: Boolean
+        @RequestParam(name = "active", required = true) active: Boolean
     ) {
         notificationSettingsService.changeNotificationStatus(telegramUser.telegramId, active)
     }
