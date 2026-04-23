@@ -11,6 +11,7 @@ import ru.illine.drinking.ponies.model.dto.TelegramUserDto
 import ru.illine.drinking.ponies.model.dto.response.IntervalResponse
 import ru.illine.drinking.ponies.model.dto.response.NotificationStatusResponse
 import ru.illine.drinking.ponies.model.dto.response.QuietModeResponse
+import ru.illine.drinking.ponies.model.dto.response.TimezoneResponse
 import ru.illine.drinking.ponies.service.notification.NotificationSettingsService
 import ru.illine.drinking.ponies.util.TimeHelper
 import ru.illine.drinking.ponies.util.telegram.TelegramGeneralConstants
@@ -47,6 +48,16 @@ class SettingController(
         @RequestParam("end") @DateTimeFormat(pattern = "HH:mm") end: LocalTime
     ) {
         notificationSettingsService.changeQuietMode(telegramUser.telegramId, start, end)
+    }
+
+    @GetMapping("/timezone")
+    @Operation(summary = "Get current user timezone")
+    fun getTimezone(
+        @Parameter(hidden = true)
+        @RequestAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) telegramUser: TelegramUserDto,
+    ): TimezoneResponse {
+        val settings = notificationSettingsService.getNotificationSettings(telegramUser.telegramId)
+        return TimezoneResponse(timezone = settings.telegramUser.userTimeZone)
     }
 
     @GetMapping("/interval")

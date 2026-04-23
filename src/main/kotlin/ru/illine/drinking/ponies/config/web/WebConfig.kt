@@ -22,7 +22,8 @@ class WebConfig(
             .addPathPatterns(
                 "/settings/quiet-mode",
                 "/settings/interval",
-                "/settings/notification-status"
+                "/settings/notification-status",
+                "/settings/timezone"
             )
     }
 

@@ -19,6 +19,7 @@ import ru.illine.drinking.ponies.model.dto.TelegramUserDto
 import ru.illine.drinking.ponies.model.dto.response.IntervalResponse
 import ru.illine.drinking.ponies.model.dto.response.NotificationStatusResponse
 import ru.illine.drinking.ponies.model.dto.response.QuietModeResponse
+import ru.illine.drinking.ponies.model.dto.response.TimezoneResponse
 import ru.illine.drinking.ponies.service.notification.NotificationSettingsService
 import ru.illine.drinking.ponies.service.telegram.TelegramValidatorService
 import ru.illine.drinking.ponies.test.generator.DtoGenerator
@@ -227,6 +228,39 @@ class SettingControllerTest @Autowired constructor(
             val response = restTemplate.exchange(url, HttpMethod.PUT, HttpEntity<Void>(headers), Void::class.java)
 
             assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
+        }
+    }
+
+    @Nested
+    @DisplayName("GET /settings/timezone")
+    inner class GetTimezone {
+
+        @Test
+        @DisplayName("valid request - returns 200 with timezone")
+        fun `returns 200 with timezone`() {
+            val expectedTimezone = "America/New_York"
+            val settingDto = DtoGenerator.generateNotificationDto(userTimeZone = expectedTimezone)
+            `when`(notificationSettingsService.getNotificationSettings(any())).thenReturn(settingDto)
+            val headers = buildHeaders()
+
+            val response = restTemplate.exchange(
+                "/settings/timezone", HttpMethod.GET, HttpEntity<Void>(headers), TimezoneResponse::class.java
+            )
+
+            assertEquals(HttpStatus.OK, response.statusCode)
+            assertEquals(expectedTimezone, response.body!!.timezone)
+            verify(notificationSettingsService).getNotificationSettings(any())
+        }
+
+        @Test
+        @DisplayName("missing auth header - returns 401")
+        fun `returns 401`() {
+            val response = restTemplate.exchange(
+                "/settings/timezone", HttpMethod.GET, HttpEntity<Void>(HttpHeaders()), Void::class.java
+            )
+
+            assertEquals(HttpStatus.UNAUTHORIZED, response.statusCode)
+            verifyNoInteractions(notificationSettingsService)
         }
     }
 
