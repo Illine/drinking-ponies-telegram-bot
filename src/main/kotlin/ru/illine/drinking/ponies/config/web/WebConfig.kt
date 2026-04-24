@@ -21,10 +21,7 @@ class WebConfig(
         registry.addInterceptor(telegramAuthInterceptor)
             .addPathPatterns(
                 "/settings",
-                "/settings/quiet-mode",
-                "/settings/interval",
-                "/settings/notification-status",
-                "/settings/timezone"
+                "/settings/**"
             )
     }
 
@@ -33,6 +30,7 @@ class WebConfig(
             .allowedOrigins(*corsProperties.allowedOrigins.toTypedArray())
             .allowedMethods(
                 HttpMethod.GET.name(),
+                HttpMethod.OPTIONS.name(),
                 HttpMethod.POST.name(),
                 HttpMethod.PUT.name(),
                 HttpMethod.PATCH.name(),

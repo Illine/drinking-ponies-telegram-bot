@@ -17,16 +17,10 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean
 import ru.illine.drinking.ponies.model.base.IntervalNotificationType
 import ru.illine.drinking.ponies.model.dto.TelegramUserDto
 import ru.illine.drinking.ponies.model.dto.SettingDto
-import ru.illine.drinking.ponies.model.dto.response.IntervalResponse
-import ru.illine.drinking.ponies.model.dto.response.NotificationStatusResponse
-import ru.illine.drinking.ponies.model.dto.response.QuietModeResponse
 import ru.illine.drinking.ponies.model.dto.response.SettingResponse
-import ru.illine.drinking.ponies.model.dto.response.TimezoneResponse
 import ru.illine.drinking.ponies.service.notification.NotificationSettingsService
 import ru.illine.drinking.ponies.service.telegram.TelegramValidatorService
-import ru.illine.drinking.ponies.test.generator.DtoGenerator
 import ru.illine.drinking.ponies.test.tag.SpringIntegrationTest
-import java.time.LocalTime
 
 @SpringIntegrationTest
 @DisplayName("SettingController Spring Integration Test")
@@ -127,56 +121,6 @@ class SettingControllerTest @Autowired constructor(
     }
 
     @Nested
-    @DisplayName("GET /settings/quiet-mode")
-    inner class GetQuietMode {
-
-        @Test
-        @DisplayName("valid request - returns 200 with quiet mode in HH:mm format")
-        fun `returns 200 with quiet mode`() {
-            val expectedStart = LocalTime.of(23, 0)
-            val expectedEnd = LocalTime.of(8, 0)
-            `when`(notificationSettingsService.getQuietMode(any())).thenReturn(expectedStart to expectedEnd)
-            val headers = buildHeaders()
-
-            val response = restTemplate.exchange(
-                "/settings/quiet-mode", HttpMethod.GET, HttpEntity<Void>(headers), QuietModeResponse::class.java
-            )
-
-            assertEquals(HttpStatus.OK, response.statusCode)
-            assertEquals("23:00", response.body!!.start)
-            assertEquals("08:00", response.body!!.end)
-            verify(notificationSettingsService).getQuietMode(any())
-        }
-
-        @Test
-        @DisplayName("single-digit hours - returns HH:mm with leading zero")
-        fun `returns HH-mm with leading zero`() {
-            `when`(notificationSettingsService.getQuietMode(any()))
-                .thenReturn(LocalTime.of(1, 30) to LocalTime.of(7, 5))
-            val headers = buildHeaders()
-
-            val response = restTemplate.exchange(
-                "/settings/quiet-mode", HttpMethod.GET, HttpEntity<Void>(headers), QuietModeResponse::class.java
-            )
-
-            assertEquals(HttpStatus.OK, response.statusCode)
-            assertEquals("01:30", response.body!!.start)
-            assertEquals("07:05", response.body!!.end)
-        }
-
-        @Test
-        @DisplayName("missing auth header - returns 401")
-        fun `returns 401`() {
-            val response = restTemplate.exchange(
-                "/settings/quiet-mode", HttpMethod.GET, HttpEntity<Void>(HttpHeaders()), Void::class.java
-            )
-
-            assertEquals(HttpStatus.UNAUTHORIZED, response.statusCode)
-            verifyNoInteractions(notificationSettingsService)
-        }
-    }
-
-    @Nested
     @DisplayName("PUT /settings/quiet-mode")
     inner class ChangeQuietMode {
 
@@ -241,41 +185,6 @@ class SettingControllerTest @Autowired constructor(
     }
 
     @Nested
-    @DisplayName("GET /settings/interval")
-    inner class GetInterval {
-
-        @Test
-        @DisplayName("valid request - returns 200 with interval data")
-        fun `returns 200 with interval`() {
-            val expectedInterval = IntervalNotificationType.HOUR_AND_HALF
-            val settingDto = DtoGenerator.generateNotificationDto(notificationInterval = expectedInterval)
-            `when`(notificationSettingsService.getNotificationSettings(any())).thenReturn(settingDto)
-            val headers = buildHeaders()
-
-            val response = restTemplate.exchange(
-                "/settings/interval", HttpMethod.GET, HttpEntity<Void>(headers), IntervalResponse::class.java
-            )
-
-            assertEquals(HttpStatus.OK, response.statusCode)
-            assertEquals(expectedInterval.name, response.body!!.interval)
-            assertEquals(expectedInterval.displayName, response.body!!.displayName)
-            assertEquals(expectedInterval.minutes, response.body!!.minutes)
-            verify(notificationSettingsService).getNotificationSettings(any())
-        }
-
-        @Test
-        @DisplayName("missing auth header - returns 401")
-        fun `returns 401`() {
-            val response = restTemplate.exchange(
-                "/settings/interval", HttpMethod.GET, HttpEntity<Void>(HttpHeaders()), Void::class.java
-            )
-
-            assertEquals(HttpStatus.UNAUTHORIZED, response.statusCode)
-            verifyNoInteractions(notificationSettingsService)
-        }
-    }
-
-    @Nested
     @DisplayName("PUT /settings/interval")
     inner class ChangeInterval {
 
@@ -322,39 +231,6 @@ class SettingControllerTest @Autowired constructor(
             val response = restTemplate.exchange(url, HttpMethod.PUT, HttpEntity<Void>(headers), Void::class.java)
 
             assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
-        }
-    }
-
-    @Nested
-    @DisplayName("GET /settings/timezone")
-    inner class GetTimezone {
-
-        @Test
-        @DisplayName("valid request - returns 200 with timezone")
-        fun `returns 200 with timezone`() {
-            val expectedTimezone = "America/New_York"
-            val settingDto = DtoGenerator.generateNotificationDto(userTimeZone = expectedTimezone)
-            `when`(notificationSettingsService.getNotificationSettings(any())).thenReturn(settingDto)
-            val headers = buildHeaders()
-
-            val response = restTemplate.exchange(
-                "/settings/timezone", HttpMethod.GET, HttpEntity<Void>(headers), TimezoneResponse::class.java
-            )
-
-            assertEquals(HttpStatus.OK, response.statusCode)
-            assertEquals(expectedTimezone, response.body!!.timezone)
-            verify(notificationSettingsService).getNotificationSettings(any())
-        }
-
-        @Test
-        @DisplayName("missing auth header - returns 401")
-        fun `returns 401`() {
-            val response = restTemplate.exchange(
-                "/settings/timezone", HttpMethod.GET, HttpEntity<Void>(HttpHeaders()), Void::class.java
-            )
-
-            assertEquals(HttpStatus.UNAUTHORIZED, response.statusCode)
-            verifyNoInteractions(notificationSettingsService)
         }
     }
 
@@ -407,52 +283,6 @@ class SettingControllerTest @Autowired constructor(
             val response = restTemplate.exchange(url, HttpMethod.PUT, HttpEntity<Void>(headers), Void::class.java)
 
             assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
-        }
-    }
-
-    @Nested
-    @DisplayName("GET /settings/notification-status")
-    inner class GetNotificationStatus {
-
-        @Test
-        @DisplayName("notifications enabled - returns 200 with active=true")
-        fun `returns active true when enabled`() {
-            `when`(notificationSettingsService.isEnabledNotifications(any())).thenReturn(true)
-            val headers = buildHeaders()
-
-            val response = restTemplate.exchange(
-                "/settings/notification-status", HttpMethod.GET, HttpEntity<Void>(headers), NotificationStatusResponse::class.java
-            )
-
-            assertEquals(HttpStatus.OK, response.statusCode)
-            assertEquals(true, response.body!!.active)
-            verify(notificationSettingsService).isEnabledNotifications(any())
-        }
-
-        @Test
-        @DisplayName("notifications disabled - returns 200 with active=false")
-        fun `returns active false when disabled`() {
-            `when`(notificationSettingsService.isEnabledNotifications(any())).thenReturn(false)
-            val headers = buildHeaders()
-
-            val response = restTemplate.exchange(
-                "/settings/notification-status", HttpMethod.GET, HttpEntity<Void>(headers), NotificationStatusResponse::class.java
-            )
-
-            assertEquals(HttpStatus.OK, response.statusCode)
-            assertEquals(false, response.body!!.active)
-            verify(notificationSettingsService).isEnabledNotifications(any())
-        }
-
-        @Test
-        @DisplayName("missing auth header - returns 401")
-        fun `returns 401`() {
-            val response = restTemplate.exchange(
-                "/settings/notification-status", HttpMethod.GET, HttpEntity<Void>(HttpHeaders()), Void::class.java
-            )
-
-            assertEquals(HttpStatus.UNAUTHORIZED, response.statusCode)
-            verifyNoInteractions(notificationSettingsService)
         }
     }
 

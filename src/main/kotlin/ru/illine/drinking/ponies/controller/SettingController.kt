@@ -8,13 +8,8 @@ import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.web.bind.annotation.*
 import ru.illine.drinking.ponies.model.base.IntervalNotificationType
 import ru.illine.drinking.ponies.model.dto.TelegramUserDto
-import ru.illine.drinking.ponies.model.dto.response.IntervalResponse
-import ru.illine.drinking.ponies.model.dto.response.NotificationStatusResponse
-import ru.illine.drinking.ponies.model.dto.response.QuietModeResponse
 import ru.illine.drinking.ponies.model.dto.response.SettingResponse
-import ru.illine.drinking.ponies.model.dto.response.TimezoneResponse
 import ru.illine.drinking.ponies.service.notification.NotificationSettingsService
-import ru.illine.drinking.ponies.util.TimeHelper
 import ru.illine.drinking.ponies.util.telegram.TelegramGeneralConstants
 import java.time.LocalTime
 
@@ -43,19 +38,6 @@ class SettingController(
         )
     }
 
-    @GetMapping("/quiet-mode")
-    @Operation(summary = "Get current quiet mode schedule")
-    fun getQuietMode(
-        @Parameter(hidden = true)
-        @RequestAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) telegramUser: TelegramUserDto,
-    ): QuietModeResponse {
-        val (start, end) = notificationSettingsService.getQuietMode(telegramUser.telegramId)
-        return QuietModeResponse(
-            start = TimeHelper.timeToString(start),
-            end = TimeHelper.timeToString(end),
-        )
-    }
-
     @PutMapping("/quiet-mode")
     @Operation(summary = "Change quiet mode schedule")
     fun changeQuietMode(
@@ -69,16 +51,6 @@ class SettingController(
         notificationSettingsService.changeQuietMode(telegramUser.telegramId, start, end)
     }
 
-    @GetMapping("/timezone")
-    @Operation(summary = "Get current user timezone")
-    fun getTimezone(
-        @Parameter(hidden = true)
-        @RequestAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) telegramUser: TelegramUserDto,
-    ): TimezoneResponse {
-        val settings = notificationSettingsService.getNotificationSettings(telegramUser.telegramId)
-        return TimezoneResponse(timezone = settings.telegramUser.userTimeZone)
-    }
-
     @PutMapping("/timezone")
     @Operation(summary = "Change user timezone")
     fun changeTimezone(
@@ -90,20 +62,6 @@ class SettingController(
         notificationSettingsService.changeTimezone(telegramUser.telegramId, timezone)
     }
 
-    @GetMapping("/interval")
-    @Operation(summary = "Get current notification interval")
-    fun getInterval(
-        @Parameter(hidden = true)
-        @RequestAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) telegramUser: TelegramUserDto,
-    ): IntervalResponse {
-        val settings = notificationSettingsService.getNotificationSettings(telegramUser.telegramId)
-        return IntervalResponse(
-            interval = settings.notificationInterval.name,
-            displayName = settings.notificationInterval.displayName,
-            minutes = settings.notificationInterval.minutes,
-        )
-    }
-
     @PutMapping("/interval")
     @Operation(summary = "Change notification interval")
     fun changeInterval(
@@ -113,16 +71,6 @@ class SettingController(
         @RequestParam(name = "interval", required = true) interval: IntervalNotificationType
     ) {
         notificationSettingsService.changeInterval(telegramUser.telegramId, interval)
-    }
-
-    @GetMapping("/notification-status")
-    @Operation(summary = "Get notification enabled status")
-    fun getNotificationStatus(
-        @Parameter(hidden = true)
-        @RequestAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) telegramUser: TelegramUserDto,
-    ): NotificationStatusResponse {
-        val enabled = notificationSettingsService.isEnabledNotifications(telegramUser.telegramId)
-        return NotificationStatusResponse(active = enabled)
     }
 
     @PutMapping("/notification-status")
