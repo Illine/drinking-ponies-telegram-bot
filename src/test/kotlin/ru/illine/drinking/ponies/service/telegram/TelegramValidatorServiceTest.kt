@@ -10,7 +10,6 @@ import ru.illine.drinking.ponies.service.telegram.impl.TelegramValidatorServiceI
 import ru.illine.drinking.ponies.test.tag.UnitTest
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
-import java.time.Duration
 import java.time.Instant
 
 @UnitTest
@@ -31,6 +30,7 @@ class TelegramValidatorServiceTest {
             username = "username",
             creatorId = 1L,
             autoUpdateCommands = false,
+            authDateExpirationSeconds = 3600,
             http = TelegramBotProperties.Http(connectionTimeToLiveInSec = 30, maxConnectionTotal = 10)
         )
         service = TelegramValidatorServiceImpl(properties)
@@ -41,16 +41,16 @@ class TelegramValidatorServiceTest {
     fun `verifySignature valid`() {
         val initData = buildInitData(Instant.now().epochSecond)
 
-        assertTrue(service.verifySignature(initData, Duration.ofHours(1)))
+        assertTrue(service.verifySignature(initData))
     }
 
     @Test
     @DisplayName("verifySignature(): returns false when auth_date is expired")
     fun `verifySignature expired auth date`() {
-        val expiredAuthDate = Instant.now().epochSecond - Duration.ofHours(2).seconds
+        val expiredAuthDate = Instant.now().epochSecond - 7200
         val initData = buildInitData(expiredAuthDate)
 
-        assertFalse(service.verifySignature(initData, Duration.ofHours(1)))
+        assertFalse(service.verifySignature(initData))
     }
 
     @Test
@@ -60,7 +60,7 @@ class TelegramValidatorServiceTest {
         val encodedUser = URLEncoder.encode(userJson, StandardCharsets.UTF_8)
         val initData = "auth_date=$authDate&hash=badhash&query_id=$queryId&user=$encodedUser"
 
-        assertFalse(service.verifySignature(initData, Duration.ofHours(1)))
+        assertFalse(service.verifySignature(initData))
     }
 
     @Test

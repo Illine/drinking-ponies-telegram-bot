@@ -90,7 +90,7 @@ class TelegramAuthInterceptorTest {
         val telegramUser = TelegramUserDto(telegramId = 1L, firstName = "Test", lastName = null, username = null)
         `when`(request.method).thenReturn("POST")
         `when`(request.getHeader(headerName)).thenReturn(initData)
-        `when`(validatorService.verifySignature(any(), any())).thenReturn(true)
+        `when`(validatorService.verifySignature(any())).thenReturn(true)
         `when`(validatorService.map(initData)).thenReturn(telegramUser)
 
         val result = interceptor.preHandle(request, response, Any())
@@ -105,7 +105,7 @@ class TelegramAuthInterceptorTest {
     fun `preHandle invalid signature returns false with 403`() {
         `when`(request.method).thenReturn("POST")
         `when`(request.getHeader(headerName)).thenReturn("invalid-data")
-        `when`(validatorService.verifySignature(any(), any())).thenReturn(false)
+        `when`(validatorService.verifySignature(any())).thenReturn(false)
 
         val result = interceptor.preHandle(request, response, Any())
 

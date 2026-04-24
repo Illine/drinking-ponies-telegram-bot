@@ -23,11 +23,12 @@ class TelegramValidatorServiceImpl(
 
     private val objectMapper = jacksonObjectMapper()
 
-    override fun verifySignature(initData: String, expirationTime: Duration): Boolean {
+    override fun verifySignature(initData: String): Boolean {
         val token = telegramBotProperties.token
         val decodedData = decode(initData)
         logger.debug("Validate 'initDate' with query_id: {}", decodedData[QUERY_ID_FIELD_NAME])
 
+        val expirationTime = Duration.ofSeconds(telegramBotProperties.authDateExpirationSeconds)
         return validateAuthDate(decodedData, expirationTime) && validateHash(decodedData, token)
     }
 

@@ -27,6 +27,9 @@ data class TelegramBotProperties(
     @NonNull
     val autoUpdateCommands: Boolean,
 
+    @Min(10)
+    val authDateExpirationSeconds: Long = 600,
+
     @NotNull
     var http: Http,
 

@@ -45,7 +45,7 @@ class NotificationControllerTest @Autowired constructor(
 
     @BeforeEach
     fun setUp() {
-        `when`(telegramValidatorService.verifySignature(any(), any())).thenReturn(true)
+        `when`(telegramValidatorService.verifySignature(any())).thenReturn(true)
         `when`(telegramValidatorService.map(any())).thenReturn(telegramUser)
     }
 
