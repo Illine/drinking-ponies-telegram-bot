@@ -151,6 +151,8 @@ tasks {
                         "**/OpenApiConfig*",
                         // JPA entities: boilerplate managed by Hibernate, not application logic
                         "**/*Entity*",
+                        // Response: not application logic
+                        "**/*Response*",
                         // Spring @ConfigurationProperties: no business logic, Kotlin data class boilerplate
                         "**/*Properties*",
                         // P6Spy logger: extends third-party Slf4JLogger, JaCoCo cannot correctly map coverage through parent bytecode

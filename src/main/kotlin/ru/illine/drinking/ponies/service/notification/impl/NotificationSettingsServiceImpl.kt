@@ -8,16 +8,25 @@ import ru.illine.drinking.ponies.model.base.IntervalNotificationType
 import ru.illine.drinking.ponies.model.dto.SettingDto
 import ru.illine.drinking.ponies.model.dto.internal.NotificationSettingDto
 import ru.illine.drinking.ponies.service.notification.NotificationSettingsService
+import ru.illine.drinking.ponies.service.notification.NotificationTimeService
+import java.time.Instant
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneId
 
 @Service
 class NotificationSettingsServiceImpl(
-    private val notificationAccessService: NotificationAccessService
+    private val notificationAccessService: NotificationAccessService,
+    private val notificationTimeService: NotificationTimeService
 ) : NotificationSettingsService {
 
     private val logger = LoggerFactory.getLogger("SERVICE")
+
+    override fun getNextNotificationAt(telegramUserId: Long): Instant {
+        logger.info("Getting next notification time for telegram user [$telegramUserId]")
+        val settings = notificationAccessService.findNotificationSettingByTelegramUserId(telegramUserId)
+        return notificationTimeService.calculateNextNotificationAt(settings)
+    }
 
     override fun getAllSettings(telegramUserId: Long): SettingDto {
         logger.info("Getting all notification settings for telegram user [$telegramUserId]")

@@ -13,6 +13,7 @@ import ru.illine.drinking.ponies.model.base.IntervalNotificationType
 import ru.illine.drinking.ponies.service.notification.impl.NotificationSettingsServiceImpl
 import ru.illine.drinking.ponies.test.generator.DtoGenerator
 import ru.illine.drinking.ponies.test.tag.UnitTest
+import java.time.Instant
 import java.time.LocalDateTime
 import java.time.LocalTime
 
@@ -23,12 +24,14 @@ class NotificationSettingsServiceTest {
     private val userId = 1L
 
     private lateinit var notificationAccessService: NotificationAccessService
+    private lateinit var notificationTimeService: NotificationTimeService
     private lateinit var service: NotificationSettingsService
 
     @BeforeEach
     fun setUp() {
         notificationAccessService = mock(NotificationAccessService::class.java)
-        service = NotificationSettingsServiceImpl(notificationAccessService)
+        notificationTimeService = mock(NotificationTimeService::class.java)
+        service = NotificationSettingsServiceImpl(notificationAccessService, notificationTimeService)
     }
 
     @Test
@@ -217,6 +220,21 @@ class NotificationSettingsServiceTest {
         }
 
         verify(notificationAccessService, never()).changeTimezone(anyLong(), anyString())
+    }
+
+    @Test
+    @DisplayName("getNextNotificationAt(): delegates to time service and returns instant")
+    fun `getNextNotificationAt delegates to time service`() {
+        val dto = DtoGenerator.generateNotificationDto(externalUserId = userId)
+        val expectedInstant = Instant.parse("2025-01-01T11:00:00Z")
+        `when`(notificationAccessService.findNotificationSettingByTelegramUserId(userId)).thenReturn(dto)
+        `when`(notificationTimeService.calculateNextNotificationAt(dto)).thenReturn(expectedInstant)
+
+        val result = service.getNextNotificationAt(userId)
+
+        assertEquals(expectedInstant, result)
+        verify(notificationAccessService).findNotificationSettingByTelegramUserId(userId)
+        verify(notificationTimeService).calculateNextNotificationAt(dto)
     }
 
     @Test

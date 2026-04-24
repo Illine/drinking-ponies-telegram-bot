@@ -12,6 +12,7 @@ import ru.illine.drinking.ponies.test.generator.DtoGenerator
 import ru.illine.drinking.ponies.test.tag.SpringIntegrationTest
 import ru.illine.drinking.ponies.test.util.ClockHelperTest
 import java.time.Clock
+import java.time.Instant
 import java.time.LocalTime
 import java.time.ZonedDateTime
 import java.util.stream.Stream
@@ -75,6 +76,33 @@ class NotificationTimeServiceTest @Autowired constructor(
 
         val actual = notificationTimeService.isNotificationDue(dto)
         Assertions.assertEquals(expected, actual, description)
+    }
+
+    @ParameterizedTest(name = "{index}: {6}")
+    @MethodSource("nextNotificationAtScenarios")
+    fun `calculateNextNotificationAt table test`(
+        lastNotificationTimeIso: String,
+        interval: IntervalNotificationType,
+        userZone: String,
+        quietStartIso: String?,
+        quietEndIso: String?,
+        expectedIso: String,
+        description: String
+    ) {
+        val lastNotification = ZonedDateTime.parse(lastNotificationTimeIso).toLocalDateTime()
+        val start = quietStartIso?.let { LocalTime.parse(it) }
+        val end = quietEndIso?.let { LocalTime.parse(it) }
+
+        val dto = DtoGenerator.generateNotificationDto(
+            timeOfLastNotification = lastNotification,
+            notificationInterval = interval,
+            userTimeZone = userZone,
+            quietModeStart = start,
+            quietModeEnd = end
+        )
+
+        val actual = notificationTimeService.calculateNextNotificationAt(dto)
+        Assertions.assertEquals(Instant.parse(expectedIso), actual, description)
     }
 
     companion object {
@@ -181,6 +209,79 @@ class NotificationTimeServiceTest @Autowired constructor(
                 Arguments.of(
                     "2025-01-02T08:00:00.000000001Z", "UTC", "22:00", "08:00", true,
                     "1 nanosecond after night interval ends -> Allow"
+                )
+            )
+        }
+
+        @JvmStatic
+        fun nextNotificationAtScenarios(): Stream<Arguments> {
+            return Stream.of(
+                // FORMAT: LastNotificationTime | Interval | Zone | QuietStart | QuietEnd | Expected | Description
+
+                Arguments.of(
+                    "2025-01-01T10:00:00Z", IntervalNotificationType.HOUR, "UTC", null, null,
+                    "2025-01-01T11:00:00Z",
+                    "No quiet mode -> rawNext = lastNotification + interval"
+                ),
+
+                Arguments.of(
+                    "2025-01-01T14:00:00Z", IntervalNotificationType.HOUR, "UTC", "14:00", "16:00",
+                    "2025-01-01T16:00:00Z",
+                    "Day quiet mode: rawNext 15:00 inside 14-16 -> Shift to quietModeEnd"
+                ),
+
+                Arguments.of(
+                    "2025-01-01T22:00:00Z", IntervalNotificationType.HOUR, "UTC", "22:00", "08:00",
+                    "2025-01-02T08:00:00Z",
+                    "Night quiet mode: rawNext 23:00 inside 22-08 -> Shift to 08:00 next day"
+                ),
+
+                Arguments.of(
+                    "2025-01-01T10:00:00Z", IntervalNotificationType.HOUR, "UTC", "14:00", "14:00",
+                    "2025-01-01T11:00:00Z",
+                    "Quiet mode start == end -> Effectively disabled, return rawNext"
+                ),
+
+                Arguments.of(
+                    "2025-01-01T12:30:00Z", IntervalNotificationType.HOUR, "Asia/Tokyo", "22:00", "08:00",
+                    "2025-01-01T23:00:00Z",
+                    "Tokyo (UTC+9): rawNext 13:30Z = 22:30 local, inside 22-08 -> Shift to 08:00 local next day = 23:00Z"
+                ),
+
+                Arguments.of(
+                    "2025-01-01T10:00:00Z", IntervalNotificationType.HOUR, "UTC", "23:00", "08:00",
+                    "2025-01-01T11:00:00Z",
+                    "rawNext 11:00 outside night quiet 23-08 -> Return rawNext"
+                ),
+
+                Arguments.of(
+                    "2025-01-01T10:00:00Z", IntervalNotificationType.HOUR, "Invalid/Zone", "14:00", "16:00",
+                    "2025-01-01T11:00:00Z",
+                    "Invalid timezone -> Fallback to UTC, rawNext 11:00 outside 14-16 -> Return rawNext"
+                ),
+
+                Arguments.of(
+                    "2025-01-01T13:00:00Z", IntervalNotificationType.HOUR, "UTC", "14:00", "16:00",
+                    "2025-01-01T16:00:00Z",
+                    "Exact quiet start boundary (inclusive): rawNext 14:00 == start -> In quiet, shift to quietModeEnd"
+                ),
+
+                Arguments.of(
+                    "2025-01-01T14:30:00Z", IntervalNotificationType.HOUR_AND_HALF, "UTC", "14:00", "17:00",
+                    "2025-01-01T17:00:00Z",
+                    "Inside quiet near end: rawNext 16:00 inside 14-17 -> Shift to quietModeEnd 17:00"
+                ),
+
+                Arguments.of(
+                    "2025-01-01T10:00:00Z", IntervalNotificationType.TWO_HOURS, "UTC", null, null,
+                    "2025-01-01T12:00:00Z",
+                    "TWO_HOURS interval without quiet mode -> rawNext = lastNotification + 120m"
+                ),
+
+                Arguments.of(
+                    "2025-01-01T06:30:00Z", IntervalNotificationType.HOUR, "UTC", "02:00", "08:00",
+                    "2025-01-01T08:00:00Z",
+                    "rawNext 07:30 inside day quiet 02-08 -> Shift to 08:00 same day"
                 )
             )
         }

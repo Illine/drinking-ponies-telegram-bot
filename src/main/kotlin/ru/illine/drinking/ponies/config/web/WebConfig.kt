@@ -21,7 +21,8 @@ class WebConfig(
         registry.addInterceptor(telegramAuthInterceptor)
             .addPathPatterns(
                 "/settings",
-                "/settings/**"
+                "/settings/**",
+                "/notifications/**"
             )
     }
 
