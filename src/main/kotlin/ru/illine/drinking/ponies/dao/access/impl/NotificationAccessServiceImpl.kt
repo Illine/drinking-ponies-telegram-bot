@@ -14,6 +14,7 @@ import ru.illine.drinking.ponies.model.base.IntervalNotificationType
 import ru.illine.drinking.ponies.model.dto.internal.NotificationSettingDto
 import ru.illine.drinking.ponies.model.dto.internal.TelegramChatDto
 import ru.illine.drinking.ponies.model.dto.internal.TelegramUserDto
+import java.time.Clock
 import java.time.LocalDateTime
 import java.time.LocalTime
 
@@ -22,6 +23,7 @@ class NotificationAccessServiceImpl(
     private val settingRepository: NotificationSettingRepository,
     private val userRepository: TelegramUserRepository,
     private val chatRepository: TelegramChatRepository,
+    private val clock: Clock,
 ) : NotificationAccessService {
 
     private val logger = LoggerFactory.getLogger("ACCESS-SERVICE")
@@ -101,8 +103,12 @@ class NotificationAccessServiceImpl(
         )
 
         if (settings.notificationInterval != notificationInterval) {
-            settings.notificationInterval = notificationInterval
-            settingRepository.save(settings)
+            // Reset timer so the new interval counts from now, not from the last notification time.
+            settings.apply {
+                this.notificationInterval = notificationInterval
+                this.timeOfLastNotification = LocalDateTime.now(clock)
+                this.notificationAttempts = 0
+            }.let { settingRepository.save(it) }
         }
 
         return settings.let {

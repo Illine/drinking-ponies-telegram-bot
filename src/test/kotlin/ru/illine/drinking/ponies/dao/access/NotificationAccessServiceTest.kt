@@ -1,6 +1,7 @@
 package ru.illine.drinking.ponies.dao.access
 
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -11,6 +12,8 @@ import org.springframework.test.context.jdbc.SqlConfig
 import ru.illine.drinking.ponies.model.base.IntervalNotificationType
 import ru.illine.drinking.ponies.test.generator.DtoGenerator
 import ru.illine.drinking.ponies.test.tag.SpringIntegrationTest
+import ru.illine.drinking.ponies.test.util.ClockHelperTest
+import java.time.Clock
 import java.time.LocalDateTime
 import java.time.LocalTime
 
@@ -28,6 +31,7 @@ import java.time.LocalTime
 )
 class NotificationAccessServiceTest @Autowired constructor(
     private val accessService: NotificationAccessService,
+    private val clock: Clock,
 ) {
 
     private val DEFAULT_ID = 1L
@@ -35,6 +39,13 @@ class NotificationAccessServiceTest @Autowired constructor(
     private val DEFAULT_TELEGRAM_USER_ID = 1L
     private val DISABLED_TELEGRAM_USER_ID = 2L
     private val WITHOUT_NOTIFICATION_ATTEMPTS = 0
+
+    private fun getMutableClock() = clock as ClockHelperTest.MutableClock
+
+    @BeforeEach
+    fun resetClock() {
+        getMutableClock().setTime(ClockHelperTest.DEFAULT_TIME)
+    }
 
     @Test
     @DisplayName("findAllNotificationSettings(): returns a not empty set")
@@ -268,6 +279,38 @@ class NotificationAccessServiceTest @Autowired constructor(
     fun `failure updateTimeOfLastNotification not found`() {
         val time = LocalDateTime.now()
         assertThrows<IllegalArgumentException> { accessService.updateTimeOfLastNotification(NOT_EXISTED_USER_ID, time) }
+    }
+
+    @Test
+    @DisplayName("updateNotificationSettings(): resets timeOfLastNotification and notificationAttempts when interval changes")
+    fun `successful updateNotificationSettings resets timeOfLastNotification and notificationAttempts on interval change`() {
+        getMutableClock().setTime("2025-06-15T14:00:00Z")
+        val expectedTime = LocalDateTime.now(clock)
+
+        val actual = assertDoesNotThrow(
+            ThrowingSupplier {
+                accessService.updateNotificationSettings(DEFAULT_TELEGRAM_USER_ID, IntervalNotificationType.HALF_HOUR)
+            }
+        )
+
+        assertEquals(IntervalNotificationType.HALF_HOUR, actual.notificationInterval)
+        assertEquals(expectedTime, actual.timeOfLastNotification)
+        assertEquals(WITHOUT_NOTIFICATION_ATTEMPTS, actual.notificationAttempts)
+    }
+
+    @Test
+    @DisplayName("updateNotificationSettings(): does not reset timeOfLastNotification and notificationAttempts when interval is the same")
+    fun `successful updateNotificationSettings does not reset timeOfLastNotification and notificationAttempts on same interval`() {
+        val before = accessService.findNotificationSettingByTelegramUserId(DEFAULT_TELEGRAM_USER_ID)
+
+        val actual = assertDoesNotThrow(
+            ThrowingSupplier {
+                accessService.updateNotificationSettings(DEFAULT_TELEGRAM_USER_ID, IntervalNotificationType.TWO_HOURS)
+            }
+        )
+
+        assertEquals(before.timeOfLastNotification, actual.timeOfLastNotification)
+        assertEquals(before.notificationAttempts, actual.notificationAttempts)
     }
 
     @Test
