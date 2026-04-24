@@ -125,14 +125,14 @@ class SettingControllerTest @Autowired constructor(
     inner class ChangeQuietMode {
 
         @Test
-        @DisplayName("valid request - returns 200")
-        fun `returns 200`() {
+        @DisplayName("valid request - returns 204")
+        fun `returns 204`() {
             val headers = buildHeaders()
             val url = "/settings/quiet-mode?start=08:00&end=22:00"
 
             val response = restTemplate.exchange(url, HttpMethod.PUT, HttpEntity<Void>(headers), Void::class.java)
 
-            assertEquals(HttpStatus.OK, response.statusCode)
+            assertEquals(HttpStatus.NO_CONTENT, response.statusCode)
             verify(notificationSettingsService).changeQuietMode(any(), any(), any())
         }
 
@@ -189,14 +189,14 @@ class SettingControllerTest @Autowired constructor(
     inner class ChangeInterval {
 
         @Test
-        @DisplayName("valid request - returns 200")
-        fun `returns 200`() {
+        @DisplayName("valid request - returns 204")
+        fun `returns 204`() {
             val headers = buildHeaders()
             val url = "/settings/interval?interval=${IntervalNotificationType.HOUR.name}"
 
             val response = restTemplate.exchange(url, HttpMethod.PUT, HttpEntity<Void>(headers), Void::class.java)
 
-            assertEquals(HttpStatus.OK, response.statusCode)
+            assertEquals(HttpStatus.NO_CONTENT, response.statusCode)
             verify(notificationSettingsService).changeInterval(any<Long>(), any<IntervalNotificationType>())
         }
 
@@ -239,14 +239,14 @@ class SettingControllerTest @Autowired constructor(
     inner class ChangeTimezone {
 
         @Test
-        @DisplayName("valid request - returns 200")
-        fun `returns 200`() {
+        @DisplayName("valid request - returns 204")
+        fun `returns 204`() {
             val headers = buildHeaders()
             val url = "/settings/timezone?timezone=Europe/Berlin"
 
             val response = restTemplate.exchange(url, HttpMethod.PUT, HttpEntity<Void>(headers), Void::class.java)
 
-            assertEquals(HttpStatus.OK, response.statusCode)
+            assertEquals(HttpStatus.NO_CONTENT, response.statusCode)
             verify(notificationSettingsService).changeTimezone(any(), any())
         }
 
@@ -291,26 +291,26 @@ class SettingControllerTest @Autowired constructor(
     inner class ChangeNotificationStatus {
 
         @Test
-        @DisplayName("valid request - returns 200")
-        fun `returns 200`() {
+        @DisplayName("valid request - returns 204")
+        fun `returns 204`() {
             val headers = buildHeaders()
             val url = "/settings/notification-status?active=false"
 
             val response = restTemplate.exchange(url, HttpMethod.PUT, HttpEntity<Void>(headers), Void::class.java)
 
-            assertEquals(HttpStatus.OK, response.statusCode)
+            assertEquals(HttpStatus.NO_CONTENT, response.statusCode)
             verify(notificationSettingsService).changeNotificationStatus(any(), any())
         }
 
         @Test
-        @DisplayName("valid request with active=true - returns 200")
-        fun `returns 200 when active true`() {
+        @DisplayName("valid request with active=true - returns 204")
+        fun `returns 204 when active true`() {
             val headers = buildHeaders()
             val url = "/settings/notification-status?active=true"
 
             val response = restTemplate.exchange(url, HttpMethod.PUT, HttpEntity<Void>(headers), Void::class.java)
 
-            assertEquals(HttpStatus.OK, response.statusCode)
+            assertEquals(HttpStatus.NO_CONTENT, response.statusCode)
             verify(notificationSettingsService).changeNotificationStatus(any(), any())
         }
 

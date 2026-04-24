@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.format.annotation.DateTimeFormat
+import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.*
 import ru.illine.drinking.ponies.model.base.IntervalNotificationType
 import ru.illine.drinking.ponies.model.dto.TelegramUserDto
@@ -39,6 +40,7 @@ class SettingController(
     }
 
     @PutMapping("/quiet-mode")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(summary = "Change quiet mode schedule")
     fun changeQuietMode(
         @Parameter(hidden = true)
@@ -52,6 +54,7 @@ class SettingController(
     }
 
     @PutMapping("/timezone")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(summary = "Change user timezone")
     fun changeTimezone(
         @Parameter(hidden = true)
@@ -63,6 +66,7 @@ class SettingController(
     }
 
     @PutMapping("/interval")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(summary = "Change notification interval")
     fun changeInterval(
         @Parameter(hidden = true)
@@ -74,6 +78,7 @@ class SettingController(
     }
 
     @PutMapping("/notification-status")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(summary = "Change notification enabled status")
     fun changeNotificationStatus(
         @Parameter(hidden = true)
