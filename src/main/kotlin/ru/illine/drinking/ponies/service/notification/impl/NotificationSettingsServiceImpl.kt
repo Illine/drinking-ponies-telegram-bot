@@ -2,8 +2,10 @@ package ru.illine.drinking.ponies.service.notification.impl
 
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
+import ru.illine.drinking.ponies.builder.SettingBuilder
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
 import ru.illine.drinking.ponies.model.base.IntervalNotificationType
+import ru.illine.drinking.ponies.model.dto.SettingDto
 import ru.illine.drinking.ponies.model.dto.internal.NotificationSettingDto
 import ru.illine.drinking.ponies.service.notification.NotificationSettingsService
 import java.time.LocalDateTime
@@ -16,6 +18,19 @@ class NotificationSettingsServiceImpl(
 ) : NotificationSettingsService {
 
     private val logger = LoggerFactory.getLogger("SERVICE")
+
+    override fun getAllSettings(telegramUserId: Long): SettingDto {
+        logger.info("Getting all notification settings for telegram user [$telegramUserId]")
+
+        val active = notificationAccessService.isEnabledNotifications(telegramUserId)
+        if (!active) {
+            logger.debug("Not enabled notifications for telegramUserId [$telegramUserId], returning empty settings")
+            return SettingDto(notificationActive = false)
+        }
+
+        logger.debug("Settings for telegramUserId [$telegramUserId] has been enabled")
+        return getNotificationSettings(telegramUserId).let { SettingBuilder.toDto(it) }
+    }
 
     override fun getNotificationSettings(telegramUserId: Long): NotificationSettingDto {
         logger.info("Getting notification settings for telegram user [$telegramUserId]")

@@ -218,4 +218,48 @@ class NotificationSettingsServiceTest {
 
         verify(notificationAccessService, never()).changeTimezone(anyLong(), anyString())
     }
+
+    @Test
+    @DisplayName("getAllSettings(): returns SettingDto with all fields when notifications are enabled")
+    fun `getAllSettings returns full dto when enabled`() {
+        `when`(notificationAccessService.isEnabledNotifications(userId)).thenReturn(true)
+        val notificationDto = DtoGenerator.generateNotificationDto(
+            externalUserId = userId,
+            notificationInterval = IntervalNotificationType.HOUR,
+            userTimeZone = "Europe/Moscow",
+            quietModeStart = LocalTime.of(23, 0),
+            quietModeEnd = LocalTime.of(8, 0),
+        )
+        `when`(notificationAccessService.findNotificationSettingByTelegramUserId(userId)).thenReturn(notificationDto)
+
+        val result = service.getAllSettings(userId)
+
+        assertEquals(true, result.notificationActive)
+        assertEquals(IntervalNotificationType.HOUR.name, result.interval)
+        assertEquals(IntervalNotificationType.HOUR.displayName, result.intervalDisplayName)
+        assertEquals(IntervalNotificationType.HOUR.minutes, result.intervalMinutes)
+        assertEquals("23:00", result.quietModeStart)
+        assertEquals("08:00", result.quietModeEnd)
+        assertEquals("Europe/Moscow", result.timezone)
+        verify(notificationAccessService).isEnabledNotifications(userId)
+        verify(notificationAccessService).findNotificationSettingByTelegramUserId(userId)
+    }
+
+    @Test
+    @DisplayName("getAllSettings(): returns SettingDto with only notificationActive=false when notifications are disabled")
+    fun `getAllSettings returns minimal dto when disabled`() {
+        `when`(notificationAccessService.isEnabledNotifications(userId)).thenReturn(false)
+
+        val result = service.getAllSettings(userId)
+
+        assertEquals(false, result.notificationActive)
+        assertEquals(null, result.interval)
+        assertEquals(null, result.intervalDisplayName)
+        assertEquals(null, result.intervalMinutes)
+        assertEquals(null, result.quietModeStart)
+        assertEquals(null, result.quietModeEnd)
+        assertEquals(null, result.timezone)
+        verify(notificationAccessService).isEnabledNotifications(userId)
+        verify(notificationAccessService, never()).findNotificationSettingByTelegramUserId(anyLong())
+    }
 }

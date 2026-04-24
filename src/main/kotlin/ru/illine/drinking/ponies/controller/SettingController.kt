@@ -11,6 +11,7 @@ import ru.illine.drinking.ponies.model.dto.TelegramUserDto
 import ru.illine.drinking.ponies.model.dto.response.IntervalResponse
 import ru.illine.drinking.ponies.model.dto.response.NotificationStatusResponse
 import ru.illine.drinking.ponies.model.dto.response.QuietModeResponse
+import ru.illine.drinking.ponies.model.dto.response.SettingResponse
 import ru.illine.drinking.ponies.model.dto.response.TimezoneResponse
 import ru.illine.drinking.ponies.service.notification.NotificationSettingsService
 import ru.illine.drinking.ponies.util.TimeHelper
@@ -23,6 +24,24 @@ import java.time.LocalTime
 class SettingController(
     private val notificationSettingsService: NotificationSettingsService
 ) {
+
+    @GetMapping
+    @Operation(summary = "Get all notification settings")
+    fun getSettings(
+        @Parameter(hidden = true)
+        @RequestAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) telegramUser: TelegramUserDto,
+    ): SettingResponse {
+        val settings = notificationSettingsService.getAllSettings(telegramUser.telegramId)
+        return SettingResponse(
+            interval = settings.interval,
+            intervalDisplayName = settings.intervalDisplayName,
+            intervalMinutes = settings.intervalMinutes,
+            quietModeStart = settings.quietModeStart,
+            quietModeEnd = settings.quietModeEnd,
+            timezone = settings.timezone,
+            notificationActive = settings.notificationActive,
+        )
+    }
 
     @GetMapping("/quiet-mode")
     @Operation(summary = "Get current quiet mode schedule")

@@ -16,9 +16,11 @@ import org.springframework.http.HttpStatus
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import ru.illine.drinking.ponies.model.base.IntervalNotificationType
 import ru.illine.drinking.ponies.model.dto.TelegramUserDto
+import ru.illine.drinking.ponies.model.dto.SettingDto
 import ru.illine.drinking.ponies.model.dto.response.IntervalResponse
 import ru.illine.drinking.ponies.model.dto.response.NotificationStatusResponse
 import ru.illine.drinking.ponies.model.dto.response.QuietModeResponse
+import ru.illine.drinking.ponies.model.dto.response.SettingResponse
 import ru.illine.drinking.ponies.model.dto.response.TimezoneResponse
 import ru.illine.drinking.ponies.service.notification.NotificationSettingsService
 import ru.illine.drinking.ponies.service.telegram.TelegramValidatorService
@@ -54,6 +56,73 @@ class SettingControllerTest @Autowired constructor(
     private fun buildHeaders(): HttpHeaders {
         return HttpHeaders().apply {
             set("X-Authorization-Telegram-Data", "test-init-data")
+        }
+    }
+
+    @Nested
+    @DisplayName("GET /settings")
+    inner class GetSettings {
+
+        @Test
+        @DisplayName("valid request - returns 200 with all settings")
+        fun `returns 200 with all settings`() {
+            val expectedInterval = IntervalNotificationType.HOUR_AND_HALF
+            val settingDto = SettingDto(
+                interval = expectedInterval.name,
+                intervalDisplayName = expectedInterval.displayName,
+                intervalMinutes = expectedInterval.minutes,
+                quietModeStart = "23:00",
+                quietModeEnd = "08:00",
+                timezone = "America/New_York",
+                notificationActive = true,
+            )
+            `when`(notificationSettingsService.getAllSettings(any())).thenReturn(settingDto)
+            val headers = buildHeaders()
+
+            val response = restTemplate.exchange(
+                "/settings", HttpMethod.GET, HttpEntity<Void>(headers), SettingResponse::class.java
+            )
+
+            assertEquals(HttpStatus.OK, response.statusCode)
+            assertEquals(expectedInterval.name, response.body!!.interval)
+            assertEquals(expectedInterval.displayName, response.body!!.intervalDisplayName)
+            assertEquals(expectedInterval.minutes, response.body!!.intervalMinutes)
+            assertEquals("23:00", response.body!!.quietModeStart)
+            assertEquals("08:00", response.body!!.quietModeEnd)
+            assertEquals("America/New_York", response.body!!.timezone)
+            assertEquals(true, response.body!!.notificationActive)
+        }
+
+        @Test
+        @DisplayName("notifications disabled - returns 200 with notificationActive=false")
+        fun `returns 200 with only notificationActive when disabled`() {
+            val settingDto = SettingDto(notificationActive = false)
+            `when`(notificationSettingsService.getAllSettings(any())).thenReturn(settingDto)
+            val headers = buildHeaders()
+
+            val response = restTemplate.exchange(
+                "/settings", HttpMethod.GET, HttpEntity<Void>(headers), SettingResponse::class.java
+            )
+
+            assertEquals(HttpStatus.OK, response.statusCode)
+            assertEquals(false, response.body!!.notificationActive)
+            assertEquals(null, response.body!!.interval)
+            assertEquals(null, response.body!!.intervalDisplayName)
+            assertEquals(null, response.body!!.intervalMinutes)
+            assertEquals(null, response.body!!.quietModeStart)
+            assertEquals(null, response.body!!.quietModeEnd)
+            assertEquals(null, response.body!!.timezone)
+        }
+
+        @Test
+        @DisplayName("missing auth header - returns 401")
+        fun `returns 401`() {
+            val response = restTemplate.exchange(
+                "/settings", HttpMethod.GET, HttpEntity<Void>(HttpHeaders()), Void::class.java
+            )
+
+            assertEquals(HttpStatus.UNAUTHORIZED, response.statusCode)
+            verifyNoInteractions(notificationSettingsService)
         }
     }
 

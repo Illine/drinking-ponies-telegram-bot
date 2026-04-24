@@ -20,6 +20,7 @@ class WebConfig(
     override fun addInterceptors(registry: InterceptorRegistry) {
         registry.addInterceptor(telegramAuthInterceptor)
             .addPathPatterns(
+                "/settings",
                 "/settings/quiet-mode",
                 "/settings/interval",
                 "/settings/notification-status",
