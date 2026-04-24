@@ -1,8 +1,11 @@
 package ru.illine.drinking.ponies.config.web
 
+import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.http.HttpMethod
-import org.springframework.web.servlet.config.annotation.CorsRegistry
+import org.springframework.web.cors.CorsConfiguration
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource
+import org.springframework.web.filter.CorsFilter
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
 import ru.illine.drinking.ponies.config.property.CorsProperties
@@ -14,9 +17,6 @@ class WebConfig(
     private val telegramAuthInterceptor: TelegramAuthInterceptor
 ) : WebMvcConfigurer {
 
-    private val defaultAllowedMapping = "/**"
-    private val defaultAllowedHeaders = "*"
-
     override fun addInterceptors(registry: InterceptorRegistry) {
         registry.addInterceptor(telegramAuthInterceptor)
             .addPathPatterns(
@@ -26,10 +26,11 @@ class WebConfig(
             )
     }
 
-    override fun addCorsMappings(registry: CorsRegistry) {
-        registry.addMapping(defaultAllowedMapping)
-            .allowedOrigins(*corsProperties.allowedOrigins.toTypedArray())
-            .allowedMethods(
+    @Bean
+    fun corsFilter(): CorsFilter {
+        val config = CorsConfiguration().apply {
+            allowedOrigins = corsProperties.allowedOrigins
+            allowedMethods = listOf(
                 HttpMethod.GET.name(),
                 HttpMethod.OPTIONS.name(),
                 HttpMethod.POST.name(),
@@ -37,7 +38,11 @@ class WebConfig(
                 HttpMethod.PATCH.name(),
                 HttpMethod.DELETE.name()
             )
-            .allowedHeaders(defaultAllowedHeaders)
-            .allowCredentials(true)
+            allowedHeaders = listOf("*")
+            allowCredentials = true
+        }
+        val source = UrlBasedCorsConfigurationSource()
+        source.registerCorsConfiguration("/**", config)
+        return CorsFilter(source)
     }
 }
