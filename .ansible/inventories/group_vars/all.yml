@@ -1,32 +1,70 @@
+# Env naming convention (DPTB-60):
+#   GitLab Variable: DPTB_<STAND>_<TAIL> (per-stand) | DPTB_<TAIL> (shared)
+#   ansible var:     dptb_<tail_lower>
+#   .dptb-env key:   <TAIL> (matches Spring ${TAIL} in application.yaml)
+# Per-stand lookup uses jinja concat: 'DPTB_' ~ (dptb_stand | upper) ~ '_<TAIL>'.
+# Source of truth: IT/Projects/DPTB/Архитектура/Env Variables.md
+
 ansible_user: "ansible"
 ansible_host: "{{ lookup('env', 'ANSIBLE_HOST') }}"
 ansible_port: "{{ lookup('env', 'ANSIBLE_PORT') }}"
 ansible_ssh_private_key_file: "{{ lookup('env', 'ANSIBLE_SSH_PRIVATE_KEY') }}"
 
-liquibase_username: "{{ lookup('env', 'DATABASE_LIQUIBASE_USERNAME') }}"
-liquibase_password: "{{ lookup('env', 'DATABASE_LIQUIBASE_PASSWORD') }}"
-liquibase_chdir: "{{ lookup('env', 'CI_PROJECT_DIR') }}/src/main/resources"
-liquibase_rollback_tag: "{{ lookup('env', 'LIQUIBASE_ROLLBACK_TAG') | default('') }}"
-liquibase_command: "{{ lookup('env', 'LIQUIBASE_COMMAND') | default('undefined', true) }}"
-
 gitlab_registry_username: "{{ lookup('env', 'CI_REGISTRY_USER') }}"
 gitlab_registry_token: "{{ lookup('env', 'CI_REGISTRY_PASSWORD') }}"
 gitlab_registry: "{{ lookup('env', 'CI_REGISTRY') }}"
+
+liquibase_username: "{{ lookup('env', 'DPTB_DATABASE_LIQUIBASE_USERNAME') }}"
+liquibase_password: "{{ lookup('env', 'DPTB_DATABASE_LIQUIBASE_PASSWORD') }}"
+liquibase_chdir: "{{ lookup('env', 'CI_PROJECT_DIR') }}/src/main/resources"
+liquibase_rollback_tag: "{{ lookup('env', 'LIQUIBASE_ROLLBACK_TAG') | default('') }}"
+liquibase_command: "{{ lookup('env', 'LIQUIBASE_COMMAND') | default('undefined', true) }}"
+liquibase_url: "{{ dptb_database_url }}"
 
 dptb_root_dir: "opt"
 dptb_main_dir: "dptb/{{ dptb_stand }}"
 dptb_config_dir: "config"
 dptb_name: "{{ lookup('env', 'SERVICE_NAME') | default('dptb', true) }}"
-dptb_docker_gateway: "{{ lookup('env', 'DPTB_DOCKER_GATEWAY') | default('172.17.0.1', true) }}"
-dptb_docker_web_port: "{{ lookup('env', 'DPTB_DOCKER_WEB_PORT') | default(8000, true) }}"
-dptb_docker_actuator_port: "{{ lookup('env', 'DPTB_DOCKER_ACTUATOR_PORT') | default(7000, true) }}"
 dptb_zone: "{{ lookup('env', 'DPTB_ZONE') }}"
 dptb_image: "{{ lookup('env', 'CI_REGISTRY_IMAGE') }}"
 dptb_version: "{{ lookup('env', 'DPTB_VERSION') | default('unknown', true) }}"
-dptb_telegram_bot_creator_id: "{{ lookup('env', 'TELEGRAM_BOT_CREATOR_ID') }}"
-dptb_database_username:  "{{ lookup('env', 'DATABASE_SERVICE_USERNAME') }}"
-dptb_database_password: "{{ lookup('env', 'DATABASE_SERVICE_PASSWORD') }}"
+
+dptb_docker_gateway: "{{ lookup('env', 'DPTB_DOCKER_GATEWAY') | default('172.17.0.1', true) }}"
+dptb_docker_web_port: "{{ lookup('env', 'DPTB_DOCKER_WEB_PORT') | default(8000, true) }}"
+dptb_docker_actuator_port: "{{ lookup('env', 'DPTB_DOCKER_ACTUATOR_PORT') | default(7000, true) }}"
+dptb_target_web_port: "{{ lookup('env', 'DPTB_' ~ (dptb_stand | upper) ~ '_TARGET_WEB_PORT') | default((8200 if dptb_stand == 'prod' else 8100), true) }}"
+dptb_target_actuator_port: "{{ lookup('env', 'DPTB_' ~ (dptb_stand | upper) ~ '_TARGET_ACTUATOR_PORT') | default((7200 if dptb_stand == 'prod' else 7100), true) }}"
+
+dptb_database_url: "{{ lookup('env', 'DPTB_' ~ (dptb_stand | upper) ~ '_DATABASE_URL') }}"
+dptb_database_username: "{{ lookup('env', 'DPTB_DATABASE_SERVICE_USERNAME') }}"
+dptb_database_password: "{{ lookup('env', 'DPTB_DATABASE_SERVICE_PASSWORD') }}"
+
+dptb_tomcat_threads_max: "{{ lookup('env', 'DPTB_' ~ (dptb_stand | upper) ~ '_TOMCAT_THREADS_MAX') | default(20, true) }}"
+dptb_hikari_pool_name: "{{ lookup('env', 'DPTB_' ~ (dptb_stand | upper) ~ '_HIKARI_POOL_NAME') | default('HikariPool', true) }}"
+dptb_hikari_max_life_time: "{{ lookup('env', 'DPTB_' ~ (dptb_stand | upper) ~ '_HIKARI_MAX_LIFE_TIME') | default(600000, true) }}"
+dptb_hikari_connection_timeout: "{{ lookup('env', 'DPTB_' ~ (dptb_stand | upper) ~ '_HIKARI_CONNECTION_TIMEOUT') | default(15000, true) }}"
+dptb_hikari_maximum_pool_size: "{{ lookup('env', 'DPTB_' ~ (dptb_stand | upper) ~ '_HIKARI_MAXIMUM_POOL_SIZE') | default(5, true) }}"
+dptb_hikari_idle_timeout: "{{ lookup('env', 'DPTB_' ~ (dptb_stand | upper) ~ '_HIKARI_IDLE_TIMEOUT') | default(200000, true) }}"
+dptb_hikari_minimum_idle: "{{ lookup('env', 'DPTB_' ~ (dptb_stand | upper) ~ '_HIKARI_MINIMUM_IDLE') | default(2, true) }}"
+
+dptb_telegram_bot_token: "{{ lookup('env', 'DPTB_' ~ (dptb_stand | upper) ~ '_TELEGRAM_BOT_TOKEN') }}"
+dptb_telegram_bot_username: "{{ lookup('env', 'DPTB_' ~ (dptb_stand | upper) ~ '_TELEGRAM_BOT_USERNAME') }}"
+dptb_telegram_bot_mini_app_url: "{{ lookup('env', 'DPTB_' ~ (dptb_stand | upper) ~ '_TELEGRAM_BOT_MINI_APP_URL') }}"
+dptb_telegram_bot_auto_update_telegram_config: "{{ lookup('env', 'DPTB_' ~ (dptb_stand | upper) ~ '_TELEGRAM_BOT_AUTO_UPDATE_TELEGRAM_CONFIG') | default('true', true) }}"
+telegram_auth_date_expiration_seconds: "{{ lookup('env', 'DPTB_' ~ (dptb_stand | upper) ~ '_TELEGRAM_AUTH_DATE_EXPIRATION_SECONDS') | default(600, true) }}"
+dptb_telegram_bot_http_connection_time_to_live: "{{ lookup('env', 'DPTB_' ~ (dptb_stand | upper) ~ '_TELEGRAM_BOT_HTTP_CONNECTION_TIME_TO_LIVE') | default(60, true) }}"
+dptb_telegram_bot_max_connection_total: "{{ lookup('env', 'DPTB_' ~ (dptb_stand | upper) ~ '_TELEGRAM_BOT_MAX_CONNECTION_TOTAL') | default(100, true) }}"
+dptb_telegram_bot_notification_retry_interval_minutes: "{{ lookup('env', 'DPTB_' ~ (dptb_stand | upper) ~ '_TELEGRAM_BOT_NOTIFICATION_RETRY_INTERVAL_MINUTES') | default(5, true) }}"
+dptb_telegram_bot_schedule_notification_cron: "{{ lookup('env', 'DPTB_' ~ (dptb_stand | upper) ~ '_TELEGRAM_BOT_SCHEDULE_NOTIFICATION_CRON') | default('0/10 * * * * *', true) }}"
+
 dptb_cors_allowed_origins: "{{ lookup('env', 'DPTB_CORS_ALLOWED_ORIGINS') | default('https://static.illine.ru', true) | split(',') }}"
+
+dptb_cache_default_ttl: "{{ lookup('env', 'DPTB_' ~ (dptb_stand | upper) ~ '_CACHE_DEFAULT_TTL') | default('5m', true) }}"
+dptb_cache_default_maximum_size: "{{ lookup('env', 'DPTB_' ~ (dptb_stand | upper) ~ '_CACHE_DEFAULT_MAXIMUM_SIZE') | default(100, true) }}"
+
+dptb_springdoc_enabled: "{{ lookup('env', 'DPTB_' ~ (dptb_stand | upper) ~ '_SPRINGDOC_ENABLED') | default('false', true) }}"
+dptb_logbook_minimum_status: "{{ lookup('env', 'DPTB_' ~ (dptb_stand | upper) ~ '_LOGBOOK_MINIMUM_STATUS') | default(200, true) }}"
+
 dptb_java_opts:
   - "-XX:MaxRAMPercentage=75.0"
   - "-XX:+UseSerialGC"

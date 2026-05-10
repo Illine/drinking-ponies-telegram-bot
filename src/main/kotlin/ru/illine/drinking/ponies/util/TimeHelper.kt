@@ -7,7 +7,8 @@ import java.time.format.DateTimeFormatter
 
 object TimeHelper {
 
-    val DEFAULT_TIME_PATTERN = "HH:mm"
+    const val DEFAULT_TIME_PATTERN = "HH:mm"
+
     val DEFAULT_TIME_FORMATTER = DateTimeFormatter.ofPattern(DEFAULT_TIME_PATTERN)
 
     fun timeToString(dateTime: LocalDateTime): String = timeToString(dateTime.toLocalTime())

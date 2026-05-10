@@ -1,14 +1,18 @@
 package ru.illine.drinking.ponies.config.web
 
+import jakarta.validation.ConstraintViolationException
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
+import org.springframework.http.converter.HttpMessageNotReadableException
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.MissingServletRequestParameterException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException
 import org.springframework.web.servlet.resource.NoResourceFoundException
+import ru.illine.drinking.ponies.exception.NotificationSettingsNotFoundException
 import ru.illine.drinking.ponies.model.dto.response.ErrorResponse
 
 @RestControllerAdvice
@@ -28,7 +32,10 @@ class DefaultExceptionHandler {
 
     @ExceptionHandler(value = [
         MethodArgumentNotValidException::class,
-        IllegalArgumentException::class
+        IllegalArgumentException::class,
+        HttpMessageNotReadableException::class,
+        MethodArgumentTypeMismatchException::class,
+        ConstraintViolationException::class
     ])
     fun handleValidationException(e: Exception): ResponseEntity<ErrorResponse> {
         if (e is MethodArgumentNotValidException) {
@@ -50,6 +57,16 @@ class DefaultExceptionHandler {
     fun handleNoResourceFound(e: NoResourceFoundException): ResponseEntity<ErrorResponse> {
         logger.warn("No static resource for path: [{}]", e.resourcePath)
         val response = ErrorResponse("resource not found")
+        return ResponseEntity
+            .status(HttpStatus.NOT_FOUND)
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(response)
+    }
+
+    @ExceptionHandler(NotificationSettingsNotFoundException::class)
+    fun handleNotificationSettingsNotFound(e: NotificationSettingsNotFoundException): ResponseEntity<ErrorResponse> {
+        logger.warn("Notification settings not found: ${e.message}")
+        val response = ErrorResponse("notification settings not found")
         return ResponseEntity
             .status(HttpStatus.NOT_FOUND)
             .contentType(MediaType.APPLICATION_JSON)

@@ -28,7 +28,8 @@ class DrinkingPoniesTelegramBot(
     BareboneToggle()
 ) {
 
-    override fun creatorId() = telegramBotProperties.creatorId
+    // Sentinel: Privacy.CREATOR is no longer used, but creatorId() is abstract in AbilityBot
+    override fun creatorId(): Long = 0L
 
     override fun onRegister() {
         super.onRegister()
@@ -44,61 +45,6 @@ class DrinkingPoniesTelegramBot(
             .locality(Locality.USER)
             .privacy(Privacy.PUBLIC)
             .action { notificationService.start(it) }
-            .build()
-
-    @Suppress("unused")
-    fun resumeCommand() =
-        Ability
-            .builder()
-            .name(TelegramCommandType.RESUME.command)
-            .info(TelegramCommandType.RESUME.info)
-            .locality(Locality.USER)
-            .privacy(Privacy.PUBLIC)
-            .action { notificationService.resume(it) }
-            .build()
-
-    @Suppress("unused")
-    fun stopCommand() =
-        Ability
-            .builder()
-            .name(TelegramCommandType.STOP.command)
-            .info(TelegramCommandType.STOP.info)
-            .locality(Locality.USER)
-            .privacy(Privacy.PUBLIC)
-            .action { notificationService.stop(it) }
-            .build()
-
-    @Suppress("unused")
-    fun pauseCommand() =
-        Ability
-            .builder()
-            .name(TelegramCommandType.PAUSE.command)
-            .info(TelegramCommandType.PAUSE.info)
-            .locality(Locality.USER)
-            .privacy(Privacy.PUBLIC)
-            .action { notificationService.pause(it) }
-            .build()
-
-    @Suppress("unused")
-    fun settingsCommand() =
-        Ability
-            .builder()
-            .name(TelegramCommandType.SETTINGS.command)
-            .info(TelegramCommandType.SETTINGS.info)
-            .locality(Locality.USER)
-            .privacy(Privacy.PUBLIC)
-            .action { notificationService.settings(it) }
-            .build()
-
-    @Suppress("unused")
-    fun versionCommand() =
-        Ability
-            .builder()
-            .name(TelegramCommandType.VERSION.command)
-            .info(TelegramCommandType.VERSION.info)
-            .locality(Locality.USER)
-            .privacy(Privacy.CREATOR)
-            .action { silent.send(telegramBotProperties.version, it.chatId()) }
             .build()
 
     @Suppress("unused")

@@ -55,6 +55,12 @@ class NotificationSettingEntity(
     @JsonIgnore
     var quietModeEnd: LocalTime? = null,
 
+    @Column(name = "pause_until")
+    var pauseUntil: LocalDateTime? = null,
+
+    @Column(name = "daily_goal_ml", nullable = false)
+    var dailyGoalMl: Int = 2000,
+
     @Column(name = "enabled", nullable = false)
     var enabled: Boolean = true
 ) {
@@ -72,6 +78,8 @@ class NotificationSettingEntity(
         if (timeOfLastNotification != other.timeOfLastNotification) return false
         if (quietModeStart != other.quietModeStart) return false
         if (quietModeEnd != other.quietModeEnd) return false
+        if (pauseUntil != other.pauseUntil) return false
+        if (dailyGoalMl != other.dailyGoalMl) return false
 
         return true
     }
@@ -84,6 +92,8 @@ class NotificationSettingEntity(
         result = 31 * result + timeOfLastNotification.hashCode()
         result = 31 * result + (quietModeStart?.hashCode() ?: 0)
         result = 31 * result + (quietModeEnd?.hashCode() ?: 0)
+        result = 31 * result + (pauseUntil?.hashCode() ?: 0)
+        result = 31 * result + dailyGoalMl
         return result
     }
 }

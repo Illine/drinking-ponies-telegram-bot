@@ -1,11 +1,35 @@
 SERVER_PORT="{{ dptb_docker_web_port }}"
 MANAGEMENT_PORT="{{ dptb_docker_actuator_port }}"
+TOMCAT_THREADS_MAX="{{ dptb_tomcat_threads_max }}"
+
 DATABASE_URL="{{ dptb_database_url }}"
 DATABASE_USERNAME="{{ dptb_database_username }}"
 DATABASE_PASSWORD="{{ dptb_database_password }}"
+HIKARI_POOL_NAME="{{ dptb_hikari_pool_name }}"
+HIKARI_MAX_LIFE_TIME="{{ dptb_hikari_max_life_time }}"
+HIKARI_CONNECTION_TIMEOUT="{{ dptb_hikari_connection_timeout }}"
+HIKARI_MAXIMUM_POOL_SIZE="{{ dptb_hikari_maximum_pool_size }}"
+HIKARI_IDLE_TIMEOUT="{{ dptb_hikari_idle_timeout }}"
+HIKARI_MINIMUM_IDLE="{{ dptb_hikari_minimum_idle }}"
+
 CURRENT_VERSION="{{ dptb_version }}"
+
 TELEGRAM_BOT_TOKEN="{{ dptb_telegram_bot_token }}"
-TELEGRAM_BOT_CREATOR_ID="{{ dptb_telegram_bot_creator_id }}"
-QUIET_MODE_TIME_WEB_APP_URL="{{ dptb_quiet_mode_time_web_app_url }}"
+TELEGRAM_BOT_USERNAME="{{ dptb_telegram_bot_username }}"
+TELEGRAM_BOT_MINI_APP_URL="{{ dptb_telegram_bot_mini_app_url }}"
+TELEGRAM_BOT_AUTO_UPDATE_TELEGRAM_CONFIG="{{ dptb_telegram_bot_auto_update_telegram_config }}"
+TELEGRAM_AUTH_DATE_EXPIRATION_SECONDS="{{ telegram_auth_date_expiration_seconds }}"
+TELEGRAM_BOT_HTTP_CONNECTION_TIME_TO_LIVE="{{ dptb_telegram_bot_http_connection_time_to_live }}"
+TELEGRAM_BOT_MAX_CONNECTION_TOTAL="{{ dptb_telegram_bot_max_connection_total }}"
+TELEGRAM_BOT_NOTIFICATION_RETRY_INTERVAL_MINUTES="{{ dptb_telegram_bot_notification_retry_interval_minutes }}"
+TELEGRAM_BOT_SCHEDULE_NOTIFICATION_CRON="{{ dptb_telegram_bot_schedule_notification_cron }}"
+
 CORS_ALLOWED_ORIGINS="{{ dptb_cors_allowed_origins | join(',') }}"
+
+CACHE_DEFAULT_TTL="{{ dptb_cache_default_ttl }}"
+CACHE_DEFAULT_MAXIMUM_SIZE="{{ dptb_cache_default_maximum_size }}"
+
+SPRINGDOC_ENABLED="{{ dptb_springdoc_enabled }}"
+LOGBOOK_MINIMUM_STATUS="{{ dptb_logbook_minimum_status }}"
+
 JAVA_OPTS={{ dptb_java_opts | join(' ') }}

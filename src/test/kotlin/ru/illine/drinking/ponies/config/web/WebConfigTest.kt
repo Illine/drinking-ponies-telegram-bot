@@ -25,7 +25,7 @@ class WebConfigTest @Autowired constructor(
 
     @ParameterizedTest
     @ValueSource(strings = ["http://localhost:3000", "http://localhost:4000"])
-    @DisplayName("CORS: OPTIONS request from allowed origin - returns 200 with CORS headers")
+    @DisplayName("OPTIONS request from allowed origin - returns 200 with CORS headers")
     fun `cors preflight from allowed origin returns cors headers`(allowedOrigin: String) {
         val headers = HttpHeaders().apply {
             set("Origin", allowedOrigin)
@@ -41,7 +41,7 @@ class WebConfigTest @Autowired constructor(
     }
 
     @Test
-    @DisplayName("CORS: request from disallowed origin - does not return CORS allow header")
+    @DisplayName("request from disallowed origin - does not return CORS allow header")
     fun `cors request from disallowed origin has no allow-origin header`() {
         val headers = HttpHeaders().apply {
             set("Origin", "http://evil.example.com")

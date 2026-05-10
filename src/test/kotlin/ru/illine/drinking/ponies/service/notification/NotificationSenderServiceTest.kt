@@ -15,8 +15,6 @@ import ru.illine.drinking.ponies.config.property.TelegramBotProperties
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
 import ru.illine.drinking.ponies.model.base.AnswerNotificationType
 import ru.illine.drinking.ponies.model.base.IntervalNotificationType
-import ru.illine.drinking.ponies.model.base.SettingsType
-import ru.illine.drinking.ponies.service.button.ButtonDataService
 import ru.illine.drinking.ponies.service.notification.impl.NotificationSenderServiceImpl
 import ru.illine.drinking.ponies.service.statistic.WaterStatisticService
 import ru.illine.drinking.ponies.service.telegram.MessageEditorService
@@ -36,11 +34,10 @@ class NotificationSenderServiceTest {
 
     private val retryIntervalMinutes = 1L
     private val botProperties = TelegramBotProperties(
-        version = "1.0.0",
         token = "token",
         username = "username",
-        creatorId = 1L,
-        autoUpdateCommands = true,
+        miniAppUrl = "https://t.me/Test/app",
+        autoUpdateTelegramConfig = true,
         http = TelegramBotProperties.Http(connectionTimeToLiveInSec = 30, maxConnectionTotal = 10),
         notification = TelegramBotProperties.Notification(retryIntervalMinutes = retryIntervalMinutes)
     )

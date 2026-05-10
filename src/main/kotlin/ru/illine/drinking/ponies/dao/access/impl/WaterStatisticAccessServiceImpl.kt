@@ -9,6 +9,7 @@ import ru.illine.drinking.ponies.dao.access.WaterStatisticAccessService
 import ru.illine.drinking.ponies.dao.repository.TelegramUserRepository
 import ru.illine.drinking.ponies.dao.repository.WaterStatisticRepository
 import ru.illine.drinking.ponies.model.dto.internal.WaterStatisticDto
+import java.time.LocalDateTime
 
 @Service
 class WaterStatisticAccessServiceImpl(
@@ -17,6 +18,20 @@ class WaterStatisticAccessServiceImpl(
 ) : WaterStatisticAccessService {
 
     private val logger = LoggerFactory.getLogger("ACCESS-SERVICE")
+
+    @Transactional(readOnly = true)
+    override fun findByUserAndEventTimeBetween(
+        telegramUserId: Long,
+        startInclusive: LocalDateTime,
+        endExclusive: LocalDateTime
+    ): List<WaterStatisticDto> {
+        logger.debug(
+            "Finding water statistics for telegramUserId [$telegramUserId] between [$startInclusive] and [$endExclusive]"
+        )
+        return waterStatisticRepository
+            .findByUserAndEventTimeBetween(telegramUserId, startInclusive, endExclusive)
+            .map { WaterStatisticBuilder.toDto(it, TelegramUserBuilder.toDto(it.telegramUser)) }
+    }
 
     @Transactional
     override fun save(dto: WaterStatisticDto): WaterStatisticDto {
