@@ -22,6 +22,8 @@ object NotificationSettingBuilder {
             notificationAttempts = setting.notificationAttempts,
             quietModeStart = setting.quietModeStart,
             quietModeEnd = setting.quietModeEnd,
+            pauseUntil = setting.pauseUntil,
+            dailyGoalMl = setting.dailyGoalMl,
             enabled = setting.enabled,
         )
 
@@ -40,6 +42,8 @@ object NotificationSettingBuilder {
             notificationAttempts = setting.notificationAttempts,
             quietModeStart = setting.quietModeStart,
             quietModeEnd = setting.quietModeEnd,
+            pauseUntil = setting.pauseUntil,
+            dailyGoalMl = setting.dailyGoalMl,
             enabled = setting.enabled,
         )
 
