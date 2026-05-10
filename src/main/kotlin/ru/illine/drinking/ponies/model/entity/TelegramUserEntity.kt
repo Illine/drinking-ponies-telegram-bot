@@ -30,6 +30,9 @@ class TelegramUserEntity(
     @Column(name = "user_time_zone", nullable = false)
     var userTimeZone: String,
 
+    @Column(name = "is_admin", nullable = false)
+    var isAdmin: Boolean = false,
+
     @Column(name = "created", nullable = false, updatable = false)
     @JsonIgnore
     var created: LocalDateTime = LocalDateTime.now(),

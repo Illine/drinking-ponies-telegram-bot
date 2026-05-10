@@ -1,5 +1,6 @@
 package ru.illine.drinking.ponies.model.dto
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
 
@@ -18,5 +19,10 @@ data class TelegramUserDto(
     @JsonProperty("is_premium")
     val isPremium: Boolean = false,
     @JsonProperty("allows_write_to_pm")
-    val allowsWriteToPm: Boolean = false
+    val allowsWriteToPm: Boolean = false,
+
+    // Internal-only flag enriched by TelegramAuthInterceptor from DB.
+    // Never accept from incoming JSON (initData) and never expose in API responses.
+    @JsonIgnore
+    val isAdmin: Boolean = false
 )

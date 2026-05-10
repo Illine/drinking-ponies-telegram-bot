@@ -9,6 +9,7 @@ object TelegramUserBuilder {
             id = entity.id,
             externalUserId = entity.externalUserId,
             userTimeZone = entity.userTimeZone,
+            isAdmin = entity.isAdmin,
             created = entity.created,
             deleted = entity.deleted,
         )
@@ -18,6 +19,7 @@ object TelegramUserBuilder {
             id = dto.id,
             externalUserId = dto.externalUserId,
             userTimeZone = dto.userTimeZone,
+            isAdmin = dto.isAdmin,
             created = dto.created,
             deleted = dto.deleted,
         )
