@@ -29,9 +29,11 @@ repositories {
 
 dependencies {
     implementation(libs.spring.boot.starter.actuator)
+    implementation(libs.spring.boot.starter.cache)
     implementation(libs.spring.boot.starter.data.jpa)
     implementation(libs.spring.boot.starter.validation)
     implementation(libs.spring.boot.starter.web)
+    implementation(libs.caffeine)
 
     implementation(libs.kotlin.reflect)
     implementation(libs.jackson.module.kotlin)
@@ -48,6 +50,7 @@ dependencies {
     implementation(libs.logstash)
     implementation(libs.commons.codec)
     implementation(libs.commons.lang3)
+    implementation(libs.springdoc.openapi.starter.webmvc.ui)
 
     liquibaseRuntime(libs.liquibase.core)
     liquibaseRuntime(libs.liquibase.groovy.dsl)
@@ -143,12 +146,20 @@ tasks {
                         // Spring @Configuration classes: beans are mocked or overridden in tests
                         "**/TelegramBotConfig*",
                         "**/TimeConfig*",
+                        "**/OpenApiConfig*",
                         // JPA entities: boilerplate managed by Hibernate, not application logic
                         "**/*Entity*",
+                        // Response: not application logic
+                        "**/*Response*",
                         // Spring @ConfigurationProperties: no business logic, Kotlin data class boilerplate
                         "**/*Properties*",
                         // P6Spy logger: extends third-party Slf4JLogger, JaCoCo cannot correctly map coverage through parent bytecode
-                        "**/CustomP6SpyLogger*"
+                        "**/CustomP6SpyLogger*",
+                        // DTOs: Kotlin data class / Jackson DTO boilerplate (auto-generated setters/copy/component*), no business logic
+                        "**/model/dto/**",
+                        // Plain Kotlin enums: synthetic getEntries() generated at bytecode level, no application logic
+                        "**/AuthErrorType*",
+                        "**/IntervalNotificationType*"
                     )
                 }
             })
