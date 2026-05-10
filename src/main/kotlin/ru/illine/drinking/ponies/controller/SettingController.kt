@@ -1,25 +1,107 @@
 package ru.illine.drinking.ponies.controller
 
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
+import io.swagger.v3.oas.annotations.media.Schema
+import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.format.annotation.DateTimeFormat
+import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.*
+import ru.illine.drinking.ponies.model.base.IntervalNotificationType
 import ru.illine.drinking.ponies.model.dto.TelegramUserDto
+import ru.illine.drinking.ponies.model.dto.response.SettingResponse
 import ru.illine.drinking.ponies.service.notification.NotificationSettingsService
 import ru.illine.drinking.ponies.util.telegram.TelegramGeneralConstants
 import java.time.LocalTime
 
 @RestController
 @RequestMapping("/settings")
+@Tag(name = "Settings", description = "Notification settings management")
 class SettingController(
     private val notificationSettingsService: NotificationSettingsService
 ) {
 
-    @PutMapping("/modes/silent")
-    fun changeSilentMode(
+    @GetMapping
+    @Operation(summary = "Get all notification settings")
+    fun getSettings(
+        @Parameter(hidden = true)
         @RequestAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) telegramUser: TelegramUserDto,
-        @RequestParam("messageId") messageId: Int,
-        @RequestParam("start") @DateTimeFormat(pattern = "HH:mm") start: LocalTime,
-        @RequestParam("end") @DateTimeFormat(pattern = "HH:mm") end: LocalTime
+    ): SettingResponse {
+        val settings = notificationSettingsService.getAllSettings(telegramUser.telegramId)
+        return SettingResponse(
+            interval = settings.interval,
+            intervalDisplayName = settings.intervalDisplayName,
+            intervalMinutes = settings.intervalMinutes,
+            quietModeStart = settings.quietModeStart,
+            quietModeEnd = settings.quietModeEnd,
+            timezone = settings.timezone,
+            dailyGoalMl = settings.dailyGoalMl,
+            notificationActive = settings.notificationActive,
+        )
+    }
+
+    @PutMapping("/quiet-mode")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(summary = "Change quiet mode schedule")
+    fun changeQuietMode(
+        @Parameter(hidden = true)
+        @RequestAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) telegramUser: TelegramUserDto,
+        @Parameter(description = "Start time in HH:mm format", example = "23:00", schema = Schema(type = "string", pattern = "HH:mm"))
+        @RequestParam(name = "start", required = true) @DateTimeFormat(pattern = "HH:mm") start: LocalTime,
+        @Parameter(description = "End time in HH:mm format", example = "08:00", schema = Schema(type = "string", pattern = "HH:mm"))
+        @RequestParam(name = "end", required = true) @DateTimeFormat(pattern = "HH:mm") end: LocalTime
     ) {
-        notificationSettingsService.changeQuietMode(telegramUser.telegramId, messageId, start, end)
+        notificationSettingsService.changeQuietMode(telegramUser.telegramId, start, end)
+    }
+
+    @PutMapping("/timezone")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(summary = "Change user timezone")
+    fun changeTimezone(
+        @Parameter(hidden = true)
+        @RequestAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) telegramUser: TelegramUserDto,
+        @Parameter(description = "IANA timezone identifier", example = "Europe/Moscow")
+        @RequestParam(name = "timezone", required = true) timezone: String
+    ) {
+        notificationSettingsService.changeTimezone(telegramUser.telegramId, timezone)
+    }
+
+    @PutMapping("/interval")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(summary = "Change notification interval")
+    fun changeInterval(
+        @Parameter(hidden = true)
+        @RequestAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) telegramUser: TelegramUserDto,
+        @Parameter(description = "Notification interval enum value", example = "HOUR")
+        @RequestParam(name = "interval", required = true) interval: IntervalNotificationType
+    ) {
+        notificationSettingsService.changeInterval(telegramUser.telegramId, interval)
+    }
+
+    @PutMapping("/notification-status")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(summary = "Change notification enabled status")
+    fun changeNotificationStatus(
+        @Parameter(hidden = true)
+        @RequestAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) telegramUser: TelegramUserDto,
+        @Parameter(description = "Enable or disable notifications", example = "true")
+        @RequestParam(name = "active", required = true) active: Boolean
+    ) {
+        notificationSettingsService.changeNotificationStatus(telegramUser.telegramId, active)
+    }
+
+    @PutMapping("/goal")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(summary = "Change daily water intake goal")
+    fun changeDailyGoal(
+        @Parameter(hidden = true)
+        @RequestAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) telegramUser: TelegramUserDto,
+        @Parameter(
+            description = "Daily goal in milliliters. Allowed values: 2000, 2250, 2500, 2750, 3000",
+            example = "2000",
+        )
+        @RequestParam(name = "goalMl", required = true) goalMl: Int
+    ) {
+        notificationSettingsService.changeDailyGoal(telegramUser.telegramId, goalMl)
     }
 }

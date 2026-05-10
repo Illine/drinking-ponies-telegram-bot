@@ -22,7 +22,7 @@ interface NotificationAccessService {
     ): TelegramUserDto
 
     fun updateNotificationSettings(
-        telegramUserId: Long, telegramChatId: Long, notificationInterval: IntervalNotificationType
+        telegramUserId: Long, notificationInterval: IntervalNotificationType
     ): NotificationSettingDto
 
     fun updateTimeOfLastNotification(telegramUserId: Long, time: LocalDateTime): NotificationSettingDto
@@ -38,5 +38,11 @@ interface NotificationAccessService {
     fun changeQuietMode(userId: Long, start: LocalTime, end: LocalTime)
 
     fun disableQuietMode(userId: Long)
+
+    fun changeTimezone(telegramUserId: Long, timezone: String)
+
+    fun setPause(telegramUserId: Long, pauseUntil: LocalDateTime?): NotificationSettingDto
+
+    fun updateDailyGoal(telegramUserId: Long, goalMl: Int)
 
 }
