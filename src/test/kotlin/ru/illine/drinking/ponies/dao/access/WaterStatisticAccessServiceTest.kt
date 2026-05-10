@@ -12,6 +12,7 @@ import ru.illine.drinking.ponies.model.base.AnswerNotificationType
 import ru.illine.drinking.ponies.model.base.WaterAmountType
 import ru.illine.drinking.ponies.test.generator.DtoGenerator
 import ru.illine.drinking.ponies.test.tag.SpringIntegrationTest
+import java.time.LocalDateTime
 
 @SpringIntegrationTest
 @DisplayName("WaterStatisticAccessService Spring Integration Test")
@@ -111,6 +112,177 @@ class WaterStatisticAccessServiceTest @Autowired constructor(
 
         assertEquals(1, actual.size)
         assertEquals(DEFAULT_EXTERNAL_USER_ID, actual[0].telegramUser.externalUserId)
+    }
+
+    @Test
+    @DisplayName("findByUserAndEventTimeBetween(): returns records inside the half-open range")
+    fun `successful findByUserAndEventTimeBetween returns records inside range`() {
+        val baseTime = LocalDateTime.of(2025, 6, 15, 10, 0)
+        accessService.save(
+            DtoGenerator.generateWaterStatisticDto(
+                externalUserId = DEFAULT_EXTERNAL_USER_ID,
+                eventTime = baseTime,
+                waterAmountMl = WaterAmountType.ML_150.amountMl
+            )
+        )
+        accessService.save(
+            DtoGenerator.generateWaterStatisticDto(
+                externalUserId = DEFAULT_EXTERNAL_USER_ID,
+                eventTime = baseTime.plusHours(2),
+                waterAmountMl = WaterAmountType.ML_250.amountMl
+            )
+        )
+
+        val actual = assertDoesNotThrow(
+            ThrowingSupplier {
+                accessService.findByUserAndEventTimeBetween(
+                    DEFAULT_EXTERNAL_USER_ID,
+                    baseTime,
+                    baseTime.plusHours(3)
+                )
+            }
+        )
+
+        assertEquals(2, actual.size)
+        assertEquals(WaterAmountType.ML_150.amountMl, actual[0].waterAmountMl)
+        assertEquals(WaterAmountType.ML_250.amountMl, actual[1].waterAmountMl)
+        assertEquals(DEFAULT_EXTERNAL_USER_ID, actual[0].telegramUser.externalUserId)
+    }
+
+    @Test
+    @DisplayName("findByUserAndEventTimeBetween(): excludes records on endExclusive boundary")
+    fun `successful findByUserAndEventTimeBetween excludes endExclusive`() {
+        val start = LocalDateTime.of(2025, 6, 15, 10, 0)
+        val end = LocalDateTime.of(2025, 6, 15, 12, 0)
+        // exactly at endExclusive - must be excluded
+        accessService.save(
+            DtoGenerator.generateWaterStatisticDto(
+                externalUserId = DEFAULT_EXTERNAL_USER_ID,
+                eventTime = end
+            )
+        )
+        // before endExclusive - must be included
+        accessService.save(
+            DtoGenerator.generateWaterStatisticDto(
+                externalUserId = DEFAULT_EXTERNAL_USER_ID,
+                eventTime = end.minusSeconds(1)
+            )
+        )
+
+        val actual = assertDoesNotThrow(
+            ThrowingSupplier {
+                accessService.findByUserAndEventTimeBetween(DEFAULT_EXTERNAL_USER_ID, start, end)
+            }
+        )
+
+        assertEquals(1, actual.size)
+        assertEquals(end.minusSeconds(1), actual[0].eventTime)
+    }
+
+    @Test
+    @DisplayName("findByUserAndEventTimeBetween(): returns empty list when no records match")
+    fun `successful findByUserAndEventTimeBetween returns empty when out of range`() {
+        accessService.save(
+            DtoGenerator.generateWaterStatisticDto(
+                externalUserId = DEFAULT_EXTERNAL_USER_ID,
+                eventTime = LocalDateTime.of(2025, 6, 15, 10, 0)
+            )
+        )
+
+        val actual = assertDoesNotThrow(
+            ThrowingSupplier {
+                accessService.findByUserAndEventTimeBetween(
+                    DEFAULT_EXTERNAL_USER_ID,
+                    LocalDateTime.of(2025, 7, 1, 0, 0),
+                    LocalDateTime.of(2025, 7, 2, 0, 0)
+                )
+            }
+        )
+
+        assertTrue(actual.isEmpty())
+    }
+
+    @Test
+    @DisplayName("findByUserAndEventTimeBetween(): returns only records of the requested user")
+    fun `successful findByUserAndEventTimeBetween filters by user`() {
+        val time = LocalDateTime.of(2025, 6, 15, 10, 0)
+        accessService.save(
+            DtoGenerator.generateWaterStatisticDto(
+                externalUserId = DEFAULT_EXTERNAL_USER_ID,
+                eventTime = time
+            )
+        )
+        accessService.save(
+            DtoGenerator.generateWaterStatisticDto(
+                externalUserId = SECOND_EXTERNAL_USER_ID,
+                eventTime = time
+            )
+        )
+
+        val actual = assertDoesNotThrow(
+            ThrowingSupplier {
+                accessService.findByUserAndEventTimeBetween(
+                    DEFAULT_EXTERNAL_USER_ID,
+                    time.minusMinutes(1),
+                    time.plusMinutes(1)
+                )
+            }
+        )
+
+        assertEquals(1, actual.size)
+        assertEquals(DEFAULT_EXTERNAL_USER_ID, actual[0].telegramUser.externalUserId)
+    }
+
+    @Test
+    @DisplayName("findByUserAndEventTimeBetween(): returns empty list for unknown user")
+    fun `successful findByUserAndEventTimeBetween unknown user`() {
+        val actual = assertDoesNotThrow(
+            ThrowingSupplier {
+                accessService.findByUserAndEventTimeBetween(
+                    NOT_EXISTED_USER_ID,
+                    LocalDateTime.of(2025, 6, 15, 0, 0),
+                    LocalDateTime.of(2025, 6, 16, 0, 0)
+                )
+            }
+        )
+
+        assertTrue(actual.isEmpty())
+    }
+
+    @Test
+    @DisplayName("findByUserAndEventTimeBetween(): returns records ordered by eventTime asc")
+    fun `successful findByUserAndEventTimeBetween orders ascending`() {
+        val baseTime = LocalDateTime.of(2025, 6, 15, 10, 0)
+        accessService.save(
+            DtoGenerator.generateWaterStatisticDto(
+                externalUserId = DEFAULT_EXTERNAL_USER_ID,
+                eventTime = baseTime.plusHours(2),
+                waterAmountMl = WaterAmountType.ML_450.amountMl
+            )
+        )
+        accessService.save(
+            DtoGenerator.generateWaterStatisticDto(
+                externalUserId = DEFAULT_EXTERNAL_USER_ID,
+                eventTime = baseTime,
+                waterAmountMl = WaterAmountType.ML_150.amountMl
+            )
+        )
+        accessService.save(
+            DtoGenerator.generateWaterStatisticDto(
+                externalUserId = DEFAULT_EXTERNAL_USER_ID,
+                eventTime = baseTime.plusHours(1),
+                waterAmountMl = WaterAmountType.ML_250.amountMl
+            )
+        )
+
+        val actual = accessService.findByUserAndEventTimeBetween(
+            DEFAULT_EXTERNAL_USER_ID, baseTime, baseTime.plusHours(3)
+        )
+
+        assertEquals(3, actual.size)
+        assertEquals(baseTime, actual[0].eventTime)
+        assertEquals(baseTime.plusHours(1), actual[1].eventTime)
+        assertEquals(baseTime.plusHours(2), actual[2].eventTime)
     }
 
 }

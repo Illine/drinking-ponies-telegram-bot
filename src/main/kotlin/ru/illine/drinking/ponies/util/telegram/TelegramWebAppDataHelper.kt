@@ -37,6 +37,7 @@ object TelegramWebAppDataHelper {
             logger.debug("Hash has expired: currentTime = {}, hashTime = {}", currentDateTime, hashDateTime)
             return false
         }
+
         return true
     }
 
