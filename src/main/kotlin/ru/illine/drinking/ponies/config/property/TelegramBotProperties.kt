@@ -13,19 +13,19 @@ import javax.validation.constraints.NotNull
 data class TelegramBotProperties(
 
     @NotEmpty
-    val version: String,
-
-    @NotEmpty
     val token: String,
 
     @NotEmpty
     val username: String,
 
-    @NotNull
-    var creatorId: Long,
+    @NotEmpty
+    val miniAppUrl: String,
 
     @NonNull
-    val autoUpdateCommands: Boolean,
+    val autoUpdateTelegramConfig: Boolean,
+
+    @Min(10)
+    val authDateExpirationSeconds: Long = 600,
 
     @NotNull
     var http: Http,

@@ -39,9 +39,6 @@ spring:
       maximum-pool-size: ${HIKARI_MAXIMUM_POOL_SIZE:5}
       idle-timeout: ${HIKARI_IDLE_TIMEOUT:200000}
       minimum-idle: ${HIKARI_MINIMUM_IDLE:2}
-  config:
-    import:
-      - ${BUTTONS_CONFIG_PATH:classpath:buttons.yaml}
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS}
 
@@ -68,11 +65,11 @@ management:
         include: health, prometheus
 
 telegram-bot:
-  version: ${CURRENT_VERSION:unknown}
   token: ${TELEGRAM_BOT_TOKEN}
   username: ${TELEGRAM_BOT_USERNAME:DrinkingPoniesBot}
-  creator-id: ${TELEGRAM_BOT_CREATOR_ID}
-  auto-update-commands: ${TELEGRAM_BOT_AUTO_UPDATE_COMMANDS:true}
+  mini-app-url: ${TELEGRAM_BOT_MINI_APP_URL}
+  auto-update-telegram-config: ${TELEGRAM_BOT_AUTO_UPDATE_TELEGRAM_CONFIG:true}
+  auth-date-expiration-seconds: ${TELEGRAM_AUTH_DATE_EXPIRATION_SECONDS:600}
   http:
     connection-time-to-live-in-sec: ${TELEGRAM_BOT_HTTP_CONNECTION_TIME_TO_LIVE:60}
     max-connection-total: ${TELEGRAM_BOT_MAX_CONNECTION_TOTAL:100}
@@ -82,6 +79,29 @@ telegram-bot:
     notification:
       cron: ${TELEGRAM_BOT_SCHEDULE_NOTIFICATION_CRON:0/10 * * * * *}
 
+app:
+  version: ${CURRENT_VERSION:local}
+
+cache:
+  default:
+    ttl: ${CACHE_DEFAULT_TTL:5m}
+    maximum-size: ${CACHE_DEFAULT_MAXIMUM_SIZE:100}
+  # Per-cache overrides (optional). Example:
+  # overrides:
+  #   user-is-admin:
+  #     ttl: 10m
+
+springdoc:
+  api-docs:
+    enabled: ${SPRINGDOC_ENABLED:false}
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: ${SPRINGDOC_ENABLED:false}
+    path: /docs
+    display-request-duration: true
+    operations-sorter: method
+    tags-sorter: alpha
+
 logbook:
   strategy: body-only-if-status-at-least
   minimum-status: ${LOGBOOK_MINIMUM_STATUS:200}
@@ -89,3 +109,7 @@ logbook:
     style: http
   logger:
     name: API
+  exclude:
+    - /docs/**
+    - /swagger-ui/**
+    - /v3/api-docs/**
