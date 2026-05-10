@@ -24,6 +24,8 @@ class DtoGenerator {
             previousNotificationMessageId: Int? = null,
             quietModeStart: LocalTime? = null,
             quietModeEnd: LocalTime? = null,
+            pauseUntil: LocalDateTime? = null,
+            dailyGoalMl: Int = 2000,
         ): NotificationSettingDto {
             val user = TelegramUserDto(
                 externalUserId = externalUserId,
@@ -42,6 +44,8 @@ class DtoGenerator {
                 notificationAttempts = notificationAttempts,
                 quietModeStart = quietModeStart,
                 quietModeEnd = quietModeEnd,
+                pauseUntil = pauseUntil,
+                dailyGoalMl = dailyGoalMl,
             )
         }
 

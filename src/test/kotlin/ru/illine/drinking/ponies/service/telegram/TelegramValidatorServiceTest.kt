@@ -5,12 +5,14 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 import ru.illine.drinking.ponies.config.property.TelegramBotProperties
+import ru.illine.drinking.ponies.exception.InvalidAuthSignatureException
 import ru.illine.drinking.ponies.service.telegram.impl.TelegramValidatorServiceImpl
 import ru.illine.drinking.ponies.test.tag.UnitTest
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
-import java.time.Duration
 import java.time.Instant
 
 @UnitTest
@@ -26,11 +28,11 @@ class TelegramValidatorServiceTest {
     @BeforeEach
     fun setUp() {
         val properties = TelegramBotProperties(
-            version = "1.0.0",
             token = token,
             username = "username",
-            creatorId = 1L,
-            autoUpdateCommands = false,
+            miniAppUrl = "https://t.me/Test/app",
+            autoUpdateTelegramConfig = false,
+            authDateExpirationSeconds = 3600,
             http = TelegramBotProperties.Http(connectionTimeToLiveInSec = 30, maxConnectionTotal = 10)
         )
         service = TelegramValidatorServiceImpl(properties)
@@ -41,16 +43,16 @@ class TelegramValidatorServiceTest {
     fun `verifySignature valid`() {
         val initData = buildInitData(Instant.now().epochSecond)
 
-        assertTrue(service.verifySignature(initData, Duration.ofHours(1)))
+        assertTrue(service.verifySignature(initData))
     }
 
     @Test
     @DisplayName("verifySignature(): returns false when auth_date is expired")
     fun `verifySignature expired auth date`() {
-        val expiredAuthDate = Instant.now().epochSecond - Duration.ofHours(2).seconds
+        val expiredAuthDate = Instant.now().epochSecond - 7200
         val initData = buildInitData(expiredAuthDate)
 
-        assertFalse(service.verifySignature(initData, Duration.ofHours(1)))
+        assertFalse(service.verifySignature(initData))
     }
 
     @Test
@@ -60,7 +62,16 @@ class TelegramValidatorServiceTest {
         val encodedUser = URLEncoder.encode(userJson, StandardCharsets.UTF_8)
         val initData = "auth_date=$authDate&hash=badhash&query_id=$queryId&user=$encodedUser"
 
-        assertFalse(service.verifySignature(initData, Duration.ofHours(1)))
+        assertFalse(service.verifySignature(initData))
+    }
+
+    @ParameterizedTest(name = "[{index}] initData=\"{0}\" - throws InvalidAuthSignatureException")
+    @ValueSource(strings = ["no-equals-sign-here", ""])
+    @DisplayName("verifySignature(): throws InvalidAuthSignatureException for malformed/empty initData")
+    fun `verifySignature throws on malformed or empty initData`(initData: String) {
+        assertThrows(InvalidAuthSignatureException::class.java) {
+            service.verifySignature(initData)
+        }
     }
 
     @Test

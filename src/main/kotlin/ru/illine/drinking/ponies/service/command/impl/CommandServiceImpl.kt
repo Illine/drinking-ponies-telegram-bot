@@ -2,13 +2,13 @@ package ru.illine.drinking.ponies.service.command.impl
 
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
-import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands
-import org.telegram.telegrambots.meta.api.objects.commands.BotCommand
-import org.telegram.telegrambots.meta.api.objects.commands.scope.BotCommandScopeAllPrivateChats
+import org.telegram.telegrambots.meta.api.methods.menubutton.SetChatMenuButton
+import org.telegram.telegrambots.meta.api.objects.menubutton.MenuButtonWebApp
+import org.telegram.telegrambots.meta.api.objects.webapp.WebAppInfo
 import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.illine.drinking.ponies.config.property.TelegramBotProperties
-import ru.illine.drinking.ponies.model.base.TelegramCommandType
 import ru.illine.drinking.ponies.service.command.CommandService
+import ru.illine.drinking.ponies.util.telegram.TelegramMenuConstants
 
 @Service
 class CommandServiceImpl(
@@ -19,27 +19,25 @@ class CommandServiceImpl(
     private val logger = LoggerFactory.getLogger("SERVICE")
 
     override fun register() {
-        if (telegramBotProperties.autoUpdateCommands) {
-            logger.warn("Telegram Commands will be updated!")
-            val availabilityCommands = TelegramCommandType.entries
-                .asIterable()
-                .filter { it.visible }
-                .sortedBy { it.order }
-                .map { BotCommand(it.command, it.descriptions) }
-                .toList()
-
-            logger.debug("Created commands: {}", availabilityCommands)
-
-            availabilityCommands.let {
-                SetMyCommands(it)
-                    .apply {
-                        scope = BotCommandScopeAllPrivateChats()
-                    }
-            }.apply { sender.execute(this) }
-
-            logger.info("The commands have updated")
-        } else {
-            logger.warn("Telegram Commands will not be updated!")
+        if (!telegramBotProperties.autoUpdateTelegramConfig) {
+            logger.info("Telegram config will not be updated!")
+            return
         }
+        logger.warn("Telegram config will be updated!")
+
+        registerMenu()
+
+        logger.info("The Telegram config has been updated")
+    }
+
+    private fun registerMenu() {
+        val menuButton = MenuButtonWebApp.builder()
+            .text(TelegramMenuConstants.MENU_BUTTON_TEXT)
+            .webAppInfo(WebAppInfo.builder().url(telegramBotProperties.miniAppUrl).build())
+            .build()
+        SetChatMenuButton.builder()
+            .menuButton(menuButton)
+            .build()
+            .apply { sender.execute(this) }
     }
 }

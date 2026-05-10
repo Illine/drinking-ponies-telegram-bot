@@ -9,6 +9,8 @@ data class TelegramUserDto(
 
     var userTimeZone: String,
 
+    var isAdmin: Boolean = false,
+
     var created: LocalDateTime = LocalDateTime.now(),
 
     var deleted: Boolean = false

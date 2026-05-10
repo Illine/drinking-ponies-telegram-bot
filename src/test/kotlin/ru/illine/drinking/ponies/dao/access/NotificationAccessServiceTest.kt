@@ -1,6 +1,7 @@
 package ru.illine.drinking.ponies.dao.access
 
 import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -8,9 +9,12 @@ import org.junit.jupiter.api.function.ThrowingSupplier
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.context.jdbc.SqlConfig
+import ru.illine.drinking.ponies.exception.NotificationSettingsNotFoundException
 import ru.illine.drinking.ponies.model.base.IntervalNotificationType
 import ru.illine.drinking.ponies.test.generator.DtoGenerator
 import ru.illine.drinking.ponies.test.tag.SpringIntegrationTest
+import ru.illine.drinking.ponies.test.util.ClockHelperTest
+import java.time.Clock
 import java.time.LocalDateTime
 import java.time.LocalTime
 
@@ -28,6 +32,7 @@ import java.time.LocalTime
 )
 class NotificationAccessServiceTest @Autowired constructor(
     private val accessService: NotificationAccessService,
+    private val clock: Clock,
 ) {
 
     private val DEFAULT_ID = 1L
@@ -35,6 +40,13 @@ class NotificationAccessServiceTest @Autowired constructor(
     private val DEFAULT_TELEGRAM_USER_ID = 1L
     private val DISABLED_TELEGRAM_USER_ID = 2L
     private val WITHOUT_NOTIFICATION_ATTEMPTS = 0
+
+    private fun getMutableClock() = clock as ClockHelperTest.MutableClock
+
+    @BeforeEach
+    fun resetClock() {
+        getMutableClock().setTime(ClockHelperTest.DEFAULT_TIME)
+    }
 
     @Test
     @DisplayName("findAllNotificationSettings(): returns a not empty set")
@@ -180,7 +192,7 @@ class NotificationAccessServiceTest @Autowired constructor(
 
         val actual = assertDoesNotThrow(
             ThrowingSupplier {
-                accessService.updateNotificationSettings(DEFAULT_TELEGRAM_USER_ID, DEFAULT_TELEGRAM_USER_ID, newInterval)
+                accessService.updateNotificationSettings(DEFAULT_TELEGRAM_USER_ID, newInterval)
             }
         )
 
@@ -192,51 +204,379 @@ class NotificationAccessServiceTest @Autowired constructor(
     fun `successful updateNotificationSettings same interval`() {
         val sameInterval = IntervalNotificationType.TWO_HOURS
 
-        assertDoesNotThrow(
+        val actual = assertDoesNotThrow(
             ThrowingSupplier {
-                accessService.updateNotificationSettings(DEFAULT_TELEGRAM_USER_ID, DEFAULT_TELEGRAM_USER_ID, sameInterval)
+                accessService.updateNotificationSettings(DEFAULT_TELEGRAM_USER_ID, sameInterval)
             }
         )
+
+        assertEquals(sameInterval, actual.notificationInterval)
     }
 
     @Test
-    @DisplayName("changeQuietMode(): updates quiet mode without exception")
+    @DisplayName("changeQuietMode(): persists quiet mode start and end times")
     fun `successful changeQuietMode`() {
+        val expectedStart = LocalTime.of(22, 0)
+        val expectedEnd = LocalTime.of(8, 0)
+
         assertDoesNotThrow(
             ThrowingSupplier {
-                accessService.changeQuietMode(DEFAULT_TELEGRAM_USER_ID, LocalTime.of(22, 0), LocalTime.of(8, 0))
+                accessService.changeQuietMode(DEFAULT_TELEGRAM_USER_ID, expectedStart, expectedEnd)
             }
         )
+
+        val actual = accessService.findNotificationSettingByTelegramUserId(DEFAULT_TELEGRAM_USER_ID)
+        assertEquals(expectedStart, actual.quietModeStart)
+        assertEquals(expectedEnd, actual.quietModeEnd)
     }
 
     @Test
-    @DisplayName("disableQuietMode(): disables quiet mode without exception")
+    @DisplayName("disableQuietMode(): clears quiet mode start and end times")
     fun `successful disableQuietMode`() {
+        accessService.changeQuietMode(DEFAULT_TELEGRAM_USER_ID, LocalTime.of(22, 0), LocalTime.of(8, 0))
+
         assertDoesNotThrow(
             ThrowingSupplier {
                 accessService.disableQuietMode(DEFAULT_TELEGRAM_USER_ID)
             }
         )
+
+        val actual = accessService.findNotificationSettingByTelegramUserId(DEFAULT_TELEGRAM_USER_ID)
+        assertNull(actual.quietModeStart)
+        assertNull(actual.quietModeEnd)
     }
 
     @Test
-    @DisplayName("findNotificationSettingByTelegramUserId(): throws IllegalArgumentException when record not found by telegramUserId")
+    @DisplayName("changeTimezone(): persists new timezone for existing user")
+    fun `successful changeTimezone`() {
+        val newTimezone = "America/New_York"
+
+        assertDoesNotThrow(
+            ThrowingSupplier {
+                accessService.changeTimezone(DEFAULT_TELEGRAM_USER_ID, newTimezone)
+            }
+        )
+
+        val actual = accessService.findNotificationSettingByTelegramUserId(DEFAULT_TELEGRAM_USER_ID)
+        assertEquals(newTimezone, actual.telegramUser.userTimeZone)
+    }
+
+    @Test
+    @DisplayName("changeTimezone(): throws IllegalArgumentException when user does not exist")
+    fun `failure changeTimezone not found`() {
+        assertThrows<IllegalArgumentException> {
+            accessService.changeTimezone(NOT_EXISTED_USER_ID, "Europe/Berlin")
+        }
+    }
+
+    @Test
+    @DisplayName("findNotificationSettingByTelegramUserId(): throws NotificationSettingsNotFoundException when record not found by telegramUserId")
     fun `failure findNotificationSettingByTelegramUserId not found`() {
-        assertThrows<IllegalArgumentException> { accessService.findNotificationSettingByTelegramUserId(NOT_EXISTED_USER_ID) }
+        assertThrows<NotificationSettingsNotFoundException> { accessService.findNotificationSettingByTelegramUserId(NOT_EXISTED_USER_ID) }
     }
 
     @Test
-    @DisplayName("updateTimeOfLastNotification(): throws IllegalArgumentException when record not found by telegramUserId")
+    @DisplayName("updateTimeOfLastNotification(): throws NotificationSettingsNotFoundException when record not found by telegramUserId")
     fun `failure updateTimeOfLastNotification not found`() {
         val time = LocalDateTime.now()
-        assertThrows<IllegalArgumentException> { accessService.updateTimeOfLastNotification(NOT_EXISTED_USER_ID, time) }
+        assertThrows<NotificationSettingsNotFoundException> { accessService.updateTimeOfLastNotification(NOT_EXISTED_USER_ID, time) }
     }
 
     @Test
-    @DisplayName("updateNotificationSettings(): throws IllegalArgumentException when record not found by telegramUserId")
+    @DisplayName("updateNotificationSettings(): resets timeOfLastNotification and notificationAttempts when interval changes")
+    fun `successful updateNotificationSettings resets timeOfLastNotification and notificationAttempts on interval change`() {
+        getMutableClock().setTime("2025-06-15T14:00:00Z")
+        val expectedTime = LocalDateTime.now(clock)
+
+        val actual = assertDoesNotThrow(
+            ThrowingSupplier {
+                accessService.updateNotificationSettings(DEFAULT_TELEGRAM_USER_ID, IntervalNotificationType.HALF_HOUR)
+            }
+        )
+
+        assertEquals(IntervalNotificationType.HALF_HOUR, actual.notificationInterval)
+        assertEquals(expectedTime, actual.timeOfLastNotification)
+        assertEquals(WITHOUT_NOTIFICATION_ATTEMPTS, actual.notificationAttempts)
+    }
+
+    @Test
+    @DisplayName("updateNotificationSettings(): does not reset timeOfLastNotification and notificationAttempts when interval is the same")
+    fun `successful updateNotificationSettings does not reset timeOfLastNotification and notificationAttempts on same interval`() {
+        val before = accessService.findNotificationSettingByTelegramUserId(DEFAULT_TELEGRAM_USER_ID)
+
+        val actual = assertDoesNotThrow(
+            ThrowingSupplier {
+                accessService.updateNotificationSettings(DEFAULT_TELEGRAM_USER_ID, IntervalNotificationType.TWO_HOURS)
+            }
+        )
+
+        assertEquals(before.timeOfLastNotification, actual.timeOfLastNotification)
+        assertEquals(before.notificationAttempts, actual.notificationAttempts)
+    }
+
+    @Test
+    @DisplayName("updateNotificationSettings(): throws NotificationSettingsNotFoundException when record not found by telegramUserId")
     fun `failure updateNotificationSettings not found`() {
-        assertThrows<IllegalArgumentException> {
-            accessService.updateNotificationSettings(NOT_EXISTED_USER_ID, NOT_EXISTED_USER_ID, IntervalNotificationType.HOUR)
+        assertThrows<NotificationSettingsNotFoundException> {
+            accessService.updateNotificationSettings(NOT_EXISTED_USER_ID, IntervalNotificationType.HOUR)
         }
+    }
+
+    @Test
+    @DisplayName("updateNotificationSettings(): clears active pauseUntil when interval changes")
+    fun `successful updateNotificationSettings clears pauseUntil on interval change`() {
+        getMutableClock().setTime("2025-06-15T10:00:00Z")
+        val pauseUntil = LocalDateTime.of(2025, 6, 15, 14, 0)
+        accessService.setPause(DEFAULT_TELEGRAM_USER_ID, pauseUntil)
+
+        val actual = assertDoesNotThrow(
+            ThrowingSupplier {
+                accessService.updateNotificationSettings(DEFAULT_TELEGRAM_USER_ID, IntervalNotificationType.HALF_HOUR)
+            }
+        )
+
+        assertEquals(IntervalNotificationType.HALF_HOUR, actual.notificationInterval)
+        assertNull(actual.pauseUntil)
+        assertEquals(LocalDateTime.now(clock), actual.timeOfLastNotification)
+    }
+
+    @Test
+    @DisplayName("setPause(): sets pauseUntil and shifts timeOfLastNotification to pauseUntil minus interval")
+    fun `successful setPause sets pauseUntil and shifts timeOfLastNotification`() {
+        val pauseUntil = LocalDateTime.of(2025, 6, 15, 14, 0)
+        // SQL fixture sets DEFAULT_TELEGRAM_USER_ID with TWO_HOURS interval (120 minutes)
+        val expectedTimeOfLastNotification = pauseUntil.minusMinutes(IntervalNotificationType.TWO_HOURS.minutes)
+
+        val actual = assertDoesNotThrow(
+            ThrowingSupplier {
+                accessService.setPause(DEFAULT_TELEGRAM_USER_ID, pauseUntil)
+            }
+        )
+
+        assertEquals(pauseUntil, actual.pauseUntil)
+        assertEquals(expectedTimeOfLastNotification, actual.timeOfLastNotification)
+    }
+
+    @Test
+    @DisplayName("setPause(): does NOT reset notificationAttempts when pause is set")
+    fun `successful setPause keeps notificationAttempts`() {
+        val pauseUntil = LocalDateTime.of(2025, 6, 15, 14, 0)
+        // SQL fixture seeds notification_attempts = 1 for DEFAULT_TELEGRAM_USER_ID
+        val before = accessService.findNotificationSettingByTelegramUserId(DEFAULT_TELEGRAM_USER_ID)
+
+        val actual = assertDoesNotThrow(
+            ThrowingSupplier {
+                accessService.setPause(DEFAULT_TELEGRAM_USER_ID, pauseUntil)
+            }
+        )
+
+        assertEquals(before.notificationAttempts, actual.notificationAttempts)
+    }
+
+    @Test
+    @DisplayName("setPause(): with null pauseUntil resets pauseUntil to null and timeOfLastNotification to now")
+    fun `successful setPause cancel resets to now`() {
+        getMutableClock().setTime("2025-06-15T14:00:00Z")
+        val expectedTime = LocalDateTime.now(clock)
+        // First put user into paused state
+        accessService.setPause(DEFAULT_TELEGRAM_USER_ID, LocalDateTime.of(2025, 6, 15, 18, 0))
+
+        val actual = assertDoesNotThrow(
+            ThrowingSupplier {
+                accessService.setPause(DEFAULT_TELEGRAM_USER_ID, null)
+            }
+        )
+
+        assertNull(actual.pauseUntil)
+        assertEquals(expectedTime, actual.timeOfLastNotification)
+    }
+
+    @Test
+    @DisplayName("setPause(): cancel does NOT reset notificationAttempts")
+    fun `successful setPause cancel keeps notificationAttempts`() {
+        val before = accessService.findNotificationSettingByTelegramUserId(DEFAULT_TELEGRAM_USER_ID)
+
+        val actual = assertDoesNotThrow(
+            ThrowingSupplier {
+                accessService.setPause(DEFAULT_TELEGRAM_USER_ID, null)
+            }
+        )
+
+        assertEquals(before.notificationAttempts, actual.notificationAttempts)
+    }
+
+    @Test
+    @DisplayName("setPause(): re-pause overwrites previous pauseUntil and timeOfLastNotification")
+    fun `successful setPause re-pause overwrites`() {
+        val firstPause = LocalDateTime.of(2025, 6, 15, 14, 0)
+        val secondPause = LocalDateTime.of(2025, 6, 15, 18, 0)
+        accessService.setPause(DEFAULT_TELEGRAM_USER_ID, firstPause)
+
+        val actual = assertDoesNotThrow(
+            ThrowingSupplier {
+                accessService.setPause(DEFAULT_TELEGRAM_USER_ID, secondPause)
+            }
+        )
+
+        assertEquals(secondPause, actual.pauseUntil)
+        assertEquals(
+            secondPause.minusMinutes(IntervalNotificationType.TWO_HOURS.minutes),
+            actual.timeOfLastNotification
+        )
+    }
+
+    @Test
+    @DisplayName("setPause(): persists pauseUntil so subsequent reads return it")
+    fun `successful setPause persists pauseUntil`() {
+        val pauseUntil = LocalDateTime.of(2025, 6, 15, 14, 0)
+
+        accessService.setPause(DEFAULT_TELEGRAM_USER_ID, pauseUntil)
+
+        val reloaded = accessService.findNotificationSettingByTelegramUserId(DEFAULT_TELEGRAM_USER_ID)
+        assertEquals(pauseUntil, reloaded.pauseUntil)
+    }
+
+    @Test
+    @DisplayName("setPause(): throws NotificationSettingsNotFoundException when record not found by telegramUserId")
+    fun `failure setPause not found`() {
+        assertThrows<NotificationSettingsNotFoundException> {
+            accessService.setPause(NOT_EXISTED_USER_ID, LocalDateTime.of(2025, 6, 15, 14, 0))
+        }
+    }
+
+    @Test
+    @DisplayName("setPause(): throws NotificationSettingsNotFoundException when record not found by telegramUserId on cancel")
+    fun `failure setPause cancel not found`() {
+        assertThrows<NotificationSettingsNotFoundException> {
+            accessService.setPause(NOT_EXISTED_USER_ID, null)
+        }
+    }
+
+    @Test
+    @DisplayName("setPause(): throws NotificationSettingsNotFoundException for disabled user (filtered by @SQLRestriction)")
+    fun `failure setPause disabled user`() {
+        assertThrows<NotificationSettingsNotFoundException> {
+            accessService.setPause(DISABLED_TELEGRAM_USER_ID, LocalDateTime.of(2025, 6, 15, 14, 0))
+        }
+    }
+
+    @Test
+    @DisplayName("changeQuietMode(): clears active pauseUntil")
+    fun `changeQuietMode clears active pauseUntil`() {
+        val pauseUntil = LocalDateTime.of(2025, 6, 15, 14, 0)
+        accessService.setPause(DEFAULT_TELEGRAM_USER_ID, pauseUntil)
+
+        assertDoesNotThrow(
+            ThrowingSupplier {
+                accessService.changeQuietMode(DEFAULT_TELEGRAM_USER_ID, LocalTime.of(22, 0), LocalTime.of(8, 0))
+            }
+        )
+
+        val actual = accessService.findNotificationSettingByTelegramUserId(DEFAULT_TELEGRAM_USER_ID)
+        assertNull(actual.pauseUntil)
+        assertEquals(LocalTime.of(22, 0), actual.quietModeStart)
+        assertEquals(LocalTime.of(8, 0), actual.quietModeEnd)
+    }
+
+    @Test
+    @DisplayName("disableQuietMode(): clears active pauseUntil")
+    fun `disableQuietMode clears active pauseUntil`() {
+        val pauseUntil = LocalDateTime.of(2025, 6, 15, 14, 0)
+        accessService.changeQuietMode(DEFAULT_TELEGRAM_USER_ID, LocalTime.of(22, 0), LocalTime.of(8, 0))
+        accessService.setPause(DEFAULT_TELEGRAM_USER_ID, pauseUntil)
+
+        assertDoesNotThrow(
+            ThrowingSupplier {
+                accessService.disableQuietMode(DEFAULT_TELEGRAM_USER_ID)
+            }
+        )
+
+        val actual = accessService.findNotificationSettingByTelegramUserId(DEFAULT_TELEGRAM_USER_ID)
+        assertNull(actual.pauseUntil)
+        assertNull(actual.quietModeStart)
+        assertNull(actual.quietModeEnd)
+    }
+
+    @Test
+    @DisplayName("disableNotifications(): clears active pauseUntil before disabling")
+    fun `disableNotifications clears active pauseUntil`() {
+        val pauseUntil = LocalDateTime.of(2025, 6, 15, 14, 0)
+        accessService.setPause(DEFAULT_TELEGRAM_USER_ID, pauseUntil)
+
+        assertDoesNotThrow(
+            ThrowingSupplier {
+                accessService.disableNotifications(DEFAULT_TELEGRAM_USER_ID)
+            }
+        )
+        // While disabled the entity is filtered out by @SQLRestriction, so re-enable to read it.
+        accessService.enableNotifications(DEFAULT_TELEGRAM_USER_ID)
+
+        val actual = accessService.findNotificationSettingByTelegramUserId(DEFAULT_TELEGRAM_USER_ID)
+        assertNull(actual.pauseUntil)
+    }
+
+    @Test
+    @DisplayName("updateDailyGoal(): persists new daily goal for existing user")
+    fun `successful updateDailyGoal updates value`() {
+        val newGoalMl = 3000
+
+        assertDoesNotThrow(
+            ThrowingSupplier {
+                accessService.updateDailyGoal(DEFAULT_TELEGRAM_USER_ID, newGoalMl)
+            }
+        )
+
+        val actual = accessService.findNotificationSettingByTelegramUserId(DEFAULT_TELEGRAM_USER_ID)
+        assertEquals(newGoalMl, actual.dailyGoalMl)
+    }
+
+    @Test
+    @DisplayName("updateDailyGoal(): does not throw when user does not exist (no-op update)")
+    fun `successful updateDailyGoal noop for missing user`() {
+        assertDoesNotThrow(
+            ThrowingSupplier {
+                accessService.updateDailyGoal(NOT_EXISTED_USER_ID, 1500)
+            }
+        )
+    }
+
+    @Test
+    @DisplayName("updateDailyGoal(): does not affect dailyGoalMl of other users")
+    fun `successful updateDailyGoal does not affect other users`() {
+        val newGoalForFirst = 2500
+        val before = accessService.findNotificationSettingByTelegramUserId(DEFAULT_TELEGRAM_USER_ID)
+        // DISABLED_TELEGRAM_USER_ID is filtered by @SQLRestriction, so re-enable to read it back.
+        accessService.enableNotifications(DISABLED_TELEGRAM_USER_ID)
+        val secondBefore = accessService.findNotificationSettingByTelegramUserId(DISABLED_TELEGRAM_USER_ID)
+
+        accessService.updateDailyGoal(DEFAULT_TELEGRAM_USER_ID, newGoalForFirst)
+
+        val firstAfter = accessService.findNotificationSettingByTelegramUserId(DEFAULT_TELEGRAM_USER_ID)
+        val secondAfter = accessService.findNotificationSettingByTelegramUserId(DISABLED_TELEGRAM_USER_ID)
+        assertNotEquals(before.dailyGoalMl, firstAfter.dailyGoalMl)
+        assertEquals(newGoalForFirst, firstAfter.dailyGoalMl)
+        assertEquals(secondBefore.dailyGoalMl, secondAfter.dailyGoalMl)
+    }
+
+    @Test
+    @DisplayName("setPause(null): on already-expired pause, clears pauseUntil but does NOT reset timeOfLastNotification")
+    fun `setPause cancel after pause expired keeps timeOfLastNotification`() {
+        getMutableClock().setTime("2025-06-15T10:00:00Z")
+        val pauseUntil = LocalDateTime.of(2025, 6, 15, 11, 0)
+        accessService.setPause(DEFAULT_TELEGRAM_USER_ID, pauseUntil)
+        val timerWhilePaused = pauseUntil.minusMinutes(IntervalNotificationType.TWO_HOURS.minutes)
+
+        // Advance clock past pauseUntil so the pause is expired.
+        getMutableClock().setTime("2025-06-15T15:00:00Z")
+
+        val actual = assertDoesNotThrow(
+            ThrowingSupplier {
+                accessService.setPause(DEFAULT_TELEGRAM_USER_ID, null)
+            }
+        )
+
+        assertNull(actual.pauseUntil)
+        // Cancel is idempotent for already-expired pause: timer is not bumped.
+        assertEquals(timerWhilePaused, actual.timeOfLastNotification)
     }
 }

@@ -55,4 +55,33 @@ interface NotificationSettingRepository : JpaRepository<NotificationSettingEntit
         @Param("end") end: LocalTime? = null
     )
 
+    @Modifying
+    @Query(
+        value = """
+        update notification_settings ns
+        set pause_until = null
+        from telegram_users u
+        where ns.telegram_user_id = u.id
+          and u.external_user_id = :externalUserId
+        """,
+        nativeQuery = true
+    )
+    fun clearPause(@Param("externalUserId") externalUserId: Long)
+
+    @Modifying
+    @Query(
+        value = """
+        update notification_settings ns
+        set daily_goal_ml = :goalMl
+        from telegram_users u
+        where ns.telegram_user_id = u.id
+          and u.external_user_id = :externalUserId
+        """,
+        nativeQuery = true
+    )
+    fun updateDailyGoal(
+        @Param("externalUserId") externalUserId: Long,
+        @Param("goalMl") goalMl: Int
+    )
+
 }

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import ru.illine.drinking.ponies.config.property.TelegramBotProperties
+import ru.illine.drinking.ponies.exception.InvalidAuthSignatureException
 import ru.illine.drinking.ponies.model.dto.TelegramUserDto
 import ru.illine.drinking.ponies.service.telegram.TelegramValidatorService
 import ru.illine.drinking.ponies.util.telegram.TelegramWebAppDataHelper.QUERY_ID_FIELD_NAME
@@ -23,11 +24,16 @@ class TelegramValidatorServiceImpl(
 
     private val objectMapper = jacksonObjectMapper()
 
-    override fun verifySignature(initData: String, expirationTime: Duration): Boolean {
+    override fun verifySignature(initData: String): Boolean {
         val token = telegramBotProperties.token
-        val decodedData = decode(initData)
+        val decodedData = runCatching { decode(initData) }.getOrElse { emptyMap() }
+        if (decodedData.isEmpty()) {
+            throw InvalidAuthSignatureException("Failed to decode 'initData': [$initData]")
+        }
+
         logger.debug("Validate 'initDate' with query_id: {}", decodedData[QUERY_ID_FIELD_NAME])
 
+        val expirationTime = Duration.ofSeconds(telegramBotProperties.authDateExpirationSeconds)
         return validateAuthDate(decodedData, expirationTime) && validateHash(decodedData, token)
     }
 

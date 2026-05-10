@@ -63,7 +63,7 @@ test:
   image: gradle:8.4-jdk17
   variables:
     GRADLE_USER_HOME: ".gradle"
-    TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TEST_TOKEN}
+    TELEGRAM_BOT_TOKEN: ${DPTB_TEST_TELEGRAM_BOT_TOKEN}
   cache:
     - key: gradle-cache-${CI_PROJECT_ID}
       paths:

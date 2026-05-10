@@ -31,18 +31,17 @@ spring:
     change-log: liquibase/changelog.yaml
     contexts: integration-test
     enabled: true
-  config:
-    import:
-      - ${BUTTONS_CONFIG_PATH:classpath:buttons.yaml}
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:4000}
 
+app:
+  version: X.Y.Z-test
+
 telegram-bot:
-  version: integration-test
   token: test-bot-token
   username: DrinkingPoniesBotIntegrationTest
-  creator-id: 1
-  auto-update-commands: false
+  mini-app-url: https://t.me/DrinkingPoniesBotIntegrationTest/app
+  auto-update-telegram-config: false
   http:
     connection-time-to-live-in-sec: 60
     max-connection-total: 100

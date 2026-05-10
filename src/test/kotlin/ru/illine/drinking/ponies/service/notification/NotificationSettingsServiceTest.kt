@@ -1,42 +1,37 @@
 package ru.illine.drinking.ponies.service.notification
 
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
-import org.mockito.ArgumentCaptor
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 import org.mockito.Mockito.*
-import org.telegram.telegrambots.meta.api.methods.send.SendMessage
-import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
 import ru.illine.drinking.ponies.model.base.IntervalNotificationType
 import ru.illine.drinking.ponies.service.notification.impl.NotificationSettingsServiceImpl
-import ru.illine.drinking.ponies.service.telegram.MessageEditorService
 import ru.illine.drinking.ponies.test.generator.DtoGenerator
 import ru.illine.drinking.ponies.test.tag.UnitTest
-import ru.illine.drinking.ponies.util.telegram.TelegramMessageConstants
-import java.time.LocalDateTime
-import java.time.LocalTime
+import java.time.*
 
 @UnitTest
 @DisplayName("NotificationSettingsService Unit Test")
 class NotificationSettingsServiceTest {
 
     private val userId = 1L
-    private val chatId = 2L
-    private val messageId = 3
 
     private lateinit var notificationAccessService: NotificationAccessService
-    private lateinit var messageEditorService: MessageEditorService
-    private lateinit var sender: TelegramClient
+    private lateinit var notificationTimeService: NotificationTimeService
+    private lateinit var clock: Clock
     private lateinit var service: NotificationSettingsService
 
     @BeforeEach
     fun setUp() {
         notificationAccessService = mock(NotificationAccessService::class.java)
-        messageEditorService = mock(MessageEditorService::class.java)
-        sender = mock(TelegramClient::class.java)
-        service = NotificationSettingsServiceImpl(notificationAccessService, messageEditorService, sender)
+        notificationTimeService = mock(NotificationTimeService::class.java)
+        clock = Clock.fixed(Instant.parse("2025-01-01T12:00:00Z"), ZoneOffset.UTC)
+        service = NotificationSettingsServiceImpl(notificationAccessService, notificationTimeService, clock)
     }
 
     @Test
@@ -44,45 +39,10 @@ class NotificationSettingsServiceTest {
     fun `changeQuietMode updates quiet mode`() {
         val start = LocalTime.of(22, 0)
         val end = LocalTime.of(8, 0)
-        val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = userId, externalChatId = chatId)
-        `when`(notificationAccessService.findNotificationSettingByTelegramUserId(userId)).thenReturn(notificationDto)
 
-        service.changeQuietMode(userId, messageId, start, end)
+        service.changeQuietMode(userId, start, end)
 
         verify(notificationAccessService).changeQuietMode(userId, start, end)
-    }
-
-    @Test
-    @DisplayName("changeQuietMode(): deletes reply markup on original message")
-    fun `changeQuietMode deletes reply markup`() {
-        val start = LocalTime.of(22, 0)
-        val end = LocalTime.of(8, 0)
-        val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = userId, externalChatId = chatId)
-        `when`(notificationAccessService.findNotificationSettingByTelegramUserId(userId)).thenReturn(notificationDto)
-
-        service.changeQuietMode(userId, messageId, start, end)
-
-        verify(messageEditorService).deleteReplyMarkup(chatId, messageId)
-    }
-
-    @Test
-    @DisplayName("changeQuietMode(): sends confirmation message with quiet mode times")
-    fun `changeQuietMode sends confirmation message`() {
-        val start = LocalTime.of(22, 0)
-        val end = LocalTime.of(8, 0)
-        val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = userId, externalChatId = chatId)
-        `when`(notificationAccessService.findNotificationSettingByTelegramUserId(userId)).thenReturn(notificationDto)
-
-        val captor = ArgumentCaptor.forClass(SendMessage::class.java)
-        service.changeQuietMode(userId, messageId, start, end)
-
-        verify(sender).execute(captor.capture())
-        val sent = captor.value
-        assertEquals(chatId.toString(), sent.chatId)
-        assertEquals(
-            TelegramMessageConstants.SETTINGS_QUIET_MODE_TIME_NOTIFICATION_CHANGING.format(start, end),
-            sent.text
-        )
     }
 
     @Test
@@ -91,7 +51,7 @@ class NotificationSettingsServiceTest {
         val time = LocalTime.of(10, 0)
 
         assertThrows(IllegalArgumentException::class.java) {
-            service.changeQuietMode(userId, messageId, time, time)
+            service.changeQuietMode(userId, time, time)
         }
     }
 
@@ -141,15 +101,326 @@ class NotificationSettingsServiceTest {
     }
 
     @Test
+    @DisplayName("isEnabledNotifications(): delegates to access service")
+    fun `isEnabledNotifications delegates to access service`() {
+        `when`(notificationAccessService.isEnabledNotifications(userId)).thenReturn(true)
+
+        val result = service.isEnabledNotifications(userId)
+
+        assertEquals(true, result)
+        verify(notificationAccessService).isEnabledNotifications(userId)
+    }
+
+    @Test
+    @DisplayName("isEnabledNotifications(): returns false when disabled")
+    fun `isEnabledNotifications returns false when disabled`() {
+        `when`(notificationAccessService.isEnabledNotifications(userId)).thenReturn(false)
+
+        val result = service.isEnabledNotifications(userId)
+
+        assertEquals(false, result)
+        verify(notificationAccessService).isEnabledNotifications(userId)
+    }
+
+    @Test
     @DisplayName("changeInterval(): delegates to access service and returns DTO")
     fun `changeInterval delegates to access service`() {
         val interval = IntervalNotificationType.TWO_HOURS
-        val expected = DtoGenerator.generateNotificationDto(externalUserId = userId, externalChatId = chatId)
-        `when`(notificationAccessService.updateNotificationSettings(userId, chatId, interval)).thenReturn(expected)
+        val expected = DtoGenerator.generateNotificationDto(externalUserId = userId)
+        `when`(notificationAccessService.updateNotificationSettings(userId, interval)).thenReturn(expected)
 
-        val result = service.changeInterval(userId, chatId, interval)
+        val result = service.changeInterval(userId, interval)
 
         assertEquals(expected, result)
-        verify(notificationAccessService).updateNotificationSettings(userId, chatId, interval)
+        verify(notificationAccessService).updateNotificationSettings(userId, interval)
+    }
+
+    @Test
+    @DisplayName("getQuietMode(): returns start and end times")
+    fun `getQuietMode returns start and end`() {
+        val expectedStart = LocalTime.of(23, 0)
+        val expectedEnd = LocalTime.of(8, 0)
+        val dto = DtoGenerator.generateNotificationDto(
+            externalUserId = userId,
+            quietModeStart = expectedStart,
+            quietModeEnd = expectedEnd
+        )
+        `when`(notificationAccessService.findNotificationSettingByTelegramUserId(userId)).thenReturn(dto)
+
+        val result = service.getQuietMode(userId)
+
+        assertEquals(expectedStart, result.first)
+        assertEquals(expectedEnd, result.second)
+    }
+
+    @Test
+    @DisplayName("getQuietMode(): throws IllegalStateException when start is null")
+    fun `getQuietMode throws when start is null`() {
+        val dto = DtoGenerator.generateNotificationDto(
+            externalUserId = userId,
+            quietModeStart = null,
+            quietModeEnd = LocalTime.of(8, 0)
+        )
+        `when`(notificationAccessService.findNotificationSettingByTelegramUserId(userId)).thenReturn(dto)
+
+        assertThrows(IllegalStateException::class.java) {
+            service.getQuietMode(userId)
+        }
+    }
+
+    @Test
+    @DisplayName("getQuietMode(): throws IllegalStateException when end is null")
+    fun `getQuietMode throws when end is null`() {
+        val dto = DtoGenerator.generateNotificationDto(
+            externalUserId = userId,
+            quietModeStart = LocalTime.of(23, 0),
+            quietModeEnd = null
+        )
+        `when`(notificationAccessService.findNotificationSettingByTelegramUserId(userId)).thenReturn(dto)
+
+        assertThrows(IllegalStateException::class.java) {
+            service.getQuietMode(userId)
+        }
+    }
+
+    @Test
+    @DisplayName("changeNotificationStatus(): enables notifications when active is true")
+    fun `changeNotificationStatus enables when active true`() {
+        service.changeNotificationStatus(userId, true)
+
+        verify(notificationAccessService).enableNotifications(userId)
+        verify(notificationAccessService, never()).disableNotifications(anyLong())
+    }
+
+    @Test
+    @DisplayName("changeNotificationStatus(): disables notifications when active is false")
+    fun `changeNotificationStatus disables when active false`() {
+        service.changeNotificationStatus(userId, false)
+
+        verify(notificationAccessService).disableNotifications(userId)
+        verify(notificationAccessService, never()).enableNotifications(anyLong())
+    }
+
+    @Test
+    @DisplayName("changeTimezone(): updates timezone via access service")
+    fun `changeTimezone updates timezone`() {
+        val timezone = "America/New_York"
+
+        service.changeTimezone(userId, timezone)
+
+        verify(notificationAccessService).changeTimezone(userId, timezone)
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = ["Invalid", "ABC/XYZ", "123", ""])
+    @DisplayName("changeTimezone(): throws IllegalArgumentException for invalid timezone")
+    fun `changeTimezone throws when invalid timezone`(timezone: String) {
+        assertThrows(IllegalArgumentException::class.java) {
+            service.changeTimezone(userId, timezone)
+        }
+
+        verify(notificationAccessService, never()).changeTimezone(anyLong(), anyString())
+    }
+
+    @Test
+    @DisplayName("getNextNotificationAt(): delegates to time service and returns instant")
+    fun `getNextNotificationAt delegates to time service`() {
+        val dto = DtoGenerator.generateNotificationDto(externalUserId = userId)
+        val expectedInstant = Instant.parse("2025-01-01T11:00:00Z")
+        `when`(notificationAccessService.findNotificationSettingByTelegramUserId(userId)).thenReturn(dto)
+        `when`(notificationTimeService.calculateNextNotificationAt(dto)).thenReturn(expectedInstant)
+
+        val result = service.getNextNotificationAt(userId)
+
+        assertEquals(expectedInstant, result)
+        verify(notificationAccessService).findNotificationSettingByTelegramUserId(userId)
+        verify(notificationTimeService).calculateNextNotificationAt(dto)
+    }
+
+    @Test
+    @DisplayName("getAllSettings(): returns SettingDto with all fields when notifications are enabled")
+    fun `getAllSettings returns full dto when enabled`() {
+        `when`(notificationAccessService.isEnabledNotifications(userId)).thenReturn(true)
+        val notificationDto = DtoGenerator.generateNotificationDto(
+            externalUserId = userId,
+            notificationInterval = IntervalNotificationType.HOUR,
+            userTimeZone = "Europe/Moscow",
+            quietModeStart = LocalTime.of(23, 0),
+            quietModeEnd = LocalTime.of(8, 0),
+        )
+        `when`(notificationAccessService.findNotificationSettingByTelegramUserId(userId)).thenReturn(notificationDto)
+
+        val result = service.getAllSettings(userId)
+
+        assertEquals(true, result.notificationActive)
+        assertEquals(IntervalNotificationType.HOUR.name, result.interval)
+        assertEquals(IntervalNotificationType.HOUR.displayName, result.intervalDisplayName)
+        assertEquals(IntervalNotificationType.HOUR.minutes, result.intervalMinutes)
+        assertEquals("23:00", result.quietModeStart)
+        assertEquals("08:00", result.quietModeEnd)
+        assertEquals("Europe/Moscow", result.timezone)
+        assertEquals(2000, result.dailyGoalMl)
+        verify(notificationAccessService).isEnabledNotifications(userId)
+        verify(notificationAccessService).findNotificationSettingByTelegramUserId(userId)
+    }
+
+    @Test
+    @DisplayName("getAllSettings(): returns SettingDto with only notificationActive=false when notifications are disabled")
+    fun `getAllSettings returns minimal dto when disabled`() {
+        `when`(notificationAccessService.isEnabledNotifications(userId)).thenReturn(false)
+
+        val result = service.getAllSettings(userId)
+
+        assertEquals(false, result.notificationActive)
+        assertEquals(null, result.interval)
+        assertEquals(null, result.intervalDisplayName)
+        assertEquals(null, result.intervalMinutes)
+        assertEquals(null, result.quietModeStart)
+        assertEquals(null, result.quietModeEnd)
+        assertEquals(null, result.timezone)
+        assertEquals(null, result.dailyGoalMl)
+        verify(notificationAccessService).isEnabledNotifications(userId)
+        verify(notificationAccessService, never()).findNotificationSettingByTelegramUserId(anyLong())
+    }
+
+    @Test
+    @DisplayName("pauseNotifications(): computes pauseUntil as now(UTC) + minutes and delegates to access service")
+    fun `pauseNotifications computes pauseUntil and delegates`() {
+        val minutes = 240L
+        val expectedPauseUntil = LocalDateTime.of(2025, 1, 1, 16, 0)
+
+        service.pauseNotifications(userId, minutes)
+
+        verify(notificationAccessService).setPause(userId, expectedPauseUntil)
+    }
+
+    @ParameterizedTest
+    @ValueSource(longs = [0, -1, -100])
+    @DisplayName("pauseNotifications(): throws IllegalArgumentException when minutes is not positive")
+    fun `pauseNotifications throws when minutes not positive`(minutes: Long) {
+        assertThrows(IllegalArgumentException::class.java) {
+            service.pauseNotifications(userId, minutes)
+        }
+
+        verify(notificationAccessService, never()).setPause(anyLong(), any())
+    }
+
+    @Test
+    @DisplayName("cancelPause(): delegates to access service with null pauseUntil")
+    fun `cancelPause delegates with null`() {
+        service.cancelPause(userId)
+
+        verify(notificationAccessService).setPause(userId, null)
+    }
+
+    @Test
+    @DisplayName("getPauseState(): returns paused=true and ISO UTC pauseUntil when pause is active")
+    fun `getPauseState returns paused true when active`() {
+        val pauseUntil = LocalDateTime.of(2025, 1, 1, 13, 0)
+        val dto = DtoGenerator.generateNotificationDto(externalUserId = userId, pauseUntil = pauseUntil)
+        `when`(notificationAccessService.findNotificationSettingByTelegramUserId(userId)).thenReturn(dto)
+
+        val result = service.getPauseState(userId)
+
+        assertEquals(true, result.paused)
+        assertEquals(Instant.parse("2025-01-01T13:00:00Z"), result.pauseUntil)
+    }
+
+    @Test
+    @DisplayName("getPauseState(): returns paused=false and null pauseUntil when pauseUntil is in the past")
+    fun `getPauseState returns paused false when pauseUntil expired`() {
+        val pauseUntil = LocalDateTime.of(2025, 1, 1, 11, 0)
+        val dto = DtoGenerator.generateNotificationDto(externalUserId = userId, pauseUntil = pauseUntil)
+        `when`(notificationAccessService.findNotificationSettingByTelegramUserId(userId)).thenReturn(dto)
+
+        val result = service.getPauseState(userId)
+
+        assertEquals(false, result.paused)
+        assertEquals(null, result.pauseUntil)
+    }
+
+    @Test
+    @DisplayName("getPauseState(): returns paused=false and null pauseUntil when pauseUntil is null")
+    fun `getPauseState returns paused false when pauseUntil null`() {
+        val dto = DtoGenerator.generateNotificationDto(externalUserId = userId, pauseUntil = null)
+        `when`(notificationAccessService.findNotificationSettingByTelegramUserId(userId)).thenReturn(dto)
+
+        val result = service.getPauseState(userId)
+
+        assertEquals(false, result.paused)
+        assertEquals(null, result.pauseUntil)
+    }
+
+    @Test
+    @DisplayName("getPauseState(): returns paused=false when pauseUntil equals now")
+    fun `getPauseState returns paused false when pauseUntil equals now`() {
+        val pauseUntil = LocalDateTime.of(2025, 1, 1, 12, 0)
+        val dto = DtoGenerator.generateNotificationDto(externalUserId = userId, pauseUntil = pauseUntil)
+        `when`(notificationAccessService.findNotificationSettingByTelegramUserId(userId)).thenReturn(dto)
+
+        val result = service.getPauseState(userId)
+
+        assertEquals(false, result.paused)
+        assertEquals(null, result.pauseUntil)
+    }
+
+    @Test
+    @DisplayName("pauseNotifications(): re-pause overrides existing pauseUntil with newly computed value")
+    fun `pauseNotifications re-pause delegates with new pauseUntil`() {
+        val firstMinutes = 60L
+        val secondMinutes = 240L
+        val firstExpected = LocalDateTime.of(2025, 1, 1, 13, 0)
+        val secondExpected = LocalDateTime.of(2025, 1, 1, 16, 0)
+
+        service.pauseNotifications(userId, firstMinutes)
+        service.pauseNotifications(userId, secondMinutes)
+
+        verify(notificationAccessService).setPause(userId, firstExpected)
+        verify(notificationAccessService).setPause(userId, secondExpected)
+    }
+
+    @Test
+    @DisplayName("pauseNotifications(): does not call cancelPause path")
+    fun `pauseNotifications does not cancel`() {
+        service.pauseNotifications(userId, 30L)
+
+        verify(notificationAccessService, never()).setPause(userId, null)
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = [2000, 2250, 2500, 2750, 3000])
+    @DisplayName("changeDailyGoal(): delegates to access service for any allowed value (incl. 2000 and 3000 boundaries)")
+    fun `changeDailyGoal delegates for allowed value`(goalMl: Int) {
+        service.changeDailyGoal(userId, goalMl)
+
+        verify(notificationAccessService).updateDailyGoal(userId, goalMl)
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = [0, 99, 1500, 1999, 2001, 2100, 2999, 3001, 10001, -100])
+    @DisplayName("changeDailyGoal(): throws IllegalArgumentException for value outside ALLOWED_VALUES_ML")
+    fun `changeDailyGoal throws when value not allowed`(goalMl: Int) {
+        assertThrows(IllegalArgumentException::class.java) {
+            service.changeDailyGoal(userId, goalMl)
+        }
+
+        verify(notificationAccessService, never()).updateDailyGoal(anyLong(), anyInt())
+    }
+
+    @Test
+    @DisplayName("getPauseState(): returns paused=true even when notificationAttempts > 0 (state independent)")
+    fun `getPauseState returns paused true regardless of notificationAttempts`() {
+        val pauseUntil = LocalDateTime.of(2025, 1, 1, 13, 0)
+        val dto = DtoGenerator.generateNotificationDto(
+            externalUserId = userId,
+            pauseUntil = pauseUntil,
+            notificationAttempts = 3
+        )
+        `when`(notificationAccessService.findNotificationSettingByTelegramUserId(userId)).thenReturn(dto)
+
+        val result = service.getPauseState(userId)
+
+        assertEquals(true, result.paused)
+        assertEquals(Instant.parse("2025-01-01T13:00:00Z"), result.pauseUntil)
     }
 }
