@@ -34,12 +34,14 @@ class StatisticsServiceTest {
 
     private lateinit var notificationAccessService: NotificationAccessService
     private lateinit var waterStatisticAccessService: WaterStatisticAccessService
+    private lateinit var insightService: InsightService
     private lateinit var service: StatisticsService
 
     @BeforeEach
     fun setUp() {
         notificationAccessService = mock(NotificationAccessService::class.java)
         waterStatisticAccessService = mock(WaterStatisticAccessService::class.java)
+        insightService = mock(InsightService::class.java)
     }
 
     @ParameterizedTest(name = "[{index}] zone={0} ({4}) -> [{2}, {3})")
@@ -53,7 +55,7 @@ class StatisticsServiceTest {
         @Suppress("UNUSED_PARAMETER") description: String,
     ) {
         val clock = Clock.fixed(Instant.parse(fixedInstant), ZoneOffset.UTC)
-        service = StatisticsServiceImpl(notificationAccessService, waterStatisticAccessService, clock)
+        service = StatisticsServiceImpl(notificationAccessService, waterStatisticAccessService, insightService, clock)
 
         val settings = DtoGenerator.generateNotificationDto(
             externalUserId = userId,
@@ -84,7 +86,7 @@ class StatisticsServiceTest {
     fun `getToday returns list as-is`() {
         // 2026-05-07T22:30:00Z -> Europe/Moscow (UTC+3) day = 2026-05-08
         val clock = Clock.fixed(Instant.parse("2026-05-07T22:30:00Z"), ZoneOffset.UTC)
-        service = StatisticsServiceImpl(notificationAccessService, waterStatisticAccessService, clock)
+        service = StatisticsServiceImpl(notificationAccessService, waterStatisticAccessService, insightService, clock)
 
         val settings = DtoGenerator.generateNotificationDto(
             externalUserId = userId,
