@@ -6,6 +6,9 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.EnumSource
+import org.junit.jupiter.params.provider.ValueSource
 import org.mockito.Mockito.*
 import org.mockito.kotlin.any
 import org.springframework.beans.factory.annotation.Autowired
@@ -15,14 +18,22 @@ import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import org.springframework.test.context.bean.override.mockito.MockitoBean
+import ru.illine.drinking.ponies.exception.NotificationSettingsNotFoundException
 import ru.illine.drinking.ponies.model.base.AnswerNotificationType
+import ru.illine.drinking.ponies.model.base.StatisticsPeriodType
+import ru.illine.drinking.ponies.model.dto.BestDayDto
+import ru.illine.drinking.ponies.model.dto.StatisticsDto
+import ru.illine.drinking.ponies.model.dto.StatisticsPointDto
 import ru.illine.drinking.ponies.model.dto.TelegramUserDto
+import ru.illine.drinking.ponies.model.dto.response.StatisticsResponse
 import ru.illine.drinking.ponies.model.dto.response.StatisticsTodayResponse
 import ru.illine.drinking.ponies.service.statistic.StatisticsService
 import ru.illine.drinking.ponies.service.telegram.TelegramValidatorService
 import ru.illine.drinking.ponies.test.generator.DtoGenerator
 import ru.illine.drinking.ponies.test.tag.SpringIntegrationTest
+import java.time.DayOfWeek
 import java.time.Instant
+import java.time.LocalDate
 import java.time.LocalDateTime
 
 @SpringIntegrationTest
@@ -119,6 +130,153 @@ class StatisticsControllerTest @Autowired constructor(
 
             assertEquals(HttpStatus.UNAUTHORIZED, response.statusCode)
             verifyNoInteractions(statisticsService)
+        }
+    }
+
+    @Nested
+    @DisplayName("GET /statistics")
+    inner class GetStatistics {
+
+        private fun fakeDto(period: StatisticsPeriodType): StatisticsDto = when (period) {
+            StatisticsPeriodType.DAY -> StatisticsDto(
+                points = (0 until 24).map { StatisticsPointDto("%02d:00".format(it), if (it == 8) 250 else 0) },
+                dailyGoalMl = 2000,
+                averageMlPerDay = 250,
+                bestDay = null,
+                currentStreakDays = 3,
+                insightText = "insight text day",
+            )
+            StatisticsPeriodType.WEEK -> StatisticsDto(
+                points = listOf(
+                    StatisticsPointDto("2026-05-04", 1800),
+                    StatisticsPointDto("2026-05-05", 2100),
+                    StatisticsPointDto("2026-05-06", 2400),
+                    StatisticsPointDto("2026-05-07", 1500),
+                    StatisticsPointDto("2026-05-08", 0),
+                    StatisticsPointDto("2026-05-09", 0),
+                    StatisticsPointDto("2026-05-10", 0),
+                ),
+                dailyGoalMl = 2000,
+                averageMlPerDay = 1114,
+                bestDay = BestDayDto(LocalDate.of(2026, 5, 6), 2400, DayOfWeek.WEDNESDAY),
+                currentStreakDays = 3,
+                insightText = "insight text week",
+            )
+            StatisticsPeriodType.MONTH -> StatisticsDto(
+                points = (1..31).map { StatisticsPointDto("2026-05-%02d".format(it), 0) },
+                dailyGoalMl = 2000,
+                averageMlPerDay = 0,
+                bestDay = null,
+                currentStreakDays = 0,
+                insightText = "insight text month",
+            )
+        }
+
+        @ParameterizedTest(name = "[{index}] period={0} - returns 200")
+        @EnumSource(StatisticsPeriodType::class)
+        @DisplayName("valid request - returns 200 for each period")
+        fun `returns 200 for each period`(period: StatisticsPeriodType) {
+            val dto = fakeDto(period)
+            `when`(statisticsService.getStatistics(telegramUser.telegramId, period)).thenReturn(dto)
+            val headers = buildHeaders()
+
+            val response = restTemplate.exchange(
+                "/statistics?period=$period", HttpMethod.GET, HttpEntity<Void>(headers), StatisticsResponse::class.java
+            )
+
+            assertEquals(HttpStatus.OK, response.statusCode)
+            assertNotNull(response.body)
+            assertEquals(dto.points.size, response.body!!.points.size)
+            assertEquals(dto.dailyGoalMl, response.body!!.dailyGoalMl)
+            assertEquals(dto.averageMlPerDay, response.body!!.averageMlPerDay)
+            assertEquals(dto.currentStreakDays, response.body!!.currentStreakDays)
+            assertEquals(dto.insightText, response.body!!.insight.text)
+            verify(statisticsService).getStatistics(telegramUser.telegramId, period)
+        }
+
+        @Test
+        @DisplayName("WEEK response includes bestDay with date, valueMl, weekday")
+        fun `WEEK response carries bestDay fields`() {
+            val dto = fakeDto(StatisticsPeriodType.WEEK)
+            `when`(statisticsService.getStatistics(telegramUser.telegramId, StatisticsPeriodType.WEEK))
+                .thenReturn(dto)
+            val headers = buildHeaders()
+
+            val response = restTemplate.exchange(
+                "/statistics?period=WEEK", HttpMethod.GET, HttpEntity<Void>(headers), StatisticsResponse::class.java
+            )
+
+            assertEquals(HttpStatus.OK, response.statusCode)
+            assertNotNull(response.body!!.bestDay)
+            assertEquals(LocalDate.of(2026, 5, 6), response.body!!.bestDay!!.date)
+            assertEquals(2400, response.body!!.bestDay!!.valueMl)
+            assertEquals(DayOfWeek.WEDNESDAY, response.body!!.bestDay!!.weekday)
+        }
+
+        @ParameterizedTest(name = "[{index}] period={0} - returns 400 (invalid enum)")
+        @ValueSource(strings = ["YEAR", "year", "INVALID"])
+        @DisplayName("invalid period enum value - returns 400")
+        fun `returns 400 on invalid period enum`(period: String) {
+            val headers = buildHeaders()
+
+            val response = restTemplate.exchange(
+                "/statistics?period=$period", HttpMethod.GET, HttpEntity<Void>(headers), Void::class.java
+            )
+
+            assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
+            verifyNoInteractions(statisticsService)
+        }
+
+        @Test
+        @DisplayName("empty period value - returns 400")
+        fun `returns 400 on empty period`() {
+            val headers = buildHeaders()
+
+            val response = restTemplate.exchange(
+                "/statistics?period=", HttpMethod.GET, HttpEntity<Void>(headers), Void::class.java
+            )
+
+            assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
+            verifyNoInteractions(statisticsService)
+        }
+
+        @Test
+        @DisplayName("missing period param - returns 400")
+        fun `returns 400 on missing period`() {
+            val headers = buildHeaders()
+
+            val response = restTemplate.exchange(
+                "/statistics", HttpMethod.GET, HttpEntity<Void>(headers), Void::class.java
+            )
+
+            assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
+            verifyNoInteractions(statisticsService)
+        }
+
+        @Test
+        @DisplayName("missing auth header - returns 401")
+        fun `returns 401`() {
+            val response = restTemplate.exchange(
+                "/statistics?period=DAY", HttpMethod.GET, HttpEntity<Void>(HttpHeaders()), Void::class.java
+            )
+
+            assertEquals(HttpStatus.UNAUTHORIZED, response.statusCode)
+            verifyNoInteractions(statisticsService)
+        }
+
+        @Test
+        @DisplayName("notifications disabled (NotificationSettingsNotFoundException) - returns 404")
+        fun `returns 404 when settings not found`() {
+            doThrow(NotificationSettingsNotFoundException("not found"))
+                .`when`(statisticsService).getStatistics(any(), any())
+            val headers = buildHeaders()
+
+            val response = restTemplate.exchange(
+                "/statistics?period=WEEK", HttpMethod.GET, HttpEntity<Void>(headers), Void::class.java
+            )
+
+            assertEquals(HttpStatus.NOT_FOUND, response.statusCode)
+            verify(statisticsService).getStatistics(telegramUser.telegramId, StatisticsPeriodType.WEEK)
         }
     }
 }

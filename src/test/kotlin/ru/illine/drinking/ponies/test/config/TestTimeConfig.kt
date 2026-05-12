@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Bean
 import ru.illine.drinking.ponies.test.util.ClockHelperTest
 import java.time.Clock
 import java.time.Instant
+import kotlin.random.Random
 
 @TestConfiguration
 class TestTimeConfig {
@@ -15,5 +16,8 @@ class TestTimeConfig {
             Instant.parse(ClockHelperTest.DEFAULT_TIME), ClockHelperTest.DEFAULT_ZONE
         )
     }
+
+    @Bean
+    fun random(): Random = Random(42)
 
 }
