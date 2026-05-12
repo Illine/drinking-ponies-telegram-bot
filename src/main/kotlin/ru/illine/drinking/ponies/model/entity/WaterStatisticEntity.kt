@@ -2,6 +2,7 @@ package ru.illine.drinking.ponies.model.entity
 
 import jakarta.persistence.*
 import ru.illine.drinking.ponies.model.base.AnswerNotificationType
+import ru.illine.drinking.ponies.model.base.WaterEntrySourceType
 import java.time.LocalDateTime
 
 @Entity
@@ -35,7 +36,11 @@ class WaterStatisticEntity(
     var eventType: AnswerNotificationType,
 
     @Column(name = "water_amount_ml", nullable = false)
-    var waterAmountMl: Int = 0
+    var waterAmountMl: Int = 0,
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "source", nullable = false)
+    var source: WaterEntrySourceType = WaterEntrySourceType.NOTIFICATION
 
 ) {
 
@@ -49,6 +54,7 @@ class WaterStatisticEntity(
         if (eventTime != other.eventTime) return false
         if (eventType != other.eventType) return false
         if (waterAmountMl != other.waterAmountMl) return false
+        if (source != other.source) return false
 
         return true
     }
@@ -58,6 +64,7 @@ class WaterStatisticEntity(
         result = 31 * result + eventTime.hashCode()
         result = 31 * result + eventType.hashCode()
         result = 31 * result + waterAmountMl
+        result = 31 * result + source.hashCode()
         return result
     }
 

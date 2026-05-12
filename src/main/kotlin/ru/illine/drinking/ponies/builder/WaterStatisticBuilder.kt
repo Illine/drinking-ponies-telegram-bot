@@ -15,7 +15,8 @@ object WaterStatisticBuilder {
             telegramUser = user,
             eventTime = entity.eventTime,
             eventType = entity.eventType,
-            waterAmountMl = entity.waterAmountMl
+            waterAmountMl = entity.waterAmountMl,
+            source = entity.source
         )
 
     fun toEntity(dto: WaterStatisticDto, user: TelegramUserEntity): WaterStatisticEntity =
@@ -24,7 +25,8 @@ object WaterStatisticBuilder {
             telegramUser = user,
             eventTime = dto.eventTime,
             eventType = dto.eventType,
-            waterAmountMl = dto.waterAmountMl
+            waterAmountMl = dto.waterAmountMl,
+            source = dto.source
         )
 
     fun toWaterEntry(dto: WaterStatisticDto): WaterEntry =
