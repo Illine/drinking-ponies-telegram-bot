@@ -58,7 +58,7 @@ class StatisticsServiceImpl(
             )
         }
 
-        val insight = insightService.build(telegramUserId, settings.dailyGoalMl, zone, today)
+        val insight = insightService.build(telegramUserId, period, settings.dailyGoalMl, zone, today)
 
         return StatisticsDto(
             period = period,
