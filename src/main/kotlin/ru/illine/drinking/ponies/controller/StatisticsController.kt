@@ -3,12 +3,12 @@ package ru.illine.drinking.ponies.controller
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.tags.Tag
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.RequestAttribute
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
+import ru.illine.drinking.ponies.builder.StatisticsBuilder
 import ru.illine.drinking.ponies.builder.WaterStatisticBuilder
+import ru.illine.drinking.ponies.model.base.StatisticsPeriodType
 import ru.illine.drinking.ponies.model.dto.TelegramUserDto
+import ru.illine.drinking.ponies.model.dto.response.StatisticsResponse
 import ru.illine.drinking.ponies.model.dto.response.StatisticsTodayResponse
 import ru.illine.drinking.ponies.service.statistic.StatisticsService
 import ru.illine.drinking.ponies.util.telegram.TelegramGeneralConstants
@@ -31,4 +31,15 @@ class StatisticsController(
             entries = entries.map(WaterStatisticBuilder::toWaterEntry),
         )
     }
+
+    @GetMapping
+    @Operation(summary = "Get aggregated statistics for the requested period")
+    fun getStatistics(
+        @Parameter(description = "Aggregation period", required = true)
+        @RequestParam period: StatisticsPeriodType,
+        @Parameter(hidden = true)
+        @RequestAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) telegramUser: TelegramUserDto,
+    ): StatisticsResponse =
+        StatisticsBuilder.toResponse(statisticsService.getStatistics(telegramUser.telegramId, period))
+
 }
