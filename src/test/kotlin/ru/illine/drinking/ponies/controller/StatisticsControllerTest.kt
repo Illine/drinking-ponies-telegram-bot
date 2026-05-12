@@ -8,15 +8,18 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
+import org.junit.jupiter.params.provider.MethodSource
 import org.junit.jupiter.params.provider.ValueSource
 import org.mockito.Mockito.*
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.web.client.TestRestTemplate
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
+import org.springframework.http.MediaType
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import ru.illine.drinking.ponies.exception.NotificationSettingsNotFoundException
 import ru.illine.drinking.ponies.model.base.AnswerNotificationType
@@ -28,10 +31,12 @@ import ru.illine.drinking.ponies.model.dto.TelegramUserDto
 import ru.illine.drinking.ponies.model.dto.response.StatisticsResponse
 import ru.illine.drinking.ponies.model.dto.response.StatisticsTodayResponse
 import ru.illine.drinking.ponies.service.statistic.StatisticsService
+import ru.illine.drinking.ponies.service.statistic.WaterStatisticService
 import ru.illine.drinking.ponies.service.telegram.TelegramValidatorService
 import ru.illine.drinking.ponies.test.generator.DtoGenerator
 import ru.illine.drinking.ponies.test.tag.SpringIntegrationTest
 import java.time.DayOfWeek
+import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -47,6 +52,9 @@ class StatisticsControllerTest @Autowired constructor(
 
     @MockitoBean
     private lateinit var statisticsService: StatisticsService
+
+    @MockitoBean
+    private lateinit var waterStatisticService: WaterStatisticService
 
     private val telegramUser = TelegramUserDto(
         telegramId = 1L,
@@ -277,6 +285,146 @@ class StatisticsControllerTest @Autowired constructor(
 
             assertEquals(HttpStatus.NOT_FOUND, response.statusCode)
             verify(statisticsService).getStatistics(telegramUser.telegramId, StatisticsPeriodType.WEEK)
+        }
+    }
+
+    @Nested
+    @DisplayName("POST /statistics/water")
+    inner class PostWater {
+
+        private fun jsonHeaders(): HttpHeaders {
+            return buildHeaders().apply {
+                contentType = MediaType.APPLICATION_JSON
+            }
+        }
+
+        private fun jsonBody(consumedAt: Instant, amountMl: Int): String =
+            """{"consumedAt":"$consumedAt","amountMl":$amountMl}"""
+
+        /**
+         * Returns an instant that is safely in the past relative to the server clock.
+         * Margin avoids flakiness against @PastOrPresent caused by clock drift between
+         * test thread and validator invocation.
+         */
+        private fun pastInstant(): Instant = Instant.now().minus(Duration.ofMinutes(5))
+
+        @Test
+        @DisplayName("valid request - returns 201 and calls service with parsed args")
+        fun `returns 201 on valid request`() {
+            val consumedAt = pastInstant()
+            val body = jsonBody(consumedAt, 250)
+
+            val response = restTemplate.exchange(
+                "/statistics/water", HttpMethod.POST, HttpEntity(body, jsonHeaders()), Void::class.java
+            )
+
+            assertEquals(HttpStatus.CREATED, response.statusCode)
+            val userIdCaptor = argumentCaptor<Long>()
+            val consumedAtCaptor = argumentCaptor<Instant>()
+            val amountCaptor = argumentCaptor<Int>()
+            verify(waterStatisticService).manualRecordEvent(
+                userIdCaptor.capture(), consumedAtCaptor.capture(), amountCaptor.capture()
+            )
+            assertEquals(telegramUser.telegramId, userIdCaptor.firstValue)
+            assertEquals(consumedAt, consumedAtCaptor.firstValue)
+            assertEquals(250, amountCaptor.firstValue)
+        }
+
+        @Test
+        @DisplayName("service throws IllegalArgumentException - returns 400 (handler maps to BAD_REQUEST)")
+        fun `returns 400 on service IllegalArgumentException`() {
+            doThrow(IllegalArgumentException("invalid"))
+                .`when`(waterStatisticService).manualRecordEvent(any(), any(), any())
+            val body = jsonBody(pastInstant(), 250)
+
+            val response = restTemplate.exchange(
+                "/statistics/water", HttpMethod.POST, HttpEntity(body, jsonHeaders()), Void::class.java
+            )
+
+            assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
+        }
+
+        @ParameterizedTest(name = "[{index}] amountMl={0} fails bean validation")
+        @ValueSource(ints = [Int.MIN_VALUE, -1, 0, 49, 1001, Int.MAX_VALUE])
+        @DisplayName("amountMl outside [MIN_ML, MAX_ML] - returns 400 (bean validation)")
+        fun `returns 400 on amount out of bounds`(amount: Int) {
+            val body = jsonBody(pastInstant(), amount)
+
+            val response = restTemplate.exchange(
+                "/statistics/water", HttpMethod.POST, HttpEntity(body, jsonHeaders()), Void::class.java
+            )
+
+            assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
+            verifyNoInteractions(waterStatisticService)
+        }
+
+        @Test
+        @DisplayName("consumedAt in the future - returns 400 (bean validation)")
+        fun `returns 400 on future consumedAt`() {
+            val body = jsonBody(Instant.now().plus(Duration.ofHours(1)), 250)
+
+            val response = restTemplate.exchange(
+                "/statistics/water", HttpMethod.POST, HttpEntity(body, jsonHeaders()), Void::class.java
+            )
+
+            assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
+            verifyNoInteractions(waterStatisticService)
+        }
+
+        @ParameterizedTest(name = "[{index}] body={0}")
+        @MethodSource("ru.illine.drinking.ponies.controller.StatisticsControllerTest#malformedBodies")
+        @DisplayName("malformed/missing JSON body fields - returns 400")
+        fun `returns 400 on malformed body`(body: String?) {
+            val entity: HttpEntity<*> = if (body == null) HttpEntity<Void>(jsonHeaders()) else HttpEntity(body, jsonHeaders())
+
+            val response = restTemplate.exchange(
+                "/statistics/water", HttpMethod.POST, entity, Void::class.java
+            )
+
+            assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
+            verifyNoInteractions(waterStatisticService)
+        }
+
+        @Test
+        @DisplayName("missing auth header - returns 401")
+        fun `returns 401 on missing auth header`() {
+            val body = jsonBody(pastInstant(), 250)
+            val headers = HttpHeaders().apply { contentType = MediaType.APPLICATION_JSON }
+
+            val response = restTemplate.exchange(
+                "/statistics/water", HttpMethod.POST, HttpEntity(body, headers), Void::class.java
+            )
+
+            assertEquals(HttpStatus.UNAUTHORIZED, response.statusCode)
+            verifyNoInteractions(waterStatisticService)
+        }
+
+        @Test
+        @DisplayName("invalid signature - returns 403")
+        fun `returns 403 on invalid signature`() {
+            `when`(telegramValidatorService.verifySignature(any())).thenReturn(false)
+            val body = jsonBody(pastInstant(), 250)
+
+            val response = restTemplate.exchange(
+                "/statistics/water", HttpMethod.POST, HttpEntity(body, jsonHeaders()), Void::class.java
+            )
+
+            assertEquals(HttpStatus.FORBIDDEN, response.statusCode)
+            verifyNoInteractions(waterStatisticService)
+        }
+    }
+
+    companion object {
+        @JvmStatic
+        fun malformedBodies(): List<String?> {
+            val pastIso = Instant.now().minus(Duration.ofMinutes(5)).toString()
+            return listOf(
+                null,
+                """{"consumedAt":"$pastIso"}""",
+                """{"amountMl":250}""",
+                """{"consumedAt":"not-a-date","amountMl":250}""",
+                """{}""",
+            )
         }
     }
 }

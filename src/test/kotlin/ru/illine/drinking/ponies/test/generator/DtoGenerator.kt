@@ -2,6 +2,7 @@ package ru.illine.drinking.ponies.test.generator
 
 import ru.illine.drinking.ponies.model.base.AnswerNotificationType
 import ru.illine.drinking.ponies.model.base.IntervalNotificationType
+import ru.illine.drinking.ponies.model.base.WaterEntrySourceType
 import ru.illine.drinking.ponies.model.dto.internal.NotificationSettingDto
 import ru.illine.drinking.ponies.model.dto.internal.TelegramChatDto
 import ru.illine.drinking.ponies.model.dto.internal.TelegramUserDto
@@ -55,6 +56,7 @@ class DtoGenerator {
             eventType: AnswerNotificationType = AnswerNotificationType.YES,
             waterAmountMl: Int = 250,
             userTimeZone: String = "Europe/Moscow",
+            source: WaterEntrySourceType = WaterEntrySourceType.NOTIFICATION,
         ): WaterStatisticDto {
             val user = TelegramUserDto(
                 externalUserId = externalUserId,
@@ -65,6 +67,7 @@ class DtoGenerator {
                 eventTime = eventTime,
                 eventType = eventType,
                 waterAmountMl = waterAmountMl,
+                source = source,
             )
         }
     }
