@@ -139,17 +139,14 @@ class StatisticsControllerTest @Autowired constructor(
 
         private fun fakeDto(period: StatisticsPeriodType): StatisticsDto = when (period) {
             StatisticsPeriodType.DAY -> StatisticsDto(
-                period = StatisticsPeriodType.DAY,
                 points = (0 until 24).map { StatisticsPointDto("%02d:00".format(it), if (it == 8) 250 else 0) },
                 dailyGoalMl = 2000,
                 averageMlPerDay = 250,
                 bestDay = null,
                 currentStreakDays = 3,
-                goalProgress = null,
                 insightText = "insight text day",
             )
             StatisticsPeriodType.WEEK -> StatisticsDto(
-                period = StatisticsPeriodType.WEEK,
                 points = listOf(
                     StatisticsPointDto("2026-05-04", 1800),
                     StatisticsPointDto("2026-05-05", 2100),
@@ -163,17 +160,14 @@ class StatisticsControllerTest @Autowired constructor(
                 averageMlPerDay = 1114,
                 bestDay = BestDayDto(LocalDate.of(2026, 5, 6), 2400, DayOfWeek.WEDNESDAY),
                 currentStreakDays = 3,
-                goalProgress = 0.43,
                 insightText = "insight text week",
             )
             StatisticsPeriodType.MONTH -> StatisticsDto(
-                period = StatisticsPeriodType.MONTH,
                 points = (1..31).map { StatisticsPointDto("2026-05-%02d".format(it), 0) },
                 dailyGoalMl = 2000,
                 averageMlPerDay = 0,
                 bestDay = null,
                 currentStreakDays = 0,
-                goalProgress = 0.0,
                 insightText = "insight text month",
             )
         }
@@ -192,12 +186,10 @@ class StatisticsControllerTest @Autowired constructor(
 
             assertEquals(HttpStatus.OK, response.statusCode)
             assertNotNull(response.body)
-            assertEquals(period, response.body!!.period)
             assertEquals(dto.points.size, response.body!!.points.size)
             assertEquals(dto.dailyGoalMl, response.body!!.dailyGoalMl)
             assertEquals(dto.averageMlPerDay, response.body!!.averageMlPerDay)
             assertEquals(dto.currentStreakDays, response.body!!.currentStreakDays)
-            assertEquals(dto.goalProgress, response.body!!.goalProgress)
             assertEquals(dto.insightText, response.body!!.insight.text)
             verify(statisticsService).getStatistics(telegramUser.telegramId, period)
         }

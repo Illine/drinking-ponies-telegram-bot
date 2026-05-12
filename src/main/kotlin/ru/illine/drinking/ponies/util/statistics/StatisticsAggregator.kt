@@ -52,23 +52,6 @@ object StatisticsAggregator {
         return BestDayDto(date = best.key, valueMl = best.value, weekday = best.key.dayOfWeek)
     }
 
-    // Denominator counts only days that have already started, not future days inside the period.
-    // Otherwise MONTH on the 5th would cap at 5/31 even with perfect adherence.
-    fun goalProgress(
-        period: StatisticsPeriodType,
-        points: List<StatisticsPointDto>,
-        dailyGoalMl: Int,
-        startLocal: LocalDate,
-        today: LocalDate
-    ): Double? {
-        if (period == StatisticsPeriodType.DAY) return null
-        if (points.isEmpty()) return 0.0
-        val elapsedDays = (today.toEpochDay() - startLocal.toEpochDay() + 1).toInt().coerceAtMost(points.size)
-        if (elapsedDays <= 0) return 0.0
-        val successful = points.take(elapsedDays).count { it.valueMl >= dailyGoalMl }
-        return successful.toDouble() / elapsedDays
-    }
-
     private const val HOURS_IN_DAY = 24
     private const val HOUR_LABEL_FORMAT = "%02d:00"
 

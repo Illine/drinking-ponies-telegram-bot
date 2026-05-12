@@ -152,21 +152,19 @@ class StatisticsServiceTest {
 
         val result = service.getStatistics(userId, StatisticsPeriodType.DAY)
 
-        assertEquals(StatisticsPeriodType.DAY, result.period)
         assertEquals(24, result.points.size)
         assertEquals("08:00", result.points[8].label)
         assertEquals(250, result.points[8].valueMl)
         assertEquals(2000, result.dailyGoalMl)
         assertEquals(250, result.averageMlPerDay) // DAY = total
         assertNull(result.bestDay)                  // DAY -> null
-        assertNull(result.goalProgress)             // DAY -> null
         assertEquals(3, result.currentStreakDays)
         assertEquals("Котик, ты пьёшь водицу 3 дней подряд - так держать!", result.insightText)
         verify(insightService).build(eq(userId), any(), eq(2000), any(), eq(LocalDate.of(2026, 5, 12)))
     }
 
     @Test
-    @DisplayName("getStatistics(WEEK): 7 day points, bestDay set, goalProgress numeric")
+    @DisplayName("getStatistics(WEEK): 7 day points, bestDay set with weekday")
     fun `getStatistics WEEK glues weekly points and bestDay`() {
         // Wednesday 2026-05-06 -> Monday 2026-05-04 .. Sunday 2026-05-10
         val clock = clockAt("2026-05-06T12:00:00Z")
@@ -194,7 +192,6 @@ class StatisticsServiceTest {
 
         val result = service.getStatistics(userId, StatisticsPeriodType.WEEK)
 
-        assertEquals(StatisticsPeriodType.WEEK, result.period)
         assertEquals(7, result.points.size)
         assertEquals("2026-05-04", result.points[0].label)
         assertEquals(2100, result.points[0].valueMl)
@@ -205,9 +202,6 @@ class StatisticsServiceTest {
         assertEquals(2400, result.bestDay!!.valueMl)
         assertEquals(DayOfWeek.WEDNESDAY, result.bestDay!!.weekday)
         assertEquals((2100 + 2400) / 7, result.averageMlPerDay)
-        assertNotNull(result.goalProgress)
-        // 2 successful days out of 3 elapsed (Mon..Wed)
-        assertEquals(2.0 / 3.0, result.goalProgress!!, 1e-9)
         assertEquals(1, result.currentStreakDays)
         assertEquals("insight", result.insightText)
     }
@@ -236,7 +230,7 @@ class StatisticsServiceTest {
     }
 
     @Test
-    @DisplayName("getStatistics(MONTH): empty period -> bestDay=null, avg=0, goalProgress=0.0 (not null)")
+    @DisplayName("getStatistics(MONTH): empty period -> bestDay=null, avg=0, 31 zero points")
     fun `getStatistics MONTH empty period`() {
         val clock = clockAt("2026-05-15T12:00:00Z")
         val settings = DtoGenerator.generateNotificationDto(externalUserId = userId, userTimeZone = "UTC")
@@ -252,8 +246,6 @@ class StatisticsServiceTest {
 
         assertNull(result.bestDay)
         assertEquals(0, result.averageMlPerDay)
-        assertNotNull(result.goalProgress)
-        assertEquals(0.0, result.goalProgress)
         assertEquals(0, result.currentStreakDays)
         assertEquals(31, result.points.size)
         assertTrue(result.points.all { it.valueMl == 0 })
@@ -390,40 +382,6 @@ class StatisticsServiceTest {
         verify(insightService).build(eq(userId), eq(StatisticsPeriodType.DAY), eq(2000), any(), eq(LocalDate.of(2026, 5, 12)))
         verify(insightService).build(eq(userId), eq(StatisticsPeriodType.WEEK), eq(2000), any(), eq(LocalDate.of(2026, 5, 12)))
         verify(insightService).build(eq(userId), eq(StatisticsPeriodType.MONTH), eq(2000), any(), eq(LocalDate.of(2026, 5, 12)))
-    }
-
-    @Test
-    @DisplayName("getStatistics(WEEK): goalProgress denominator equals 7 on Sunday (full week elapsed)")
-    fun `getStatistics WEEK goalProgress on Sunday counts full week`() {
-        // Sunday 2026-05-10 -> Monday 2026-05-04 .. Sunday 2026-05-10 (elapsed = 7).
-        // 4 successful days out of 7 elapsed -> 4/7.
-        val clock = clockAt("2026-05-10T12:00:00Z")
-        val settings = DtoGenerator.generateNotificationDto(externalUserId = userId, userTimeZone = "UTC")
-        whenever(notificationAccessService.findNotificationSettingByTelegramUserId(userId)).thenReturn(settings)
-
-        val events = listOf(
-            LocalDateTime.of(2026, 5, 4, 10, 0),
-            LocalDateTime.of(2026, 5, 5, 10, 0),
-            LocalDateTime.of(2026, 5, 7, 10, 0),
-            LocalDateTime.of(2026, 5, 9, 10, 0),
-        ).map { time ->
-            DtoGenerator.generateWaterStatisticDto(
-                externalUserId = userId,
-                eventTime = time,
-                waterAmountMl = 2000,
-            )
-        }
-        whenever(waterStatisticAccessService.findByUserAndEventTimeBetween(any(), any(), any()))
-            .thenReturn(events)
-        whenever(insightService.build(eq(userId), any(), eq(2000), any(), eq(LocalDate.of(2026, 5, 10))))
-            .thenReturn(InsightDto(currentStreakDays = 0, text = "x"))
-
-        service = StatisticsServiceImpl(notificationAccessService, waterStatisticAccessService, insightService, clock)
-
-        val result = service.getStatistics(userId, StatisticsPeriodType.WEEK)
-
-        assertNotNull(result.goalProgress)
-        assertEquals(4.0 / 7.0, result.goalProgress!!, 1e-9)
     }
 
     @Test

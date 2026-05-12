@@ -12,13 +12,11 @@ object StatisticsBuilder {
 
     fun toResponse(dto: StatisticsDto): StatisticsResponse =
         StatisticsResponse(
-            period = dto.period,
             points = dto.points.map(::toPoint),
             dailyGoalMl = dto.dailyGoalMl,
             averageMlPerDay = dto.averageMlPerDay,
             bestDay = dto.bestDay?.let(::toBestDay),
             currentStreakDays = dto.currentStreakDays,
-            goalProgress = dto.goalProgress,
             insight = InsightInfo(text = dto.insightText),
         )
 

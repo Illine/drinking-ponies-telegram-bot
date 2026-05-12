@@ -61,13 +61,11 @@ class StatisticsServiceImpl(
         val insight = insightService.build(telegramUserId, period, settings.dailyGoalMl, zone, today)
 
         return StatisticsDto(
-            period = period,
             points = points,
             dailyGoalMl = settings.dailyGoalMl,
             averageMlPerDay = StatisticsAggregator.averageMlPerDay(period, points),
             bestDay = StatisticsAggregator.bestDay(period, byDate),
             currentStreakDays = insight.currentStreakDays,
-            goalProgress = StatisticsAggregator.goalProgress(period, points, settings.dailyGoalMl, startLocal, today),
             insightText = insight.text,
         )
     }

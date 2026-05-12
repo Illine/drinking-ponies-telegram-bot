@@ -161,9 +161,15 @@ class LocalMessageProviderTest {
     }
 
     @Test
-    @DisplayName("streak >= 3: STREAK_HIGH wins over BEST_DAY for WEEK and MONTH (DAY has no streak rule)")
-    fun `streak high beats best day for week and month`() {
-        // DAY excluded on purpose: streak phrasing ("N дней подряд") is meaningless on a single-day view.
+    @DisplayName("streak >= 3 + bestDay: ACHIEVEMENT bucket shares airtime between STREAK_HIGH and BEST_DAY")
+    fun `achievement bucket shares airtime between streak high and best day`() {
+        // DAY excluded on purpose: streak phrasing ("N дней подряд") is meaningless on a single-day view,
+        // and DAY has no BEST_DAY rule.
+        // 2026-05-06 is a Wednesday - WEEK phrasing uses weekday ("среда"), MONTH uses date ("6 мая").
+        val bestDayMarker = mapOf(
+            StatisticsPeriodType.WEEK to "среда",
+            StatisticsPeriodType.MONTH to "6 мая",
+        )
         listOf(StatisticsPeriodType.WEEK, StatisticsPeriodType.MONTH).forEach { period ->
             val ctx = InsightStatsContext(
                 period = period,
@@ -173,21 +179,25 @@ class LocalMessageProviderTest {
                 dailyGoalMl = 2000,
             )
 
-            val result = provider.getMessage(MessageSpec.InsightStats, ctx)
-
+            // Both outcomes must be reachable across seeds; the picker is random so we sample broadly.
+            val outcomes = (0L until 100L).map { seed ->
+                LocalMessageProvider(Random(seed)).getMessage(MessageSpec.InsightStats, ctx).text
+            }
             Assertions.assertTrue(
-                result.text.contains("подряд") || result.text.contains("по цели"),
-                "[$period] expected STREAK_HIGH phrasing, got: ${result.text}"
+                outcomes.any { it.contains("подряд") || it.contains("по цели") },
+                "[$period] STREAK_HIGH never picked across 100 seeds"
             )
-            Assertions.assertTrue(result.text.contains("5"), "[$period] expected streak count, got: ${result.text}")
-            Assertions.assertFalse(
-                result.text.contains("среда"),
-                "[$period] STREAK_HIGH must win over BEST_DAY: ${result.text}"
+            Assertions.assertTrue(
+                outcomes.any { it.contains(bestDayMarker.getValue(period)) },
+                "[$period] BEST_DAY never picked across 100 seeds"
             )
-            Assertions.assertFalse(
-                result.text.contains("2400"),
-                "[$period] STREAK_HIGH must not leak bestDay: ${result.text}"
-            )
+            // Every outcome must belong to the ACHIEVEMENT bucket - no AVG/FALLBACK leakage when ACHIEVEMENT matches.
+            val isAchievement: (String) -> Boolean = {
+                it.contains("подряд") || it.contains("по цели") || it.contains(bestDayMarker.getValue(period))
+            }
+            Assertions.assertTrue(outcomes.all(isAchievement)) {
+                "[$period] ACHIEVEMENT bucket leaked: ${outcomes.firstOrNull { !isAchievement(it) }}"
+            }
         }
     }
 
@@ -469,6 +479,91 @@ class LocalMessageProviderTest {
 
         Assertions.assertFalse(result.text.contains("подряд"), "streak=2 must not trigger STREAK_HIGH: ${result.text}")
         Assertions.assertTrue(result.text.contains("1200"), "expected AVG_LOW with avg=1200, got: ${result.text}")
+    }
+
+    @Test
+    @DisplayName("ACHIEVEMENT bucket: only STREAK_HIGH matches when bestDay=null - in-bucket filter selects single candidate")
+    fun `achievement bucket in-bucket filter picks only matching candidate`() {
+        // WEEK with streak=5 and bestDay=null:
+        //   - EMPTY predicate fails (streak != 0)
+        //   - ACHIEVEMENT bucket: STREAK_HIGH matches (streak >= 3), BEST_DAY predicate fails (bestDay == null)
+        // The provider must keep ACHIEVEMENT bucket (bucket.filter(...).isNotEmpty()) and pick STREAK_HIGH.
+        // No BEST_DAY phrasing must surface; no leakage into AVG/FALLBACK is allowed.
+        val ctx = InsightStatsContext(
+            period = StatisticsPeriodType.WEEK,
+            avgMlPerDay = 1800,
+            bestDay = null,
+            currentStreakDays = 5,
+            dailyGoalMl = 2000,
+        )
+
+        // Sample broadly so randomness inside the bucket cannot mask a leak.
+        val outcomes = (0L until 100L).map { seed ->
+            LocalMessageProvider(Random(seed)).getMessage(MessageSpec.InsightStats, ctx).text
+        }
+
+        Assertions.assertTrue(outcomes.all { it.contains("подряд") || it.contains("по цели") }) {
+            "expected only STREAK_HIGH phrasing, leak found: ${outcomes.firstOrNull { !(it.contains("подряд") || it.contains("по цели")) }}"
+        }
+        Assertions.assertTrue(outcomes.all { it.contains("5") }, "expected streak number 5 in all outcomes")
+        // Defensive: no AVG/FALLBACK phrasing leaks even when only one candidate in the bucket matches.
+        Assertions.assertTrue(outcomes.none { it.contains("В среднем") }, "AVG leaked into ACHIEVEMENT result")
+        Assertions.assertTrue(outcomes.none { it.contains("До конца недели") }, "FALLBACK leaked into ACHIEVEMENT result")
+    }
+
+    @Test
+    @DisplayName("first bucket (EMPTY) skipped when no candidate matches, second bucket (ACHIEVEMENT) wins")
+    fun `bucket priority skips empty first bucket and picks next matching bucket`() {
+        // WEEK with avg=0, streak=5, bestDay=null:
+        //   - EMPTY predicate (avg==0 && streak==0 && bestDay==null) fails because streak=5
+        //   - ACHIEVEMENT bucket: STREAK_HIGH matches
+        // This guards the buckets.firstNotNullOf { ... takeIf { isNotEmpty() } } contract:
+        // an empty bucket must be skipped, not produce an error or pick fallback prematurely.
+        val ctx = InsightStatsContext(
+            period = StatisticsPeriodType.WEEK,
+            avgMlPerDay = 0,
+            bestDay = null,
+            currentStreakDays = 5,
+            dailyGoalMl = 2000,
+        )
+
+        val result = provider.getMessage(MessageSpec.InsightStats, ctx)
+
+        Assertions.assertTrue(
+            result.text.contains("подряд") || result.text.contains("по цели"),
+            "expected STREAK_HIGH after skipping EMPTY bucket, got: ${result.text}"
+        )
+        // EMPTY bucket phrasing must NOT have been selected.
+        Assertions.assertFalse(
+            result.text.contains("пока пустая") || result.text.contains("начнём неделю"),
+            "EMPTY bucket leaked despite predicate mismatch: ${result.text}"
+        )
+    }
+
+    @Test
+    @DisplayName("DAY: high streak never produces STREAK_HIGH across many seeds (no leakage from cross-period rules)")
+    fun `day never surfaces streak high across many seeds`() {
+        // DPTB-126 regression guard: STREAK_HIGH_RULE is shared between WEEK and MONTH buckets only.
+        // DAY_BUCKETS must NOT include the rule under any period-gate. Sampling broadly catches
+        // accidental cross-period leakage that a single-seed test might miss.
+        val ctx = InsightStatsContext(
+            period = StatisticsPeriodType.DAY,
+            avgMlPerDay = 0,
+            bestDay = null,
+            currentStreakDays = 7,
+            dailyGoalMl = 2000,
+        )
+
+        val outcomes = (0L until 100L).map { seed ->
+            LocalMessageProvider(Random(seed)).getMessage(MessageSpec.InsightStats, ctx).text
+        }
+
+        Assertions.assertTrue(outcomes.none { it.contains("подряд") }) {
+            "DAY leaked STREAK_HIGH: ${outcomes.firstOrNull { it.contains("подряд") }}"
+        }
+        Assertions.assertTrue(outcomes.none { it.contains("по цели") }) {
+            "DAY leaked STREAK_HIGH: ${outcomes.firstOrNull { it.contains("по цели") }}"
+        }
     }
 
     @Test
