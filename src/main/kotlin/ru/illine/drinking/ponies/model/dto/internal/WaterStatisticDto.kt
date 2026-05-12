@@ -1,6 +1,7 @@
 package ru.illine.drinking.ponies.model.dto.internal
 
 import ru.illine.drinking.ponies.model.base.AnswerNotificationType
+import ru.illine.drinking.ponies.model.base.WaterEntrySourceType
 import java.time.LocalDateTime
 
 data class WaterStatisticDto(
@@ -12,5 +13,7 @@ data class WaterStatisticDto(
 
     val eventType: AnswerNotificationType,
 
-    val waterAmountMl: Int = 0
+    val waterAmountMl: Int = 0,
+
+    val source: WaterEntrySourceType = WaterEntrySourceType.NOTIFICATION
 )
