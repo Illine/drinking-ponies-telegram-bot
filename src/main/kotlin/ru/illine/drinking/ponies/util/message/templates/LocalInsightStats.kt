@@ -7,7 +7,7 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
-import java.util.Locale
+import java.util.*
 
 object LocalInsightStats {
 
@@ -30,7 +30,7 @@ object LocalInsightStats {
         predicate = { it.currentStreakDays >= STREAK_HIGH_THRESHOLD },
         templates = listOf(
             { "Котик, ты пьёшь водицу ${it.currentStreakDays} дней подряд - так держать!" },
-            { "Уже ${it.currentStreakDays} дней подряд по цели, солнышко." }
+            { "Уже ${it.currentStreakDays} дней подряд по цели, солнышко" }
         )
     )
 
@@ -38,28 +38,28 @@ object LocalInsightStats {
         TemplateRule(
             predicate = { it.avgMlPerDay == 0 && it.currentStreakDays == 0 },
             templates = listOf(
-                { "Сегодня пока пусто, котик. Сделай первый глоток." },
+                { "Сегодня пока пусто, котик. Сделай первый глоток" },
                 { "Солнышко, начнём день - выпей водицу в первый раз!" }
             )
         ),
         TemplateRule(
             predicate = { it.avgMlPerDay >= it.dailyGoalMl },
             templates = listOf(
-                { "Цель на сегодня уже взята, солнышко - ${it.avgMlPerDay} мл." },
-                { "Сегодня перебрала цель, котик - ${it.avgMlPerDay} мл." }
+                { "Цель на сегодня уже взята, солнышко - ${it.avgMlPerDay} мл" },
+                { "Сегодня перебрала цель, котик - ${it.avgMlPerDay} мл" }
             )
         ),
         TemplateRule(
             predicate = { it.avgMlPerDay > 0 && it.avgMlPerDay < it.dailyGoalMl },
             templates = listOf(
-                { "Сегодня выпито ${it.avgMlPerDay} мл - до цели ещё ${it.dailyGoalMl - it.avgMlPerDay} мл, котик." },
-                { "Уже ${it.avgMlPerDay} мл сегодня - осталось ${it.dailyGoalMl - it.avgMlPerDay} мл до цели, солнышко." }
+                { "Сегодня выпито ${it.avgMlPerDay} мл - до цели ещё ${it.dailyGoalMl - it.avgMlPerDay} мл, котик" },
+                { "Уже ${it.avgMlPerDay} мл сегодня - осталось ${it.dailyGoalMl - it.avgMlPerDay} мл до цели, солнышко" }
             )
         ),
         TemplateRule(
             predicate = { true },
             templates = listOf(
-                { "Сегодня ещё можно попить воды, солнышко." }
+                { "Сегодня ещё можно попить воды, солнышко!" }
             )
         )
     )
@@ -68,7 +68,7 @@ object LocalInsightStats {
         TemplateRule(
             predicate = { it.avgMlPerDay == 0 && it.currentStreakDays == 0 && it.bestDay == null },
             templates = listOf(
-                { "Эта неделя пока пустая, котик. Сделай первый глоток." },
+                { "Эта неделя пока пустая, котик. Сделай первый глоток" },
                 { "Солнышко, начнём неделю - выпей водицу в первый раз!" }
             )
         ),
@@ -77,28 +77,28 @@ object LocalInsightStats {
         TemplateRule(
             predicate = { it.bestDay != null && it.bestDay.valueMl > 0 },
             templates = listOf(
-                { "Лучший день недели - ${weekdayRu(it.bestDay!!.weekday)} (${it.bestDay.valueMl} мл)." },
-                { "Пик недели - ${weekdayRu(it.bestDay!!.weekday)}: ${it.bestDay.valueMl} мл водицы." }
+                { "Лучший день недели - ${weekdayRu(it.bestDay!!.weekday)} (${it.bestDay.valueMl} мл)" },
+                { "Пик недели - ${weekdayRu(it.bestDay!!.weekday)}: ${it.bestDay.valueMl} мл водицы" }
             )
         ),
         TemplateRule(
             predicate = { it.avgMlPerDay >= it.dailyGoalMl },
             templates = listOf(
-                { "В среднем ${it.avgMlPerDay} мл в день - выше цели, молодец." },
-                { "Котик, в среднем по ${it.avgMlPerDay} мл - так держать." }
+                { "В среднем ${it.avgMlPerDay} мл в день - выше цели, молодец" },
+                { "Котик, в среднем по ${it.avgMlPerDay} мл - так держать" }
             )
         ),
         TemplateRule(
             predicate = { it.avgMlPerDay > 0 && it.avgMlPerDay < it.dailyGoalMl },
             templates = listOf(
-                { "В среднем ${it.avgMlPerDay} мл - давай чуть больше водицы, котик." },
-                { "Не дотягиваем чуть-чуть: ${it.avgMlPerDay} мл при цели ${it.dailyGoalMl} мл." }
+                { "В среднем ${it.avgMlPerDay} мл - давай чуть больше водицы, котик" },
+                { "Не дотягиваем чуть-чуть: ${it.avgMlPerDay} мл при цели ${it.dailyGoalMl} мл" }
             )
         ),
         TemplateRule(
             predicate = { true },
             templates = listOf(
-                { "До конца недели ещё успеешь налить водицы, солнышко." }
+                { "До конца недели ещё успеешь налить водицы, солнышко!" }
             )
         )
     )
@@ -107,7 +107,7 @@ object LocalInsightStats {
         TemplateRule(
             predicate = { it.avgMlPerDay == 0 && it.currentStreakDays == 0 && it.bestDay == null },
             templates = listOf(
-                { "Этот месяц пока пустой, котик. Сделай первый глоток." },
+                { "Этот месяц пока пустой, котик. Сделай первый глоток" },
                 { "Солнышко, начнём месяц - выпей водицу в первый раз!" }
             )
         ),
@@ -116,28 +116,28 @@ object LocalInsightStats {
         TemplateRule(
             predicate = { it.bestDay != null && it.bestDay.valueMl > 0 },
             templates = listOf(
-                { "Лучший день месяца - ${dayMonthRu(it.bestDay!!.date)} (${it.bestDay.valueMl} мл)." },
-                { "Пик месяца - ${dayMonthRu(it.bestDay!!.date)}: ${it.bestDay.valueMl} мл водицы." }
+                { "Лучший день месяца - ${dayMonthRu(it.bestDay!!.date)} (${it.bestDay.valueMl} мл)" },
+                { "Пик месяца - ${dayMonthRu(it.bestDay!!.date)}: ${it.bestDay.valueMl} мл водицы" }
             )
         ),
         TemplateRule(
             predicate = { it.avgMlPerDay >= it.dailyGoalMl },
             templates = listOf(
-                { "В среднем ${it.avgMlPerDay} мл в день - выше цели, молодец." },
-                { "Котик, в среднем по ${it.avgMlPerDay} мл - так держать." }
+                { "В среднем ${it.avgMlPerDay} мл в день - выше цели, молодец" },
+                { "Котик, в среднем по ${it.avgMlPerDay} мл - так держать" }
             )
         ),
         TemplateRule(
             predicate = { it.avgMlPerDay > 0 && it.avgMlPerDay < it.dailyGoalMl },
             templates = listOf(
-                { "В среднем ${it.avgMlPerDay} мл - давай чуть больше водицы, котик." },
-                { "Не дотягиваем чуть-чуть: ${it.avgMlPerDay} мл при цели ${it.dailyGoalMl} мл." }
+                { "В среднем ${it.avgMlPerDay} мл - давай чуть больше водицы, котик" },
+                { "Не дотягиваем чуть-чуть: ${it.avgMlPerDay} мл при цели ${it.dailyGoalMl} мл" }
             )
         ),
         TemplateRule(
             predicate = { true },
             templates = listOf(
-                { "До конца месяца ещё успеешь налить водицы, солнышко." }
+                { "До конца месяца ещё успеешь налить водицы, солнышко!" }
             )
         )
     )
