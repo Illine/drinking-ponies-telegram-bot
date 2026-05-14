@@ -72,47 +72,56 @@ update-youtrack-build:
 
       echo "Found issue: ${ISSUE_ID}"
 
-      # Find-or-create build value
-      echo "Find-or-create build value '${BUILD_NAME}'"
-      HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
+      # Сборка/Версия are guarded by conditional visibility on Subsystem in {Backend-Bot, Frontend-MiniApp}.
+      # REST rejects the update otherwise (HTTP 400). Skip Сборка/Версия (and bundle find-or-create) for ineligible Subsystem.
+      SUBSYSTEM=$(curl -sf \
         -H "Authorization: Bearer ${YOUTRACK_TOKEN}" \
-        -H "Content-Type: application/json" \
-        "${YOUTRACK_URL}/api/admin/customFieldSettings/bundles/build/${YOUTRACK_BUILD_BUNDLE_ID}/values" \
-        -d "{\"name\": \"${BUILD_NAME}\"}")
+        "${YOUTRACK_URL}/api/issues/${ISSUE_ID}?fields=customFields(name,value(name))" \
+        | jq -r '.customFields[] | select(.name == "Subsystem") | .value.name // empty') || SUBSYSTEM=""
+      echo "Issue subsystem: ${SUBSYSTEM:-<none>}"
 
-      if [ "${HTTP_CODE}" = "200" ] || [ "${HTTP_CODE}" = "201" ]; then
-        echo "Build value created"
-      elif [ "${HTTP_CODE}" = "409" ]; then
-        echo "Build value already exists"
-      else
-        echo "Warning: build value response ${HTTP_CODE}"
-      fi
+      case "${SUBSYSTEM}" in
+        Backend-Bot|Frontend-MiniApp)
+          echo "Find-or-create build value '${BUILD_NAME}'"
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
+            -H "Authorization: Bearer ${YOUTRACK_TOKEN}" \
+            -H "Content-Type: application/json" \
+            "${YOUTRACK_URL}/api/admin/customFieldSettings/bundles/build/${YOUTRACK_BUILD_BUNDLE_ID}/values" \
+            -d "{\"name\": \"${BUILD_NAME}\"}")
+          if [ "${HTTP_CODE}" = "200" ] || [ "${HTTP_CODE}" = "201" ]; then
+            echo "Build value created"
+          elif [ "${HTTP_CODE}" = "409" ]; then
+            echo "Build value already exists"
+          else
+            echo "Warning: build value response ${HTTP_CODE}"
+          fi
 
-      # Find-or-create version value (unreleased)
-      echo "Find-or-create version value '${VERSION_NAME}'"
-      HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
-        -H "Authorization: Bearer ${YOUTRACK_TOKEN}" \
-        -H "Content-Type: application/json" \
-        "${YOUTRACK_URL}/api/admin/customFieldSettings/bundles/version/${YOUTRACK_VERSION_BUNDLE_ID}/values" \
-        -d "{\"name\": \"${VERSION_NAME}\", \"released\": false}")
+          echo "Find-or-create version value '${VERSION_NAME}'"
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
+            -H "Authorization: Bearer ${YOUTRACK_TOKEN}" \
+            -H "Content-Type: application/json" \
+            "${YOUTRACK_URL}/api/admin/customFieldSettings/bundles/version/${YOUTRACK_VERSION_BUNDLE_ID}/values" \
+            -d "{\"name\": \"${VERSION_NAME}\", \"released\": false}")
+          if [ "${HTTP_CODE}" = "200" ] || [ "${HTTP_CODE}" = "201" ]; then
+            echo "Version value created"
+          elif [ "${HTTP_CODE}" = "409" ]; then
+            echo "Version value already exists"
+          else
+            echo "Warning: version value response ${HTTP_CODE}"
+          fi
 
-      if [ "${HTTP_CODE}" = "200" ] || [ "${HTTP_CODE}" = "201" ]; then
-        echo "Version value created"
-      elif [ "${HTTP_CODE}" = "409" ]; then
-        echo "Version value already exists"
-      else
-        echo "Warning: version value response ${HTTP_CODE}"
-      fi
-
-      # Update issue: set both Сборка and Версия
-      echo "Updating ${ISSUE_ID}"
-      FIELDS_JSON="[{\"id\": \"${YOUTRACK_BUILD_FIELD_ID}\", \"\$type\": \"SingleBuildIssueCustomField\", \"value\": {\"name\": \"${BUILD_NAME}\"}}, {\"id\": \"${YOUTRACK_VERSION_FIELD_ID}\", \"\$type\": \"SingleVersionIssueCustomField\", \"value\": {\"name\": \"${VERSION_NAME}\"}}]"
-
-      curl -sf -o /dev/null -X POST \
-        -H "Authorization: Bearer ${YOUTRACK_TOKEN}" \
-        -H "Content-Type: application/json" \
-        "${YOUTRACK_URL}/api/issues/${ISSUE_ID}" \
-        -d "{\"customFields\": ${FIELDS_JSON}}" || echo "Warning: failed to update fields for ${ISSUE_ID}"
+          echo "Updating ${ISSUE_ID} fields"
+          FIELDS_JSON="[{\"id\": \"${YOUTRACK_BUILD_FIELD_ID}\", \"\$type\": \"SingleBuildIssueCustomField\", \"value\": {\"name\": \"${BUILD_NAME}\"}}, {\"id\": \"${YOUTRACK_VERSION_FIELD_ID}\", \"\$type\": \"SingleVersionIssueCustomField\", \"value\": {\"name\": \"${VERSION_NAME}\"}}]"
+          curl -sf -o /dev/null -X POST \
+            -H "Authorization: Bearer ${YOUTRACK_TOKEN}" \
+            -H "Content-Type: application/json" \
+            "${YOUTRACK_URL}/api/issues/${ISSUE_ID}" \
+            -d "{\"customFields\": ${FIELDS_JSON}}" || echo "Warning: failed to update fields for ${ISSUE_ID}"
+          ;;
+        *)
+          echo "Subsystem '${SUBSYSTEM:-<none>}' is not Backend-Bot/Frontend-MiniApp - skip Сборка/Версия (only pipeline comment will be posted)"
+          ;;
+      esac
 
       # Unpin existing pipeline comments
       PINNED_IDS=$(curl -sf \
