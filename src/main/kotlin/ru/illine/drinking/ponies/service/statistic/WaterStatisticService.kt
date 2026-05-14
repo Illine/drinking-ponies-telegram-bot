@@ -10,6 +10,6 @@ interface WaterStatisticService {
 
     fun recordEvents(telegramUsers: Collection<TelegramUserDto>, eventType: AnswerNotificationType)
 
-    fun manualRecordEvent(externalUserId: Long, consumedAt: Instant, amountMl: Int)
+    fun manualRecordEvent(externalUserId: Long, consumedAt: Instant?, amountMl: Int)
 
 }
