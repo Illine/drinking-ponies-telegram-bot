@@ -1,7 +1,9 @@
 package ru.illine.drinking.ponies.controller
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
@@ -13,6 +15,7 @@ import org.junit.jupiter.params.provider.ValueSource
 import org.mockito.Mockito.*
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.nullableArgumentCaptor
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.web.client.TestRestTemplate
 import org.springframework.http.HttpEntity
@@ -28,6 +31,7 @@ import ru.illine.drinking.ponies.model.dto.BestDayDto
 import ru.illine.drinking.ponies.model.dto.StatisticsDto
 import ru.illine.drinking.ponies.model.dto.StatisticsPointDto
 import ru.illine.drinking.ponies.model.dto.TelegramUserDto
+import ru.illine.drinking.ponies.model.dto.request.WaterEntryRequest
 import ru.illine.drinking.ponies.model.dto.response.StatisticsResponse
 import ru.illine.drinking.ponies.model.dto.response.StatisticsTodayResponse
 import ru.illine.drinking.ponies.service.statistic.StatisticsService
@@ -44,7 +48,8 @@ import java.time.LocalDateTime
 @SpringIntegrationTest
 @DisplayName("StatisticsController Spring Integration Test")
 class StatisticsControllerTest @Autowired constructor(
-    private val restTemplate: TestRestTemplate
+    private val restTemplate: TestRestTemplate,
+    private val objectMapper: ObjectMapper
 ) {
 
     @MockitoBean
@@ -298,9 +303,6 @@ class StatisticsControllerTest @Autowired constructor(
             }
         }
 
-        private fun jsonBody(consumedAt: Instant, amountMl: Int): String =
-            """{"consumedAt":"$consumedAt","amountMl":$amountMl}"""
-
         /**
          * Returns an instant that is safely in the past relative to the server clock.
          * Margin avoids flakiness against @PastOrPresent caused by clock drift between
@@ -312,7 +314,7 @@ class StatisticsControllerTest @Autowired constructor(
         @DisplayName("valid request - returns 201 and calls service with parsed args")
         fun `returns 201 on valid request`() {
             val consumedAt = pastInstant()
-            val body = jsonBody(consumedAt, 250)
+            val body = objectMapper.writeValueAsString(WaterEntryRequest(consumedAt, 250))
 
             val response = restTemplate.exchange(
                 "/statistics/water", HttpMethod.POST, HttpEntity(body, jsonHeaders()), Void::class.java
@@ -331,11 +333,32 @@ class StatisticsControllerTest @Autowired constructor(
         }
 
         @Test
+        @DisplayName("valid request - returns 201 and calls service with parsed args")
+        fun `returns 201 on valid request on null consumerAt`() {
+            val body = objectMapper.writeValueAsString(WaterEntryRequest(null, 250))
+
+            val response = restTemplate.exchange(
+                "/statistics/water", HttpMethod.POST, HttpEntity(body, jsonHeaders()), Void::class.java
+            )
+
+            assertEquals(HttpStatus.CREATED, response.statusCode)
+            val userIdCaptor = argumentCaptor<Long>()
+            val consumedAtCaptor = nullableArgumentCaptor<Instant>()
+            val amountCaptor = argumentCaptor<Int>()
+            verify(waterStatisticService).manualRecordEvent(
+                userIdCaptor.capture(), consumedAtCaptor.capture(), amountCaptor.capture()
+            )
+            assertEquals(telegramUser.telegramId, userIdCaptor.firstValue)
+            assertEquals(250, amountCaptor.firstValue)
+            assertNull(consumedAtCaptor.firstValue)
+        }
+
+        @Test
         @DisplayName("service throws IllegalArgumentException - returns 400 (handler maps to BAD_REQUEST)")
         fun `returns 400 on service IllegalArgumentException`() {
             doThrow(IllegalArgumentException("invalid"))
                 .`when`(waterStatisticService).manualRecordEvent(any(), any(), any())
-            val body = jsonBody(pastInstant(), 250)
+            val body = objectMapper.writeValueAsString(WaterEntryRequest(pastInstant(), 250))
 
             val response = restTemplate.exchange(
                 "/statistics/water", HttpMethod.POST, HttpEntity(body, jsonHeaders()), Void::class.java
@@ -348,7 +371,7 @@ class StatisticsControllerTest @Autowired constructor(
         @ValueSource(ints = [Int.MIN_VALUE, -1, 0, 49, 1001, Int.MAX_VALUE])
         @DisplayName("amountMl outside [MIN_ML, MAX_ML] - returns 400 (bean validation)")
         fun `returns 400 on amount out of bounds`(amount: Int) {
-            val body = jsonBody(pastInstant(), amount)
+            val body = objectMapper.writeValueAsString(WaterEntryRequest(pastInstant(), amount))
 
             val response = restTemplate.exchange(
                 "/statistics/water", HttpMethod.POST, HttpEntity(body, jsonHeaders()), Void::class.java
@@ -361,7 +384,9 @@ class StatisticsControllerTest @Autowired constructor(
         @Test
         @DisplayName("consumedAt in the future - returns 400 (bean validation)")
         fun `returns 400 on future consumedAt`() {
-            val body = jsonBody(Instant.now().plus(Duration.ofHours(1)), 250)
+            val body = objectMapper.writeValueAsString(
+                WaterEntryRequest(Instant.now().plus(Duration.ofHours(1)), 250)
+            )
 
             val response = restTemplate.exchange(
                 "/statistics/water", HttpMethod.POST, HttpEntity(body, jsonHeaders()), Void::class.java
@@ -388,7 +413,7 @@ class StatisticsControllerTest @Autowired constructor(
         @Test
         @DisplayName("missing auth header - returns 401")
         fun `returns 401 on missing auth header`() {
-            val body = jsonBody(pastInstant(), 250)
+            val body = objectMapper.writeValueAsString(WaterEntryRequest(pastInstant(), 250))
             val headers = HttpHeaders().apply { contentType = MediaType.APPLICATION_JSON }
 
             val response = restTemplate.exchange(
@@ -403,7 +428,7 @@ class StatisticsControllerTest @Autowired constructor(
         @DisplayName("invalid signature - returns 403")
         fun `returns 403 on invalid signature`() {
             `when`(telegramValidatorService.verifySignature(any())).thenReturn(false)
-            val body = jsonBody(pastInstant(), 250)
+            val body = objectMapper.writeValueAsString(WaterEntryRequest(pastInstant(), 250))
 
             val response = restTemplate.exchange(
                 "/statistics/water", HttpMethod.POST, HttpEntity(body, jsonHeaders()), Void::class.java
@@ -421,7 +446,6 @@ class StatisticsControllerTest @Autowired constructor(
             return listOf(
                 null,
                 """{"consumedAt":"$pastIso"}""",
-                """{"amountMl":250}""",
                 """{"consumedAt":"not-a-date","amountMl":250}""",
                 """{}""",
             )
