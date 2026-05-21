@@ -18,6 +18,7 @@ object StatisticsBuilder {
             bestDay = dto.bestDay?.let(::toBestDay),
             currentStreakDays = dto.currentStreakDays,
             insight = InsightInfo(text = dto.insightText),
+            firstEntryAt = dto.firstEntryAt,
         )
 
     private fun toPoint(point: StatisticsPointDto): StatisticsPoint =

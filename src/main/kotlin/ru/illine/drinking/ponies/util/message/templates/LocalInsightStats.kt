@@ -1,200 +1,74 @@
 package ru.illine.drinking.ponies.util.message.templates
 
-import ru.illine.drinking.ponies.model.base.StatisticsPeriodType
 import ru.illine.drinking.ponies.model.dto.message.InsightStatsContext
+import ru.illine.drinking.ponies.util.PluralizationHelper.pluralizeDays
 import ru.illine.drinking.ponies.util.message.RuleBucket
 import ru.illine.drinking.ponies.util.message.TemplateRule
-import java.time.DayOfWeek
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import java.time.format.TextStyle
-import java.util.*
 
 object LocalInsightStats {
 
-    private const val STREAK_HIGH_THRESHOLD = 3
-
-    private val RU_LOCALE: Locale = Locale.forLanguageTag("ru")
-
-    // Renders as "12 мая" - MMMM uses CLDR "format" (contextual) form, which is genitive in ru-RU.
-    private val DAY_MONTH_FORMATTER: DateTimeFormatter =
-        DateTimeFormatter.ofPattern("d MMMM", RU_LOCALE)
-
-    private fun weekdayRu(weekday: DayOfWeek): String =
-        weekday.getDisplayName(TextStyle.FULL, RU_LOCALE)
-
-    private fun dayMonthRu(date: LocalDate): String =
-        date.format(DAY_MONTH_FORMATTER)
-
-    // STREAK_HIGH phrasing is identical across periods - one canonical rule, reused in WEEK/MONTH buckets.
-    private val STREAK_HIGH_RULE: TemplateRule<InsightStatsContext> = TemplateRule(
-        predicate = { it.currentStreakDays >= STREAK_HIGH_THRESHOLD },
-        templates = listOf(
-            { "Котик, ты пьёшь водицу ${it.currentStreakDays} дней подряд - так держать!" },
-            { "Уже ${it.currentStreakDays} дней подряд по цели, солнышко" }
-        )
-    )
-
-    private val DAY_BUCKETS: List<RuleBucket<InsightStatsContext>> = listOf(
-        // EMPTY
+    val PHRASES: List<RuleBucket<InsightStatsContext>> = listOf(
+        // Specific signals
         listOf(
             TemplateRule(
-                predicate = { it.avgMlPerDay == 0 && it.currentStreakDays == 0 },
+                predicate = { it.currentStreakDays in 2..6 },
                 templates = listOf(
-                    { "Сегодня пока пусто, котик. Сделай первый глоток" },
-                    { "Солнышко, начнём день - выпей водицу в первый раз!" }
-                )
-            )
-        ),
-        // GOAL_REACHED
-        listOf(
-            TemplateRule(
-                predicate = { it.avgMlPerDay >= it.dailyGoalMl },
-                templates = listOf(
-                    { "Цель на сегодня уже взята, солнышко - ${it.avgMlPerDay} мл" },
-                    { "Сегодня перебрала цель, котик - ${it.avgMlPerDay} мл" }
-                )
-            )
-        ),
-        // PARTIAL
-        listOf(
-            TemplateRule(
-                predicate = { it.avgMlPerDay > 0 && it.avgMlPerDay < it.dailyGoalMl },
-                templates = listOf(
-                    { "Сегодня выпито ${it.avgMlPerDay} мл - до цели ещё ${it.dailyGoalMl - it.avgMlPerDay} мл, котик" },
-                    { "Уже ${it.avgMlPerDay} мл сегодня - осталось ${it.dailyGoalMl - it.avgMlPerDay} мл до цели, солнышко" }
-                )
-            )
-        ),
-        // FALLBACK
-        listOf(
-            TemplateRule(
-                predicate = { true },
-                templates = listOf(
-                    { "Сегодня ещё можно попить воды, солнышко!" }
-                )
-            )
-        )
-    )
-
-    private val WEEK_BUCKETS: List<RuleBucket<InsightStatsContext>> = listOf(
-        // EMPTY
-        listOf(
-            TemplateRule(
-                predicate = { it.avgMlPerDay == 0 && it.currentStreakDays == 0 && it.bestDay == null },
-                templates = listOf(
-                    { "Эта неделя пока пустая, котик. Сделай первый глоток" },
-                    { "Солнышко, начнём неделю - выпей водицу в первый раз!" }
-                )
-            )
-        ),
-        // ACHIEVEMENTS: STREAK_HIGH and BEST_DAY share airtime when both match.
-        // bestDay !! is guarded by the predicate (bestDay != null && valueMl > 0).
-        listOf(
-            STREAK_HIGH_RULE,
-            TemplateRule(
-                predicate = { it.bestDay != null && it.bestDay.valueMl > 0 },
-                templates = listOf(
-                    { "Лучший день недели - ${weekdayRu(it.bestDay!!.weekday)} (${it.bestDay.valueMl} мл)" },
-                    { "Пик недели - ${weekdayRu(it.bestDay!!.weekday)}: ${it.bestDay.valueMl} мл водицы" }
-                )
-            )
-        ),
-        // AVG (mutually exclusive: >= goal vs > 0 && < goal)
-        listOf(
-            TemplateRule(
-                predicate = { it.avgMlPerDay >= it.dailyGoalMl },
-                templates = listOf(
-                    { "В среднем ${it.avgMlPerDay} мл в день - выше цели, молодец" },
-                    { "Котик, в среднем по ${it.avgMlPerDay} мл - так держать" }
+                    { "${it.currentStreakDays} ${pluralizeDays(it.currentStreakDays)} подряд - поняши заметили!" },
+                    { "${it.currentStreakDays} ${pluralizeDays(it.currentStreakDays)} - и ритм пошёл!" },
                 )
             ),
             TemplateRule(
-                predicate = { it.avgMlPerDay > 0 && it.avgMlPerDay < it.dailyGoalMl },
+                predicate = { it.currentStreakDays in 7..13 },
                 templates = listOf(
-                    { "В среднем ${it.avgMlPerDay} мл - давай чуть больше водицы, котик" },
-                    { "Не дотягиваем чуть-чуть: ${it.avgMlPerDay} мл при цели ${it.dailyGoalMl} мл" }
-                )
-            )
-        ),
-        // FALLBACK
-        listOf(
-            TemplateRule(
-                predicate = { true },
-                templates = listOf(
-                    { "До конца недели ещё успеешь налить водицы, солнышко!" }
-                )
-            )
-        )
-    )
-
-    private val MONTH_BUCKETS: List<RuleBucket<InsightStatsContext>> = listOf(
-        // EMPTY
-        listOf(
-            TemplateRule(
-                predicate = { it.avgMlPerDay == 0 && it.currentStreakDays == 0 && it.bestDay == null },
-                templates = listOf(
-                    { "Этот месяц пока пустой, котик. Сделай первый глоток" },
-                    { "Солнышко, начнём месяц - выпей водицу в первый раз!" }
-                )
-            )
-        ),
-        // ACHIEVEMENTS: STREAK_HIGH and BEST_DAY share airtime when both match.
-        // bestDay !! is guarded by the predicate (bestDay != null && valueMl > 0).
-        listOf(
-            STREAK_HIGH_RULE,
-            TemplateRule(
-                predicate = { it.bestDay != null && it.bestDay.valueMl > 0 },
-                templates = listOf(
-                    { "Лучший день месяца - ${dayMonthRu(it.bestDay!!.date)} (${it.bestDay.valueMl} мл)" },
-                    { "Пик месяца - ${dayMonthRu(it.bestDay!!.date)}: ${it.bestDay.valueMl} мл водицы" }
-                )
-            )
-        ),
-        // AVG
-        listOf(
-            TemplateRule(
-                predicate = { it.avgMlPerDay >= it.dailyGoalMl },
-                templates = listOf(
-                    { "В среднем ${it.avgMlPerDay} мл в день - выше цели, молодец" },
-                    { "Котик, в среднем по ${it.avgMlPerDay} мл - так держать" }
+                    { "${it.currentStreakDays} ${pluralizeDays(it.currentStreakDays)} - это уже не случайность!" },
+                    { "Столько дней выпивать норму подряд - чувствуешь как вырабатывается привычка?" },
                 )
             ),
             TemplateRule(
-                predicate = { it.avgMlPerDay > 0 && it.avgMlPerDay < it.dailyGoalMl },
+                predicate = { it.currentStreakDays >= 14 },
                 templates = listOf(
-                    { "В среднем ${it.avgMlPerDay} мл - давай чуть больше водицы, котик" },
-                    { "Не дотягиваем чуть-чуть: ${it.avgMlPerDay} мл при цели ${it.dailyGoalMl} мл" }
+                    { "${it.currentStreakDays} ${pluralizeDays(it.currentStreakDays)} - это уже ритуал :)" },
+                    { "${it.currentStreakDays} ${pluralizeDays(it.currentStreakDays)} подряд - поняши аплодируют тебе!" },
+                    { "${it.currentStreakDays} ${pluralizeDays(it.currentStreakDays)} - ого!" },
                 )
-            )
-        ),
-        // FALLBACK
-        listOf(
+            ),
+
+            TemplateRule(
+                predicate = { it.avgMlPerDay >= it.dailyGoalMl && it.dailyGoalMl > 0 },
+                templates = listOf(
+                    { "В среднем выше цели - поняши шепчутся, что ты самое гидрированное солнышко!" },
+                    { "Среднее перебирает план - ты молодец, но перепей :)" },
+                )
+            ),
+
+            TemplateRule(
+                predicate = { it.bestDay != null },
+                templates = listOf(
+                    { "Лучший день - ${it.bestDay!!.valueMl} мл, помнишь как это было?" },
+                    { "День с ${it.bestDay!!.valueMl} мл воды - вот это размах :)" },
+                )
+            ),
+
+            // Generic fallback - used only if nothing specific matched
             TemplateRule(
                 predicate = { true },
                 templates = listOf(
-                    { "До конца месяца ещё успеешь налить водицы, солнышко!" }
+                    { "Поняши тобой довольны!" },
+                    { "Поняши машут хвостами в твою честь" },
+                    { "Твой внутренний пони в восторге!" },
+                    { "Кто-то тут молодец, и это ты" },
+                    { "Маленькая пони тебе кивает" },
+                    { "Кактусы тебе завидуют" },
+                    { "Радуга где-то поднялась в твою честь" },
+                    { "Твои почки шлют сердечко" },
+                    { "Тело тебя слышит, и это редко" },
+                    { "Без громких слов - ты просто молодец!" },
+                    { "Заметно, что ты стараешься!" },
+                    { "Тихий прогресс - самый честный" },
+                    { "Самое важное - не останавливаться!" },
                 )
             )
         )
     )
-
-    // Outer list = priority buckets, inner list = candidates with equal priority.
-    // The provider takes the first bucket with any match and randomises within it,
-    // so equally-good signals (STREAK_HIGH vs BEST_DAY) get equal airtime instead of strict shadowing.
-    val BUCKETS: List<RuleBucket<InsightStatsContext>> = listOf(
-        StatisticsPeriodType.DAY to DAY_BUCKETS,
-        StatisticsPeriodType.WEEK to WEEK_BUCKETS,
-        StatisticsPeriodType.MONTH to MONTH_BUCKETS,
-    ).flatMap { (period, buckets) ->
-        buckets.map { bucket ->
-            bucket.map { rule ->
-                TemplateRule(
-                    predicate = { it.period == period && rule.predicate(it) },
-                    templates = rule.templates
-                )
-            }
-        }
-    }
 
 }

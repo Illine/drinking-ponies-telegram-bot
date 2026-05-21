@@ -1,10 +1,13 @@
 package ru.illine.drinking.ponies.dao.access.impl
 
 import org.slf4j.LoggerFactory
+import org.springframework.cache.annotation.CacheEvict
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import ru.illine.drinking.ponies.builder.TelegramUserBuilder
 import ru.illine.drinking.ponies.builder.WaterStatisticBuilder
+import ru.illine.drinking.ponies.config.cache.CacheConfig
 import ru.illine.drinking.ponies.dao.access.WaterStatisticAccessService
 import ru.illine.drinking.ponies.dao.repository.TelegramUserRepository
 import ru.illine.drinking.ponies.dao.repository.WaterStatisticRepository
@@ -21,19 +24,27 @@ class WaterStatisticAccessServiceImpl(
 
     @Transactional(readOnly = true)
     override fun findByUserAndEventTimeBetween(
-        telegramUserId: Long,
+        externalUserId: Long,
         startInclusive: LocalDateTime,
         endExclusive: LocalDateTime
     ): List<WaterStatisticDto> {
         logger.debug(
-            "Finding water statistics for telegramUserId [$telegramUserId] between [$startInclusive] and [$endExclusive]"
+            "Finding water statistics for externalUserId [$externalUserId] between [$startInclusive] and [$endExclusive]"
         )
         return waterStatisticRepository
-            .findByUserAndEventTimeBetween(telegramUserId, startInclusive, endExclusive)
+            .findByUserAndEventTimeBetween(externalUserId, startInclusive, endExclusive)
             .map { WaterStatisticBuilder.toDto(it, TelegramUserBuilder.toDto(it.telegramUser)) }
     }
 
+    @Transactional(readOnly = true)
+    @Cacheable(CacheConfig.WATER_FIRST_ENTRY, key = "#externalUserId")
+    override fun findEarliestEventTimeByUser(externalUserId: Long): LocalDateTime? {
+        logger.debug("Finding earliest water entry for externalUserId [$externalUserId]")
+        return waterStatisticRepository.findEarliestEventTimeByUser(externalUserId)
+    }
+
     @Transactional
+    @CacheEvict(CacheConfig.WATER_FIRST_ENTRY, key = "#dto.telegramUser.externalUserId")
     override fun save(dto: WaterStatisticDto): WaterStatisticDto {
         logger.debug("Saving a water statistic record for a telegram user: [${dto.telegramUser.externalUserId}]")
 
@@ -47,6 +58,7 @@ class WaterStatisticAccessServiceImpl(
     }
 
     @Transactional
+    @CacheEvict(CacheConfig.WATER_FIRST_ENTRY, allEntries = true)
     override fun saveAll(statistics: Collection<WaterStatisticDto>): List<WaterStatisticDto> {
         logger.debug("Saving [${statistics.size}] water statistic records")
 

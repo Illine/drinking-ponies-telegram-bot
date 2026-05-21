@@ -6,9 +6,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
-import ru.illine.drinking.ponies.model.base.StatisticsPeriodType
 import ru.illine.drinking.ponies.model.dto.StatisticsPointDto
-import ru.illine.drinking.ponies.model.dto.internal.WaterStatisticDto
 import ru.illine.drinking.ponies.test.generator.DtoGenerator
 import ru.illine.drinking.ponies.test.tag.UnitTest
 import java.time.DayOfWeek
@@ -22,15 +20,15 @@ import java.util.stream.Stream
 class StatisticsAggregatorTest {
 
     private val utcZone = ZoneId.of("UTC")
-    private val yekZone = ZoneId.of("Asia/Yekaterinburg") // +5
+    private val yekZone = ZoneId.of("Asia/Yekaterinburg")
 
     @Test
     @DisplayName("sumByLocalDate(): groups events by local date and sums waterAmountMl")
     fun `sumByLocalDate groups by local date`() {
         val events = listOf(
-            waterEvent(LocalDateTime.of(2026, 5, 12, 8, 0), 250),
-            waterEvent(LocalDateTime.of(2026, 5, 12, 18, 0), 500),
-            waterEvent(LocalDateTime.of(2026, 5, 13, 9, 0), 300),
+            DtoGenerator.generateWaterEvent(LocalDateTime.of(2026, 5, 12, 8, 0), 250),
+            DtoGenerator.generateWaterEvent(LocalDateTime.of(2026, 5, 12, 18, 0), 500),
+            DtoGenerator.generateWaterEvent(LocalDateTime.of(2026, 5, 13, 9, 0), 300),
         )
 
         val result = StatisticsAggregator.sumByLocalDate(events, utcZone)
@@ -44,7 +42,7 @@ class StatisticsAggregatorTest {
     @DisplayName("sumByLocalDate(): event near midnight UTC shifts to next local date for +5 zone")
     fun `sumByLocalDate shifts day for positive offset zone`() {
         // 2026-05-11T19:30Z -> 2026-05-12T00:30 in +5
-        val events = listOf(waterEvent(LocalDateTime.of(2026, 5, 11, 19, 30), 250))
+        val events = listOf(DtoGenerator.generateWaterEvent(LocalDateTime.of(2026, 5, 11, 19, 30), 250))
 
         val result = StatisticsAggregator.sumByLocalDate(events, yekZone)
 
@@ -61,6 +59,7 @@ class StatisticsAggregatorTest {
         assertTrue(result.isEmpty())
     }
 
+
     @Test
     @DisplayName("aggregateByHour(): always returns 24 points with HH:00 labels")
     fun `aggregateByHour returns 24 points`() {
@@ -73,12 +72,22 @@ class StatisticsAggregatorTest {
     }
 
     @Test
+    @DisplayName("aggregateByHour(): all 24 labels are HH:00 in order")
+    fun `aggregateByHour labels in order`() {
+        val result = StatisticsAggregator.aggregateByHour(emptyList(), utcZone)
+
+        result.forEachIndexed { i, p ->
+            assertEquals("%02d:00".format(i), p.label)
+        }
+    }
+
+    @Test
     @DisplayName("aggregateByHour(): event at 08:15 local -> bucket 08:00 (sum across same hour)")
     fun `aggregateByHour buckets by local hour`() {
         val events = listOf(
-            waterEvent(LocalDateTime.of(2026, 5, 12, 8, 15), 250),
-            waterEvent(LocalDateTime.of(2026, 5, 12, 8, 45), 300),
-            waterEvent(LocalDateTime.of(2026, 5, 12, 13, 0), 500),
+            DtoGenerator.generateWaterEvent(LocalDateTime.of(2026, 5, 12, 8, 15), 250),
+            DtoGenerator.generateWaterEvent(LocalDateTime.of(2026, 5, 12, 8, 45), 300),
+            DtoGenerator.generateWaterEvent(LocalDateTime.of(2026, 5, 12, 13, 0), 500),
         )
 
         val result = StatisticsAggregator.aggregateByHour(events, utcZone)
@@ -86,7 +95,6 @@ class StatisticsAggregatorTest {
         assertEquals(550, result[8].valueMl)
         assertEquals(500, result[13].valueMl)
         assertEquals("08:00", result[8].label)
-        // Other hours stay zero
         assertEquals(0, result[0].valueMl)
         assertEquals(0, result[23].valueMl)
     }
@@ -95,7 +103,7 @@ class StatisticsAggregatorTest {
     @DisplayName("aggregateByHour(): TZ shift moves event into local hour, not UTC hour")
     fun `aggregateByHour respects user zone`() {
         // 03:30 UTC -> 08:30 in +5 -> hour 08
-        val events = listOf(waterEvent(LocalDateTime.of(2026, 5, 12, 3, 30), 250))
+        val events = listOf(DtoGenerator.generateWaterEvent(LocalDateTime.of(2026, 5, 12, 3, 30), 250))
 
         val result = StatisticsAggregator.aggregateByHour(events, yekZone)
 
@@ -131,44 +139,62 @@ class StatisticsAggregatorTest {
         assertTrue(result.all { it.valueMl == 0 })
     }
 
-    @ParameterizedTest(name = "[{index}] {3}: period={0}, total={1} -> avg={2}")
+    @ParameterizedTest(name = "[{index}] {3}: days={0}, total={1} -> avg={2}")
     @MethodSource("provideAverageCases")
-    @DisplayName("averageMlPerDay(): DAY returns total, WEEK/MONTH returns total/points.size (floor)")
+    @DisplayName("averageMlPerDay(): returns floor(total / days)")
     fun `averageMlPerDay table`(
-        period: StatisticsPeriodType, points: List<StatisticsPointDto>, expected: Int,
+        days: Int, points: List<StatisticsPointDto>, expected: Int,
         @Suppress("UNUSED_PARAMETER") description: String,
     ) {
-        val result = StatisticsAggregator.averageMlPerDay(period, points)
+        val result = StatisticsAggregator.averageMlPerDay(days, points)
 
         assertEquals(expected, result)
     }
 
     @Test
-    @DisplayName("bestDay(): DAY returns null even with non-empty data")
-    fun `bestDay DAY returns null`() {
+    @DisplayName("averageMlPerDay(): days=1 returns total (division by 1)")
+    fun `averageMlPerDay days one returns total`() {
+        val points = listOf(StatisticsPointDto("08:00", 250), StatisticsPointDto("13:00", 500))
+
+        val result = StatisticsAggregator.averageMlPerDay(1, points)
+
+        assertEquals(750, result)
+    }
+
+    @Test
+    @DisplayName("bestDay(): days=1 returns null even with non-empty data")
+    fun `bestDay days one returns null`() {
         val byDate = mapOf(LocalDate.of(2026, 5, 12) to 2400)
 
-        val result = StatisticsAggregator.bestDay(StatisticsPeriodType.DAY, byDate)
+        val result = StatisticsAggregator.bestDay(1, byDate)
 
         assertNull(result)
     }
 
     @Test
-    @DisplayName("bestDay(): WEEK with all zeros (or empty) -> null")
-    fun `bestDay all zeros returns null`() {
-        val resultEmpty = StatisticsAggregator.bestDay(StatisticsPeriodType.WEEK, emptyMap())
-        val resultAllZero = StatisticsAggregator.bestDay(
-            StatisticsPeriodType.WEEK,
-            mapOf(LocalDate.of(2026, 5, 4) to 0, LocalDate.of(2026, 5, 5) to 0)
-        )
+    @DisplayName("bestDay(): empty byDate -> null")
+    fun `bestDay empty returns null`() {
+        val result = StatisticsAggregator.bestDay(7, emptyMap())
 
-        assertNull(resultEmpty)
-        assertNull(resultAllZero)
+        assertNull(result)
     }
 
     @Test
-    @DisplayName("bestDay(): WEEK picks max date and extracts weekday")
-    fun `bestDay WEEK picks max with weekday`() {
+    @DisplayName("bestDay(): all-zero values -> null")
+    fun `bestDay all zeros returns null`() {
+        val byDate = mapOf(
+            LocalDate.of(2026, 5, 4) to 0,
+            LocalDate.of(2026, 5, 5) to 0,
+        )
+
+        val result = StatisticsAggregator.bestDay(7, byDate)
+
+        assertNull(result)
+    }
+
+    @Test
+    @DisplayName("bestDay(): picks max value with weekday")
+    fun `bestDay picks max with weekday`() {
         // 2026-05-06 is Wednesday
         val byDate = mapOf(
             LocalDate.of(2026, 5, 4) to 1800,
@@ -177,7 +203,7 @@ class StatisticsAggregatorTest {
             LocalDate.of(2026, 5, 7) to 1500,
         )
 
-        val result = StatisticsAggregator.bestDay(StatisticsPeriodType.WEEK, byDate)
+        val result = StatisticsAggregator.bestDay(7, byDate)
 
         assertNotNull(result)
         assertEquals(LocalDate.of(2026, 5, 6), result!!.date)
@@ -186,58 +212,50 @@ class StatisticsAggregatorTest {
     }
 
     @Test
-    @DisplayName("bestDay(): MONTH picks max date with correct weekday extracted")
-    fun `bestDay MONTH picks max with weekday`() {
-        // 2026-05-15 is a Friday.
+    @DisplayName("bestDay(): tie returns chronologically first maximum")
+    fun `bestDay tie returns earliest`() {
         val byDate = mapOf(
-            LocalDate.of(2026, 5, 1) to 1500,
-            LocalDate.of(2026, 5, 10) to 2400,
-            LocalDate.of(2026, 5, 15) to 3000,
-            LocalDate.of(2026, 5, 31) to 1800,
-        )
-
-        val result = StatisticsAggregator.bestDay(StatisticsPeriodType.MONTH, byDate)
-
-        assertNotNull(result)
-        assertEquals(LocalDate.of(2026, 5, 15), result!!.date)
-        assertEquals(3000, result.valueMl)
-        assertEquals(DayOfWeek.FRIDAY, result.weekday)
-    }
-
-    @Test
-    @DisplayName("bestDay(): tie returns one of the maxima (impl uses maxByOrNull on map entries)")
-    fun `bestDay tie returns a maximum`() {
-        val byDate = mapOf(
-            LocalDate.of(2026, 5, 4) to 2400,
             LocalDate.of(2026, 5, 6) to 2400,
+            LocalDate.of(2026, 5, 4) to 2400,
             LocalDate.of(2026, 5, 7) to 1800,
         )
 
-        val result = StatisticsAggregator.bestDay(StatisticsPeriodType.WEEK, byDate)
+        val result = StatisticsAggregator.bestDay(7, byDate)
 
         assertNotNull(result)
-        assertEquals(2400, result!!.valueMl)
-        // Map.entries iteration order is not contractual; just assert tie value is one of the candidates.
-        assertTrue(result.date == LocalDate.of(2026, 5, 4) || result.date == LocalDate.of(2026, 5, 6))
+        assertEquals(LocalDate.of(2026, 5, 4), result!!.date)
+        assertEquals(2400, result.valueMl)
     }
 
-    private fun waterEvent(eventTime: LocalDateTime, ml: Int): WaterStatisticDto =
-        DtoGenerator.generateWaterStatisticDto(eventTime = eventTime, waterAmountMl = ml)
+    @ParameterizedTest(name = "[{index}] {3}")
+    @MethodSource("provideCalculateStreakCases")
+    @DisplayName("calculateStreak(): computes streak from byDate against today and dailyGoalMl")
+    fun `calculateStreak table`(
+        byDate: Map<LocalDate, Int>,
+        today: LocalDate,
+        dailyGoalMl: Int,
+        @Suppress("UNUSED_PARAMETER") description: String,
+        expected: Int,
+    ) {
+        val result = StatisticsAggregator.calculateStreak(byDate, today, dailyGoalMl = dailyGoalMl)
+
+        assertEquals(expected, result)
+    }
 
     companion object {
 
         @JvmStatic
         fun provideAverageCases(): Stream<Arguments> = Stream.of(
-            // DAY: returns total regardless of point count
+            // days=1, total=750
             Arguments.of(
-                StatisticsPeriodType.DAY,
+                1,
                 listOf(StatisticsPointDto("08:00", 250), StatisticsPointDto("13:00", 500)),
                 750,
-                "DAY = total",
+                "days=1 returns total",
             ),
-            // WEEK: floor division
+            // days=7, floor division
             Arguments.of(
-                StatisticsPeriodType.WEEK,
+                7,
                 listOf(
                     StatisticsPointDto("2026-05-04", 1800),
                     StatisticsPointDto("2026-05-05", 2100),
@@ -248,22 +266,91 @@ class StatisticsAggregatorTest {
                     StatisticsPointDto("2026-05-10", 0),
                 ),
                 (1800 + 2100 + 2400 + 1500) / 7,
-                "WEEK with partial fill",
+                "days=7 with partial fill (floor division)",
             ),
-            // MONTH 28 days, all zero
+            // days=28, all zeros
             Arguments.of(
-                StatisticsPeriodType.MONTH,
+                28,
                 (1..28).map { StatisticsPointDto("2025-02-%02d".format(it), 0) },
                 0,
-                "MONTH all zeros",
+                "all zeros",
             ),
-            // WEEK empty -> defensive guard returns 0 (not div-by-zero)
+            // days=2, total=999 -> 999/2 = 499 (floor)
             Arguments.of(
-                StatisticsPeriodType.WEEK,
-                emptyList<StatisticsPointDto>(),
-                0,
-                "WEEK empty returns zero",
+                2,
+                listOf(
+                    StatisticsPointDto("2026-05-04", 500),
+                    StatisticsPointDto("2026-05-05", 499),
+                ),
+                499,
+                "floor division non-zero",
             ),
         )
+
+        @JvmStatic
+        fun provideCalculateStreakCases(): Stream<Arguments> {
+            val today = LocalDate.of(2026, 5, 12)
+            return Stream.of(
+                Arguments.of(
+                    (0..2).associate { today.minusDays(it.toLong()) to 2000 },
+                    today,
+                    2000,
+                    "today met and consecutive days back -> counts today plus chain",
+                    3,
+                ),
+                Arguments.of(
+                    emptyMap<LocalDate, Int>(),
+                    today,
+                    2000,
+                    "empty byDate returns 0",
+                    0,
+                ),
+                Arguments.of(
+                    mapOf(
+                        today to 2000,
+                        today.minusDays(1) to 2000,
+                        today.minusDays(2) to 2000,
+                        today.minusDays(3) to 500,
+                        today.minusDays(4) to 2000,
+                    ),
+                    today,
+                    2000,
+                    "below goal on a day breaks the chain back",
+                    3,
+                ),
+                Arguments.of(
+                    (0..500L).associate { today.minusDays(it) to 2000 },
+                    today,
+                    2000,
+                    "bounded by STREAK_LIMIT_DAYS (366) plus today -> 367",
+                    367,
+                ),
+                Arguments.of(
+                    mapOf(
+                        today to 500,
+                        today.minusDays(1) to 2000,
+                        today.minusDays(2) to 2000,
+                    ),
+                    today,
+                    2000,
+                    "today below goal -> streak=0 (chain broken now, prior days ignored)",
+                    0,
+                ),
+                Arguments.of(
+                    mapOf(today.minusDays(1) to 2000),
+                    today,
+                    2000,
+                    "today missing entirely -> streak=0",
+                    0,
+                ),
+                Arguments.of(
+                    mapOf(today to 2200),
+                    today,
+                    2000,
+                    "only today met -> streak=1",
+                    1,
+                ),
+            )
+        }
     }
 }
