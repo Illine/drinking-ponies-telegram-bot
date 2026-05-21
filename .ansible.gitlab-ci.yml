@@ -9,8 +9,6 @@ build-ansible-image:
   allow_failure: true
   image: docker:27
   rules:
-    - if: '$PIPELINE_TYPE == "version-tag"'
-      when: never
     - when: manual
   before_script:
     - docker login -u "${CI_REGISTRY_USER}" -p "${CI_REGISTRY_PASSWORD}" "${CI_REGISTRY}"
@@ -67,8 +65,6 @@ rollback-database:
     LIQUIBASE_COMMAND: "rollback"
     LIQUIBASE_ROLLBACK_TAG: "" # must be overridden when the job will be run
   rules:
-    - if: '$PIPELINE_TYPE == "version-tag"'
-      when: never
     - if: '$CI_COMMIT_BRANCH == "master"'
       when: manual
       variables:

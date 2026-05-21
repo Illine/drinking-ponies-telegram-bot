@@ -1,6 +1,5 @@
 package ru.illine.drinking.ponies.util.statistics
 
-import ru.illine.drinking.ponies.model.base.StatisticsPeriodType
 import ru.illine.drinking.ponies.model.dto.BestDayDto
 import ru.illine.drinking.ponies.model.dto.StatisticsPointDto
 import ru.illine.drinking.ponies.model.dto.internal.WaterStatisticDto
@@ -8,6 +7,12 @@ import java.time.LocalDate
 import java.time.ZoneId
 
 object StatisticsAggregator {
+
+    private const val HOURS_IN_DAY = 24
+    private const val HOUR_LABEL_FORMAT = "%02d:00"
+
+    // 366 (not 365) covers a leap year, so a full year of streak isn't off by one
+    const val STREAK_LIMIT_DAYS = 366L
 
     fun sumByLocalDate(events: List<WaterStatisticDto>, zone: ZoneId): Map<LocalDate, Int> =
         events.groupBy { StatisticsPeriodHelper.toLocal(it.eventTime, zone).toLocalDate() }
@@ -27,32 +32,42 @@ object StatisticsAggregator {
     fun aggregateByDay(
         byDate: Map<LocalDate, Int>,
         startLocal: LocalDate,
-        daysInPeriod: Int
+        days: Int
     ): List<StatisticsPointDto> =
-        (0 until daysInPeriod).map { offset ->
+        (0 until days).map { offset ->
             val date = startLocal.plusDays(offset.toLong())
             StatisticsPointDto(label = date.toString(), valueMl = byDate[date] ?: 0)
         }
 
-    fun averageMlPerDay(period: StatisticsPeriodType, points: List<StatisticsPointDto>): Int {
+    fun averageMlPerDay(days: Int, points: List<StatisticsPointDto>): Int {
         val total = points.sumOf { it.valueMl }
-        return when (period) {
-            StatisticsPeriodType.DAY -> total
-            StatisticsPeriodType.WEEK,
-            StatisticsPeriodType.MONTH -> if (points.isEmpty()) 0 else total / points.size
-        }
+        return total / days
     }
 
-    fun bestDay(period: StatisticsPeriodType, byDate: Map<LocalDate, Int>): BestDayDto? {
-        if (period == StatisticsPeriodType.DAY) return null
+    fun bestDay(days: Int, byDate: Map<LocalDate, Int>): BestDayDto? {
+        if (days == 1) return null
         val best = byDate.entries
             .filter { it.value > 0 }
-            .sortedBy { it.key }  // chronologically first
+            .sortedBy { it.key }
             .maxByOrNull { it.value } ?: return null
         return BestDayDto(date = best.key, valueMl = best.value, weekday = best.key.dayOfWeek)
     }
 
-    private const val HOURS_IN_DAY = 24
-    private const val HOUR_LABEL_FORMAT = "%02d:00"
-
+    fun calculateStreak(
+        byDate: Map<LocalDate, Int>,
+        today: LocalDate,
+        dailyGoalMl: Int
+    ): Int {
+        // Active streak: if today's goal isn't met, the chain is broken right now, regardless of past days.
+        if ((byDate[today] ?: 0) < dailyGoalMl) return 0
+        var streak = 1
+        var cursor = today.minusDays(1)
+        val earliest = today.minusDays(STREAK_LIMIT_DAYS)
+        while (!cursor.isBefore(earliest)) {
+            if ((byDate[cursor] ?: 0) < dailyGoalMl) break
+            streak++
+            cursor = cursor.minusDays(1)
+        }
+        return streak
+    }
 }

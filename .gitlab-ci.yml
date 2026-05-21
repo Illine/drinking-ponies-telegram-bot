@@ -13,10 +13,6 @@ stages:
 
 workflow:
   rules:
-    - if: '$CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+$/'
-      when: always
-      variables:
-        PIPELINE_TYPE: "version-tag"
     - if: '$CI_COMMIT_MESSAGE =~ /\[skip gitlab-ci\]/'
       when: never
     - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH'
@@ -27,15 +23,14 @@ variables:
   GRADLE_JVM_OPTS: "-Xmx4096m"
   GRADLE_OPTS: "-Dorg.gradle.workers.max=4"
   SERVICE_NAME: "dptb"
+  SERVICE_DISPLAY_NAME: "Bot"
   YOUTRACK_PROJECT: "DPTB"
 
 default:
   interruptible: true
 
 generate-version:
-  extends:
-    - .default-tags
-    - .branch-only
+  extends: .default-tags
   stage: pre
   image:
     name: gittools/gitversion:6.5.0
@@ -56,9 +51,7 @@ generate-version:
       - gitversion.properties
 
 test:
-  extends:
-    - .default-tags
-    - .branch-only
+  extends: .default-tags
   stage: test
   image: gradle:8.4-jdk17
   variables:
@@ -97,9 +90,7 @@ test:
         path: "build/jacoco/coverage.xml"
 
 build-jar:
-  extends:
-    - .default-tags
-    - .branch-only
+  extends: .default-tags
   stage: build
   image: gradle:8.4-jdk17
   needs:
@@ -118,9 +109,7 @@ build-jar:
       - build/libs/drinking-ponies.jar
 
 build-image:
-  extends:
-    - .default-tags
-    - .branch-only
+  extends: .default-tags
   stage: build
   image: docker:27
   needs:

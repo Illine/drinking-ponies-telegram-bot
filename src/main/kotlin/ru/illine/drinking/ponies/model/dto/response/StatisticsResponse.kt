@@ -1,6 +1,7 @@
 package ru.illine.drinking.ponies.model.dto.response
 
 import io.swagger.v3.oas.annotations.media.Schema
+import java.time.Instant
 
 @Schema(description = "Aggregated water consumption statistics for the requested period")
 data class StatisticsResponse(
@@ -16,4 +17,10 @@ data class StatisticsResponse(
     val currentStreakDays: Int,
     @Schema(description = "Cute insight phrase")
     val insight: InsightInfo,
+    @Schema(
+        description = "Timestamp of the user's earliest water entry; used as the left bound of the calendar",
+        example = "2026-04-15T10:30:00Z",
+        nullable = true
+    )
+    val firstEntryAt: Instant?,
 )

@@ -55,30 +55,36 @@ class WaterStatisticServiceImpl(
         )
     }
 
-    override fun manualRecordEvent(externalUserId: Long, consumedAt: Instant, amountMl: Int) {
+    override fun manualRecordEvent(externalUserId: Long, consumedAt: Instant?, amountMl: Int) {
         require(amountMl.toLong() in WaterEntryConstants.MIN_ML..WaterEntryConstants.MAX_ML) {
             "Water amount must be between ${WaterEntryConstants.MIN_ML} and ${WaterEntryConstants.MAX_ML} ml, got: $amountMl"
         }
 
         val now = Instant.now(clock)
-        require(!consumedAt.isAfter(now)) {
-            "consumedAt must not be in the future, got: $consumedAt (now: $now)"
-        }
-        require(!consumedAt.isBefore(now.minus(WaterEntryConstants.MAX_DAYS_AGO, ChronoUnit.DAYS))) {
-            "consumedAt must not be older than ${WaterEntryConstants.MAX_DAYS_AGO} days, got: $consumedAt"
-        }
+        val eventInstant = consumedAt?.also {
+            require(!it.isAfter(now)) {
+                "consumedAt must not be in the future, got: $it (now: $now)"
+            }
+            require(
+                !it.isBefore(
+                    now.minus(WaterEntryConstants.MAX_DAYS_AGO, ChronoUnit.DAYS)
+                )
+            ) {
+                "consumedAt must not be older than ${WaterEntryConstants.MAX_DAYS_AGO} days, got: $it"
+            }
+        } ?: now.also { logger.debug("consumedAt not passed, now will be used") }
 
         logger.info(
             "Recording manual water entry for user [{}], amount [{}] ml at [{}]",
             externalUserId,
             amountMl,
-            consumedAt
+            eventInstant
         )
 
         waterStatisticAccessService.save(
             WaterStatisticDto(
                 telegramUser = TelegramUserDto.create(externalUserId),
-                eventTime = LocalDateTime.ofInstant(consumedAt, ZoneOffset.UTC),
+                eventTime = LocalDateTime.ofInstant(eventInstant, ZoneOffset.UTC),
                 eventType = AnswerNotificationType.YES,
                 waterAmountMl = amountMl,
                 source = WaterEntrySourceType.MANUAL

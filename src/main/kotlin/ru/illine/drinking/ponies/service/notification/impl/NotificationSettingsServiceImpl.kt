@@ -10,6 +10,7 @@ import ru.illine.drinking.ponies.model.dto.internal.NotificationSettingDto
 import ru.illine.drinking.ponies.model.dto.response.PauseStateResponse
 import ru.illine.drinking.ponies.service.notification.NotificationSettingsService
 import ru.illine.drinking.ponies.service.notification.NotificationTimeService
+import ru.illine.drinking.ponies.util.statistics.toUtcInstant
 import ru.illine.drinking.ponies.util.telegram.TelegramDailyGoalConstants
 import java.time.*
 
@@ -139,7 +140,7 @@ class NotificationSettingsServiceImpl(
         val now = LocalDateTime.now(clock)
         val activePauseUntil = settings.pauseUntil
             ?.takeIf { it.isAfter(now) }
-            ?.toInstant(ZoneOffset.UTC)
+            ?.toUtcInstant()
         return PauseStateResponse(
             paused = activePauseUntil != null,
             pauseUntil = activePauseUntil

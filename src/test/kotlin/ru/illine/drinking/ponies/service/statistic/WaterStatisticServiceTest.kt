@@ -99,7 +99,7 @@ class WaterStatisticServiceTest {
     @Test
     @DisplayName("manualRecordEvent(): saves statistic with source=MANUAL, eventType=YES and converts consumedAt to UTC LocalDateTime")
     fun `manualRecordEvent saves statistic with manual source`() {
-        val externalUserId = 12345L
+        val externalUserId = 1L
         val consumedAt = fixedClock.instant().minus(2, ChronoUnit.HOURS)
         val captor = argumentCaptor<WaterStatisticDto>()
 
@@ -112,6 +112,23 @@ class WaterStatisticServiceTest {
         assertEquals(250, saved.waterAmountMl)
         assertEquals(WaterEntrySourceType.MANUAL, saved.source)
         assertEquals(LocalDateTime.ofInstant(consumedAt, ZoneOffset.UTC), saved.eventTime)
+    }
+
+    @Test
+    @DisplayName("manualRecordEvent(): uses clock's current time when consumedAt is null")
+    fun `manualRecordEvent uses now when consumedAt is null`() {
+        val externalUserId = 1L
+        val captor = argumentCaptor<WaterStatisticDto>()
+
+        service.manualRecordEvent(externalUserId, null, 250)
+
+        verify(waterStatisticAccessService).save(captor.capture())
+        val saved = captor.firstValue
+        assertEquals(externalUserId, saved.telegramUser.externalUserId)
+        assertEquals(AnswerNotificationType.YES, saved.eventType)
+        assertEquals(250, saved.waterAmountMl)
+        assertEquals(WaterEntrySourceType.MANUAL, saved.source)
+        assertEquals(fixedNow, saved.eventTime)
     }
 
     @ParameterizedTest(name = "[{index}] amount={0} ml is accepted (boundary)")

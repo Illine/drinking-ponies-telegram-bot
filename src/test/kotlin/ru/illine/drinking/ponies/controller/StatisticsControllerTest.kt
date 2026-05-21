@@ -1,33 +1,26 @@
 package ru.illine.drinking.ponies.controller
 
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNotNull
+import com.fasterxml.jackson.databind.ObjectMapper
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
-import org.junit.jupiter.params.provider.EnumSource
 import org.junit.jupiter.params.provider.MethodSource
 import org.junit.jupiter.params.provider.ValueSource
 import org.mockito.Mockito.*
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.nullableArgumentCaptor
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.web.client.TestRestTemplate
-import org.springframework.http.HttpEntity
-import org.springframework.http.HttpHeaders
-import org.springframework.http.HttpMethod
-import org.springframework.http.HttpStatus
-import org.springframework.http.MediaType
+import org.springframework.http.*
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import ru.illine.drinking.ponies.exception.NotificationSettingsNotFoundException
 import ru.illine.drinking.ponies.model.base.AnswerNotificationType
-import ru.illine.drinking.ponies.model.base.StatisticsPeriodType
-import ru.illine.drinking.ponies.model.dto.BestDayDto
-import ru.illine.drinking.ponies.model.dto.StatisticsDto
 import ru.illine.drinking.ponies.model.dto.StatisticsPointDto
-import ru.illine.drinking.ponies.model.dto.TelegramUserDto
 import ru.illine.drinking.ponies.model.dto.response.StatisticsResponse
 import ru.illine.drinking.ponies.model.dto.response.StatisticsTodayResponse
 import ru.illine.drinking.ponies.service.statistic.StatisticsService
@@ -35,16 +28,13 @@ import ru.illine.drinking.ponies.service.statistic.WaterStatisticService
 import ru.illine.drinking.ponies.service.telegram.TelegramValidatorService
 import ru.illine.drinking.ponies.test.generator.DtoGenerator
 import ru.illine.drinking.ponies.test.tag.SpringIntegrationTest
-import java.time.DayOfWeek
-import java.time.Duration
-import java.time.Instant
-import java.time.LocalDate
-import java.time.LocalDateTime
+import java.time.*
 
 @SpringIntegrationTest
 @DisplayName("StatisticsController Spring Integration Test")
 class StatisticsControllerTest @Autowired constructor(
-    private val restTemplate: TestRestTemplate
+    private val restTemplate: TestRestTemplate,
+    private val objectMapper: ObjectMapper
 ) {
 
     @MockitoBean
@@ -56,12 +46,7 @@ class StatisticsControllerTest @Autowired constructor(
     @MockitoBean
     private lateinit var waterStatisticService: WaterStatisticService
 
-    private val telegramUser = TelegramUserDto(
-        telegramId = 1L,
-        firstName = "First Name",
-        lastName = null,
-        username = "username"
-    )
+    private val telegramUser = DtoGenerator.generateTelegramUserDto()
 
     @BeforeEach
     fun setUp() {
@@ -145,90 +130,109 @@ class StatisticsControllerTest @Autowired constructor(
     @DisplayName("GET /statistics")
     inner class GetStatistics {
 
-        private fun fakeDto(period: StatisticsPeriodType): StatisticsDto = when (period) {
-            StatisticsPeriodType.DAY -> StatisticsDto(
-                points = (0 until 24).map { StatisticsPointDto("%02d:00".format(it), if (it == 8) 250 else 0) },
-                dailyGoalMl = 2000,
-                averageMlPerDay = 250,
-                bestDay = null,
-                currentStreakDays = 3,
-                insightText = "insight text day",
-            )
-            StatisticsPeriodType.WEEK -> StatisticsDto(
-                points = listOf(
-                    StatisticsPointDto("2026-05-04", 1800),
-                    StatisticsPointDto("2026-05-05", 2100),
-                    StatisticsPointDto("2026-05-06", 2400),
-                    StatisticsPointDto("2026-05-07", 1500),
-                    StatisticsPointDto("2026-05-08", 0),
-                    StatisticsPointDto("2026-05-09", 0),
-                    StatisticsPointDto("2026-05-10", 0),
-                ),
-                dailyGoalMl = 2000,
-                averageMlPerDay = 1114,
-                bestDay = BestDayDto(LocalDate.of(2026, 5, 6), 2400, DayOfWeek.WEDNESDAY),
-                currentStreakDays = 3,
-                insightText = "insight text week",
-            )
-            StatisticsPeriodType.MONTH -> StatisticsDto(
-                points = (1..31).map { StatisticsPointDto("2026-05-%02d".format(it), 0) },
-                dailyGoalMl = 2000,
-                averageMlPerDay = 0,
-                bestDay = null,
-                currentStreakDays = 0,
-                insightText = "insight text month",
-            )
-        }
+        private val from = LocalDate.of(2026, 5, 4)
+        private val to = LocalDate.of(2026, 5, 10)
 
-        @ParameterizedTest(name = "[{index}] period={0} - returns 200")
-        @EnumSource(StatisticsPeriodType::class)
-        @DisplayName("valid request - returns 200 for each period")
-        fun `returns 200 for each period`(period: StatisticsPeriodType) {
-            val dto = fakeDto(period)
-            `when`(statisticsService.getStatistics(telegramUser.telegramId, period)).thenReturn(dto)
+        private fun dailyDto(firstEntryAt: Instant? = Instant.parse("2026-04-15T10:30:00Z")) =
+            DtoGenerator.generateStatisticsDto(firstEntryAt = firstEntryAt)
+
+        private fun hourlyDto() = DtoGenerator.generateStatisticsDto(
+            points = (0 until 24).map { StatisticsPointDto("%02d:00".format(it), if (it == 8) 250 else 0) },
+            averageMlPerDay = 250,
+            bestDay = null,
+            currentStreakDays = 1,
+            insightText = "today insight",
+        )
+
+        @Test
+        @DisplayName("valid range - returns 200 with full body and forwards from/to to service")
+        fun `valid range returns 200`() {
+            val dto = dailyDto()
+            `when`(statisticsService.getStatistics(eq(telegramUser.telegramId), eq(from), eq(to))).thenReturn(dto)
             val headers = buildHeaders()
 
             val response = restTemplate.exchange(
-                "/statistics?period=$period", HttpMethod.GET, HttpEntity<Void>(headers), StatisticsResponse::class.java
+                "/statistics?from=$from&to=$to",
+                HttpMethod.GET, HttpEntity<Void>(headers), StatisticsResponse::class.java
             )
 
             assertEquals(HttpStatus.OK, response.statusCode)
             assertNotNull(response.body)
-            assertEquals(dto.points.size, response.body!!.points.size)
-            assertEquals(dto.dailyGoalMl, response.body!!.dailyGoalMl)
-            assertEquals(dto.averageMlPerDay, response.body!!.averageMlPerDay)
-            assertEquals(dto.currentStreakDays, response.body!!.currentStreakDays)
-            assertEquals(dto.insightText, response.body!!.insight.text)
-            verify(statisticsService).getStatistics(telegramUser.telegramId, period)
+            val body = response.body!!
+            assertEquals(dto.points.size, body.points.size)
+            assertEquals(dto.dailyGoalMl, body.dailyGoalMl)
+            assertEquals(dto.averageMlPerDay, body.averageMlPerDay)
+            assertEquals(dto.currentStreakDays, body.currentStreakDays)
+            assertEquals(dto.insightText, body.insight.text)
+            assertEquals(LocalDate.of(2026, 5, 6), body.bestDay!!.date)
+            assertEquals(2400, body.bestDay!!.valueMl)
+            assertEquals(DayOfWeek.WEDNESDAY, body.bestDay!!.weekday)
+            assertEquals(Instant.parse("2026-04-15T10:30:00Z"), body.firstEntryAt)
+            val fromCaptor = argumentCaptor<LocalDate>()
+            val toCaptor = argumentCaptor<LocalDate>()
+            verify(statisticsService).getStatistics(eq(telegramUser.telegramId), fromCaptor.capture(), toCaptor.capture())
+            assertEquals(from, fromCaptor.firstValue)
+            assertEquals(to, toCaptor.firstValue)
         }
 
         @Test
-        @DisplayName("WEEK response includes bestDay with date, valueMl, weekday")
-        fun `WEEK response carries bestDay fields`() {
-            val dto = fakeDto(StatisticsPeriodType.WEEK)
-            `when`(statisticsService.getStatistics(telegramUser.telegramId, StatisticsPeriodType.WEEK))
-                .thenReturn(dto)
+        @DisplayName("from == to - returns 200 with 24 hourly buckets")
+        fun `from equals to returns hourly`() {
+            val day = LocalDate.of(2026, 5, 12)
+            `when`(statisticsService.getStatistics(eq(telegramUser.telegramId), eq(day), eq(day))).thenReturn(hourlyDto())
             val headers = buildHeaders()
 
             val response = restTemplate.exchange(
-                "/statistics?period=WEEK", HttpMethod.GET, HttpEntity<Void>(headers), StatisticsResponse::class.java
+                "/statistics?from=$day&to=$day",
+                HttpMethod.GET, HttpEntity<Void>(headers), StatisticsResponse::class.java
             )
 
             assertEquals(HttpStatus.OK, response.statusCode)
-            assertNotNull(response.body!!.bestDay)
-            assertEquals(LocalDate.of(2026, 5, 6), response.body!!.bestDay!!.date)
-            assertEquals(2400, response.body!!.bestDay!!.valueMl)
-            assertEquals(DayOfWeek.WEDNESDAY, response.body!!.bestDay!!.weekday)
+            assertEquals(24, response.body!!.points.size)
+            assertEquals("00:00", response.body!!.points.first().label)
+            assertEquals("23:00", response.body!!.points.last().label)
         }
 
-        @ParameterizedTest(name = "[{index}] period={0} - returns 400 (invalid enum)")
-        @ValueSource(strings = ["YEAR", "year", "INVALID"])
-        @DisplayName("invalid period enum value - returns 400")
-        fun `returns 400 on invalid period enum`(period: String) {
+        @Test
+        @DisplayName("firstEntryAt = null is rendered as null in response")
+        fun `null firstEntryAt rendered as null`() {
+            `when`(statisticsService.getStatistics(eq(telegramUser.telegramId), eq(from), eq(to)))
+                .thenReturn(dailyDto(firstEntryAt = null))
             val headers = buildHeaders()
 
             val response = restTemplate.exchange(
-                "/statistics?period=$period", HttpMethod.GET, HttpEntity<Void>(headers), Void::class.java
+                "/statistics?from=$from&to=$to",
+                HttpMethod.GET, HttpEntity<Void>(headers), StatisticsResponse::class.java
+            )
+
+            assertEquals(HttpStatus.OK, response.statusCode)
+            assertNull(response.body!!.firstEntryAt)
+        }
+
+        @Test
+        @DisplayName("service throws IllegalArgumentException (e.g. from > to in user TZ) - returns 400")
+        fun `service IllegalArgumentException returns 400`() {
+            `when`(statisticsService.getStatistics(any(), any(), any()))
+                .thenThrow(IllegalArgumentException("Invalid parameter: 'from' must be before or equal to 'to'"))
+            val headers = buildHeaders()
+
+            val response = restTemplate.exchange(
+                "/statistics?from=2026-05-10&to=2026-05-09",
+                HttpMethod.GET, HttpEntity<Void>(headers), Void::class.java
+            )
+
+            assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
+        }
+
+        @ParameterizedTest(name = "[{index}] from={0} - returns 400 (malformed date)")
+        @ValueSource(strings = ["foobar", "2026-13-01", "2026-05-32", ""])
+        @DisplayName("malformed from - returns 400")
+        fun `malformed from returns 400`(from: String) {
+            val headers = buildHeaders()
+
+            val response = restTemplate.exchange(
+                "/statistics?from=$from&to=2026-05-10",
+                HttpMethod.GET, HttpEntity<Void>(headers), Void::class.java
             )
 
             assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
@@ -236,12 +240,12 @@ class StatisticsControllerTest @Autowired constructor(
         }
 
         @Test
-        @DisplayName("empty period value - returns 400")
-        fun `returns 400 on empty period`() {
+        @DisplayName("missing from param - returns 400")
+        fun `missing from returns 400`() {
             val headers = buildHeaders()
 
             val response = restTemplate.exchange(
-                "/statistics?period=", HttpMethod.GET, HttpEntity<Void>(headers), Void::class.java
+                "/statistics?to=2026-05-10", HttpMethod.GET, HttpEntity<Void>(headers), Void::class.java
             )
 
             assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
@@ -249,8 +253,21 @@ class StatisticsControllerTest @Autowired constructor(
         }
 
         @Test
-        @DisplayName("missing period param - returns 400")
-        fun `returns 400 on missing period`() {
+        @DisplayName("missing to param - returns 400")
+        fun `missing to returns 400`() {
+            val headers = buildHeaders()
+
+            val response = restTemplate.exchange(
+                "/statistics?from=2026-05-10", HttpMethod.GET, HttpEntity<Void>(headers), Void::class.java
+            )
+
+            assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
+            verifyNoInteractions(statisticsService)
+        }
+
+        @Test
+        @DisplayName("missing both params - returns 400")
+        fun `missing both returns 400`() {
             val headers = buildHeaders()
 
             val response = restTemplate.exchange(
@@ -265,7 +282,8 @@ class StatisticsControllerTest @Autowired constructor(
         @DisplayName("missing auth header - returns 401")
         fun `returns 401`() {
             val response = restTemplate.exchange(
-                "/statistics?period=DAY", HttpMethod.GET, HttpEntity<Void>(HttpHeaders()), Void::class.java
+                "/statistics?from=2026-05-04&to=2026-05-10",
+                HttpMethod.GET, HttpEntity<Void>(HttpHeaders()), Void::class.java
             )
 
             assertEquals(HttpStatus.UNAUTHORIZED, response.statusCode)
@@ -276,15 +294,15 @@ class StatisticsControllerTest @Autowired constructor(
         @DisplayName("notifications disabled (NotificationSettingsNotFoundException) - returns 404")
         fun `returns 404 when settings not found`() {
             doThrow(NotificationSettingsNotFoundException("not found"))
-                .`when`(statisticsService).getStatistics(any(), any())
+                .`when`(statisticsService).getStatistics(any(), any(), any())
             val headers = buildHeaders()
 
             val response = restTemplate.exchange(
-                "/statistics?period=WEEK", HttpMethod.GET, HttpEntity<Void>(headers), Void::class.java
+                "/statistics?from=$from&to=$to",
+                HttpMethod.GET, HttpEntity<Void>(headers), Void::class.java
             )
 
             assertEquals(HttpStatus.NOT_FOUND, response.statusCode)
-            verify(statisticsService).getStatistics(telegramUser.telegramId, StatisticsPeriodType.WEEK)
         }
     }
 
@@ -298,21 +316,13 @@ class StatisticsControllerTest @Autowired constructor(
             }
         }
 
-        private fun jsonBody(consumedAt: Instant, amountMl: Int): String =
-            """{"consumedAt":"$consumedAt","amountMl":$amountMl}"""
-
-        /**
-         * Returns an instant that is safely in the past relative to the server clock.
-         * Margin avoids flakiness against @PastOrPresent caused by clock drift between
-         * test thread and validator invocation.
-         */
         private fun pastInstant(): Instant = Instant.now().minus(Duration.ofMinutes(5))
 
         @Test
         @DisplayName("valid request - returns 201 and calls service with parsed args")
         fun `returns 201 on valid request`() {
             val consumedAt = pastInstant()
-            val body = jsonBody(consumedAt, 250)
+            val body = objectMapper.writeValueAsString(DtoGenerator.generateWaterEntryRequest(consumedAt, 250))
 
             val response = restTemplate.exchange(
                 "/statistics/water", HttpMethod.POST, HttpEntity(body, jsonHeaders()), Void::class.java
@@ -331,11 +341,32 @@ class StatisticsControllerTest @Autowired constructor(
         }
 
         @Test
+        @DisplayName("valid request - returns 201 and calls service with parsed args")
+        fun `returns 201 on valid request on null consumerAt`() {
+            val body = objectMapper.writeValueAsString(DtoGenerator.generateWaterEntryRequest(consumedAt = null, amountMl = 250))
+
+            val response = restTemplate.exchange(
+                "/statistics/water", HttpMethod.POST, HttpEntity(body, jsonHeaders()), Void::class.java
+            )
+
+            assertEquals(HttpStatus.CREATED, response.statusCode)
+            val userIdCaptor = argumentCaptor<Long>()
+            val consumedAtCaptor = nullableArgumentCaptor<Instant>()
+            val amountCaptor = argumentCaptor<Int>()
+            verify(waterStatisticService).manualRecordEvent(
+                userIdCaptor.capture(), consumedAtCaptor.capture(), amountCaptor.capture()
+            )
+            assertEquals(telegramUser.telegramId, userIdCaptor.firstValue)
+            assertEquals(250, amountCaptor.firstValue)
+            assertNull(consumedAtCaptor.firstValue)
+        }
+
+        @Test
         @DisplayName("service throws IllegalArgumentException - returns 400 (handler maps to BAD_REQUEST)")
         fun `returns 400 on service IllegalArgumentException`() {
             doThrow(IllegalArgumentException("invalid"))
                 .`when`(waterStatisticService).manualRecordEvent(any(), any(), any())
-            val body = jsonBody(pastInstant(), 250)
+            val body = objectMapper.writeValueAsString(DtoGenerator.generateWaterEntryRequest(pastInstant(), 250))
 
             val response = restTemplate.exchange(
                 "/statistics/water", HttpMethod.POST, HttpEntity(body, jsonHeaders()), Void::class.java
@@ -348,7 +379,7 @@ class StatisticsControllerTest @Autowired constructor(
         @ValueSource(ints = [Int.MIN_VALUE, -1, 0, 49, 1001, Int.MAX_VALUE])
         @DisplayName("amountMl outside [MIN_ML, MAX_ML] - returns 400 (bean validation)")
         fun `returns 400 on amount out of bounds`(amount: Int) {
-            val body = jsonBody(pastInstant(), amount)
+            val body = objectMapper.writeValueAsString(DtoGenerator.generateWaterEntryRequest(pastInstant(), amount))
 
             val response = restTemplate.exchange(
                 "/statistics/water", HttpMethod.POST, HttpEntity(body, jsonHeaders()), Void::class.java
@@ -361,7 +392,12 @@ class StatisticsControllerTest @Autowired constructor(
         @Test
         @DisplayName("consumedAt in the future - returns 400 (bean validation)")
         fun `returns 400 on future consumedAt`() {
-            val body = jsonBody(Instant.now().plus(Duration.ofHours(1)), 250)
+            val body = objectMapper.writeValueAsString(
+                DtoGenerator.generateWaterEntryRequest(
+                    consumedAt = Instant.now().plus(Duration.ofHours(1)),
+                    amountMl = 250,
+                )
+            )
 
             val response = restTemplate.exchange(
                 "/statistics/water", HttpMethod.POST, HttpEntity(body, jsonHeaders()), Void::class.java
@@ -388,7 +424,7 @@ class StatisticsControllerTest @Autowired constructor(
         @Test
         @DisplayName("missing auth header - returns 401")
         fun `returns 401 on missing auth header`() {
-            val body = jsonBody(pastInstant(), 250)
+            val body = objectMapper.writeValueAsString(DtoGenerator.generateWaterEntryRequest(pastInstant(), 250))
             val headers = HttpHeaders().apply { contentType = MediaType.APPLICATION_JSON }
 
             val response = restTemplate.exchange(
@@ -403,7 +439,7 @@ class StatisticsControllerTest @Autowired constructor(
         @DisplayName("invalid signature - returns 403")
         fun `returns 403 on invalid signature`() {
             `when`(telegramValidatorService.verifySignature(any())).thenReturn(false)
-            val body = jsonBody(pastInstant(), 250)
+            val body = objectMapper.writeValueAsString(DtoGenerator.generateWaterEntryRequest(pastInstant(), 250))
 
             val response = restTemplate.exchange(
                 "/statistics/water", HttpMethod.POST, HttpEntity(body, jsonHeaders()), Void::class.java
@@ -421,7 +457,6 @@ class StatisticsControllerTest @Autowired constructor(
             return listOf(
                 null,
                 """{"consumedAt":"$pastIso"}""",
-                """{"amountMl":250}""",
                 """{"consumedAt":"not-a-date","amountMl":250}""",
                 """{}""",
             )

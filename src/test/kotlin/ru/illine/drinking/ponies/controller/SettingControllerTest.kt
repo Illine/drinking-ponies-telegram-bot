@@ -18,10 +18,10 @@ import org.springframework.http.HttpStatus
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import ru.illine.drinking.ponies.model.base.IntervalNotificationType
 import ru.illine.drinking.ponies.model.dto.SettingDto
-import ru.illine.drinking.ponies.model.dto.TelegramUserDto
 import ru.illine.drinking.ponies.model.dto.response.SettingResponse
 import ru.illine.drinking.ponies.service.notification.NotificationSettingsService
 import ru.illine.drinking.ponies.service.telegram.TelegramValidatorService
+import ru.illine.drinking.ponies.test.generator.DtoGenerator
 import ru.illine.drinking.ponies.test.tag.SpringIntegrationTest
 
 @SpringIntegrationTest
@@ -36,12 +36,7 @@ class SettingControllerTest @Autowired constructor(
     @MockitoBean
     private lateinit var notificationSettingsService: NotificationSettingsService
 
-    private val telegramUser = TelegramUserDto(
-        telegramId = 1L,
-        firstName = "First Name",
-        lastName = null,
-        username = "username"
-    )
+    private val telegramUser = DtoGenerator.generateTelegramUserDto()
 
     @BeforeEach
     fun setUp() {
@@ -63,16 +58,7 @@ class SettingControllerTest @Autowired constructor(
         @DisplayName("valid request - returns 200 with all settings")
         fun `returns 200 with all settings`() {
             val expectedInterval = IntervalNotificationType.HOUR_AND_HALF
-            val settingDto = SettingDto(
-                interval = expectedInterval.name,
-                intervalDisplayName = expectedInterval.displayName,
-                intervalMinutes = expectedInterval.minutes,
-                quietModeStart = "23:00",
-                quietModeEnd = "08:00",
-                timezone = "America/New_York",
-                dailyGoalMl = 2500,
-                notificationActive = true,
-            )
+            val settingDto = DtoGenerator.generateSettingDto()
             `when`(notificationSettingsService.getAllSettings(any())).thenReturn(settingDto)
             val headers = buildHeaders()
 

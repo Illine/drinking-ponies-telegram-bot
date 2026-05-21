@@ -16,9 +16,9 @@ import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import ru.illine.drinking.ponies.config.web.security.AuthErrorType
-import ru.illine.drinking.ponies.model.dto.TelegramUserDto
 import ru.illine.drinking.ponies.model.dto.response.VersionResponse
 import ru.illine.drinking.ponies.service.telegram.TelegramValidatorService
+import ru.illine.drinking.ponies.test.generator.DtoGenerator
 import ru.illine.drinking.ponies.test.tag.SpringIntegrationTest
 
 @SpringIntegrationTest
@@ -30,12 +30,7 @@ class SystemControllerTest @Autowired constructor(
     @MockitoBean
     private lateinit var telegramValidatorService: TelegramValidatorService
 
-    private val telegramUser = TelegramUserDto(
-        telegramId = 1L,
-        firstName = "First Name",
-        lastName = null,
-        username = "username"
-    )
+    private val telegramUser = DtoGenerator.generateTelegramUserDto()
 
     @BeforeEach
     fun setUp() {
