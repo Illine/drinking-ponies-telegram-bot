@@ -18,11 +18,11 @@ import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import ru.illine.drinking.ponies.exception.NotificationSettingsNotFoundException
-import ru.illine.drinking.ponies.model.dto.TelegramUserDto
 import ru.illine.drinking.ponies.model.dto.response.NotificationNextResponse
 import ru.illine.drinking.ponies.model.dto.response.PauseStateResponse
 import ru.illine.drinking.ponies.service.notification.NotificationSettingsService
 import ru.illine.drinking.ponies.service.telegram.TelegramValidatorService
+import ru.illine.drinking.ponies.test.generator.DtoGenerator
 import ru.illine.drinking.ponies.test.tag.SpringIntegrationTest
 import java.time.Instant
 
@@ -38,12 +38,7 @@ class NotificationControllerTest @Autowired constructor(
     @MockitoBean
     private lateinit var notificationSettingsService: NotificationSettingsService
 
-    private val telegramUser = TelegramUserDto(
-        telegramId = 1L,
-        firstName = "First Name",
-        lastName = null,
-        username = "username"
-    )
+    private val telegramUser = DtoGenerator.generateTelegramUserDto()
 
     @BeforeEach
     fun setUp() {

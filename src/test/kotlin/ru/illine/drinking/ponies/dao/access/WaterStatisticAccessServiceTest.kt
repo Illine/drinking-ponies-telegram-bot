@@ -285,4 +285,70 @@ class WaterStatisticAccessServiceTest @Autowired constructor(
         assertEquals(baseTime.plusHours(2), actual[2].eventTime)
     }
 
+    @Test
+    @DisplayName("findEarliestEventTimeByUser(): returns the minimum eventTime for the user")
+    fun `findEarliestEventTimeByUser returns min`() {
+        val earliest = LocalDateTime.of(2025, 1, 5, 9, 30)
+        accessService.save(
+            DtoGenerator.generateWaterStatisticDto(
+                externalUserId = DEFAULT_EXTERNAL_USER_ID,
+                eventTime = LocalDateTime.of(2025, 6, 15, 10, 0)
+            )
+        )
+        accessService.save(
+            DtoGenerator.generateWaterStatisticDto(
+                externalUserId = DEFAULT_EXTERNAL_USER_ID,
+                eventTime = earliest
+            )
+        )
+        accessService.save(
+            DtoGenerator.generateWaterStatisticDto(
+                externalUserId = DEFAULT_EXTERNAL_USER_ID,
+                eventTime = LocalDateTime.of(2025, 3, 10, 8, 0)
+            )
+        )
+
+        val actual = accessService.findEarliestEventTimeByUser(DEFAULT_EXTERNAL_USER_ID)
+
+        assertEquals(earliest, actual)
+    }
+
+    @Test
+    @DisplayName("findEarliestEventTimeByUser(): returns null when user has no records")
+    fun `findEarliestEventTimeByUser returns null when no records`() {
+        val actual = accessService.findEarliestEventTimeByUser(DEFAULT_EXTERNAL_USER_ID)
+
+        assertNull(actual)
+    }
+
+    @Test
+    @DisplayName("findEarliestEventTimeByUser(): isolates by user (does not pick events of another user)")
+    fun `findEarliestEventTimeByUser isolates per user`() {
+        val mine = LocalDateTime.of(2025, 6, 15, 10, 0)
+        accessService.save(
+            DtoGenerator.generateWaterStatisticDto(
+                externalUserId = DEFAULT_EXTERNAL_USER_ID,
+                eventTime = mine
+            )
+        )
+        // Earlier event for a different user must NOT be returned for DEFAULT user.
+        accessService.save(
+            DtoGenerator.generateWaterStatisticDto(
+                externalUserId = SECOND_EXTERNAL_USER_ID,
+                eventTime = LocalDateTime.of(2024, 1, 1, 0, 0)
+            )
+        )
+
+        val actual = accessService.findEarliestEventTimeByUser(DEFAULT_EXTERNAL_USER_ID)
+
+        assertEquals(mine, actual)
+    }
+
+    @Test
+    @DisplayName("findEarliestEventTimeByUser(): unknown user -> null")
+    fun `findEarliestEventTimeByUser unknown user`() {
+        val actual = accessService.findEarliestEventTimeByUser(NOT_EXISTED_USER_ID)
+
+        assertNull(actual)
+    }
 }

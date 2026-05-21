@@ -24,4 +24,15 @@ interface WaterStatisticRepository : JpaRepository<WaterStatisticEntity, Long> {
         @Param("endExclusive") endExclusive: LocalDateTime
     ): List<WaterStatisticEntity>
 
+    @Query(
+        value = """
+            select min(event_time) from water_statistics
+            where user_id = (
+                select id from telegram_users
+                where external_user_id = :externalUserId and deleted = false
+            )
+        """,
+        nativeQuery = true
+    )
+    fun findEarliestEventTimeByUser(@Param("externalUserId") externalUserId: Long): LocalDateTime?
 }

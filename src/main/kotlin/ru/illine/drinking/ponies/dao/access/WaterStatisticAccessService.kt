@@ -6,10 +6,12 @@ import java.time.LocalDateTime
 interface WaterStatisticAccessService {
     
     fun findByUserAndEventTimeBetween(
-        telegramUserId: Long,
+        externalUserId: Long,
         startInclusive: LocalDateTime,
         endExclusive: LocalDateTime
     ): List<WaterStatisticDto>
+
+    fun findEarliestEventTimeByUser(externalUserId: Long): LocalDateTime?
 
     fun save(dto: WaterStatisticDto): WaterStatisticDto
 

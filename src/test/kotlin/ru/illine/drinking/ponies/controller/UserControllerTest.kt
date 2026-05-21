@@ -20,9 +20,9 @@ import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.context.jdbc.SqlConfig
 import ru.illine.drinking.ponies.config.cache.CacheConfig
 import ru.illine.drinking.ponies.config.web.security.AuthErrorType
-import ru.illine.drinking.ponies.model.dto.TelegramUserDto
 import ru.illine.drinking.ponies.model.dto.response.MeResponse
 import ru.illine.drinking.ponies.service.telegram.TelegramValidatorService
+import ru.illine.drinking.ponies.test.generator.DtoGenerator
 import ru.illine.drinking.ponies.test.tag.SpringIntegrationTest
 
 @SpringIntegrationTest
@@ -49,12 +49,7 @@ class UserControllerTest @Autowired constructor(
     private val NON_ADMIN_USER_ID = 2L
     private val MISSING_USER_ID = 0L
 
-    private val telegramUser = TelegramUserDto(
-        telegramId = ADMIN_USER_ID,
-        firstName = "First Name",
-        lastName = null,
-        username = "username"
-    )
+    private val telegramUser = DtoGenerator.generateTelegramUserDto(telegramId = ADMIN_USER_ID)
 
     @BeforeEach
     fun setUp() {

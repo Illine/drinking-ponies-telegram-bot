@@ -5,7 +5,7 @@ import ru.illine.drinking.ponies.model.dto.internal.WaterStatisticDto
 import ru.illine.drinking.ponies.model.dto.response.WaterEntry
 import ru.illine.drinking.ponies.model.entity.TelegramUserEntity
 import ru.illine.drinking.ponies.model.entity.WaterStatisticEntity
-import java.time.ZoneOffset
+import ru.illine.drinking.ponies.util.statistics.toUtcInstant
 
 object WaterStatisticBuilder {
 
@@ -31,7 +31,7 @@ object WaterStatisticBuilder {
 
     fun toWaterEntry(dto: WaterStatisticDto): WaterEntry =
         WaterEntry(
-            eventTime = dto.eventTime.toInstant(ZoneOffset.UTC),
+            eventTime = dto.eventTime.toUtcInstant(),
             amountMl = dto.waterAmountMl,
         )
 

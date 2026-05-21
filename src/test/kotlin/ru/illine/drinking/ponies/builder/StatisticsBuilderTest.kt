@@ -9,6 +9,7 @@ import ru.illine.drinking.ponies.model.dto.StatisticsPointDto
 import ru.illine.drinking.ponies.model.dto.response.StatisticsResponse
 import ru.illine.drinking.ponies.test.tag.UnitTest
 import java.time.DayOfWeek
+import java.time.Instant
 import java.time.LocalDate
 import kotlin.reflect.full.memberProperties
 
@@ -29,6 +30,7 @@ class StatisticsBuilderTest {
             bestDay = BestDayDto(LocalDate.of(2026, 5, 5), 2100, DayOfWeek.TUESDAY),
             currentStreakDays = 3,
             insightText = "Котик, ты пьёшь водицу 3 дней подряд - так держать!",
+            firstEntryAt = Instant.parse("2026-04-15T10:30:00Z"),
         )
 
         val response = StatisticsBuilder.toResponse(dto)
@@ -46,6 +48,25 @@ class StatisticsBuilderTest {
         assertEquals(DayOfWeek.TUESDAY, response.bestDay!!.weekday)
         assertEquals(3, response.currentStreakDays)
         assertEquals("Котик, ты пьёшь водицу 3 дней подряд - так держать!", response.insight.text)
+        assertEquals(Instant.parse("2026-04-15T10:30:00Z"), response.firstEntryAt)
+    }
+
+    @Test
+    @DisplayName("toResponse(): null firstEntryAt maps through as null")
+    fun `toResponse preserves null firstEntryAt`() {
+        val dto = StatisticsDto(
+            points = emptyList(),
+            dailyGoalMl = 2000,
+            averageMlPerDay = 0,
+            bestDay = null,
+            currentStreakDays = 0,
+            insightText = "Здесь пока пусто, котик. Сделай первый глоток.",
+            firstEntryAt = null,
+        )
+
+        val response = StatisticsBuilder.toResponse(dto)
+
+        assertNull(response.firstEntryAt)
     }
 
     @Test
@@ -73,6 +94,7 @@ class StatisticsBuilderTest {
             bestDay = null,
             currentStreakDays = 0,
             insightText = "Здесь пока пусто, котик. Сделай первый глоток.",
+            firstEntryAt = null,
         )
 
         val response = StatisticsBuilder.toResponse(dto)

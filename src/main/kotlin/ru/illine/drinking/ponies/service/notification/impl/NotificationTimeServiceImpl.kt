@@ -4,6 +4,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import ru.illine.drinking.ponies.model.dto.internal.NotificationSettingDto
 import ru.illine.drinking.ponies.service.notification.NotificationTimeService
+import ru.illine.drinking.ponies.util.statistics.toUtcInstant
 import java.time.*
 
 @Suppress("IDENTITY_SENSITIVE_OPERATIONS_WITH_VALUE_TYPE")
@@ -60,7 +61,7 @@ class NotificationTimeServiceImpl(private val clock: Clock) : NotificationTimeSe
         logger.debug("Calculating next notification time for user id: [{}]", dto.id)
 
         val rawNext = dto.timeOfLastNotification.plusMinutes(dto.notificationInterval.minutes)
-        val rawNextInstant = rawNext.toInstant(ZoneOffset.UTC)
+        val rawNextInstant = rawNext.toUtcInstant()
         logger.debug("Raw next notification (UTC): [{}]", rawNextInstant)
 
         val quietStart = dto.quietModeStart
@@ -83,7 +84,7 @@ class NotificationTimeServiceImpl(private val clock: Clock) : NotificationTimeSe
         } else {
             isAtOrAfterStart || isAtOrBeforeEnd
         }
-        logger.debug("Quiet mode [{}-{}], in quiet mode: [{}]", quietStart, quietEnd, isInQuietMode)
+        logger.debug("Quiet mode [{} - {}], in quiet mode: [{}]", quietStart, quietEnd, isInQuietMode)
 
         if (!isInQuietMode) {
             return rawNextInstant
