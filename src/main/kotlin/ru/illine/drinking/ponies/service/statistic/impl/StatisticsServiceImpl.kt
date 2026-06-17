@@ -31,22 +31,22 @@ class StatisticsServiceImpl(
     private val logger = LoggerFactory.getLogger("SERVICE")
 
     // Returns RAW events (unfiltered by YES) for the home widget's per-event diary.
-    override fun getToday(telegramUserId: Long): List<WaterStatisticDto> {
-        logger.debug("Getting today entries for telegram user [{}]", telegramUserId)
+    override fun getToday(externalUserId: Long): List<WaterStatisticDto> {
+        logger.debug("Getting today entries for telegram user [{}]", externalUserId)
 
-        val ctx = userTimeContext(telegramUserId)
+        val ctx = userTimeContext(externalUserId)
         val (startInclusive, endExclusive) =
             StatisticsPeriodHelper.localDayBoundsToUtc(ctx.today, ctx.today.plusDays(1), ctx.zone)
 
-        return waterStatisticAccessService.findByUserAndEventTimeBetween(telegramUserId, startInclusive, endExclusive)
+        return waterStatisticAccessService.findByUserAndEventTimeBetween(externalUserId, startInclusive, endExclusive)
     }
 
-    override fun getStatistics(telegramUserId: Long, from: LocalDate, to: LocalDate): StatisticsDto {
-        logger.debug("Getting [{} - {}] statistics for telegram user [{}]", from, to, telegramUserId)
+    override fun getStatistics(externalUserId: Long, from: LocalDate, to: LocalDate): StatisticsDto {
+        logger.debug("Getting [{} - {}] statistics for telegram user [{}]", from, to, externalUserId)
 
         require(from <= to) { "Invalid parameter: 'from' must be before or equal to 'to'" }
 
-        val ctx = userTimeContext(telegramUserId)
+        val ctx = userTimeContext(externalUserId)
 
         require(from <= ctx.today) { "Invalid parameter: 'from' must not be in the future" }
 
@@ -60,7 +60,7 @@ class StatisticsServiceImpl(
         val fetchStart = minOf(from, streakWindowStart)
         val fetchEndExclusive = maxOf(to, ctx.today).plusDays(1)
 
-        val allEvents = fetchYesEvents(telegramUserId, fetchStart, fetchEndExclusive, ctx.zone)
+        val allEvents = fetchYesEvents(externalUserId, fetchStart, fetchEndExclusive, ctx.zone)
         val byDate = StatisticsAggregator.sumByLocalDate(allEvents, ctx.zone)
 
         // Points are built from events in the requested [from..to] window only.
@@ -87,7 +87,7 @@ class StatisticsServiceImpl(
                 ctx.settings.dailyGoalMl
             )
         )
-        val firstEntryAt = waterStatisticAccessService.findEarliestEventTimeByUser(telegramUserId)?.toUtcInstant()
+        val firstEntryAt = waterStatisticAccessService.findEarliestEventTimeByUser(externalUserId)?.toUtcInstant()
 
         return StatisticsDto(
             points = points,
@@ -101,18 +101,18 @@ class StatisticsServiceImpl(
     }
 
     private fun fetchYesEvents(
-        telegramUserId: Long,
+        externalUserId: Long,
         startLocal: LocalDate,
         endLocalExclusive: LocalDate,
         zone: ZoneId
     ): List<WaterStatisticDto> {
         val (startUtc, endUtc) = StatisticsPeriodHelper.localDayBoundsToUtc(startLocal, endLocalExclusive, zone)
-        return waterStatisticAccessService.findByUserAndEventTimeBetween(telegramUserId, startUtc, endUtc)
+        return waterStatisticAccessService.findByUserAndEventTimeBetween(externalUserId, startUtc, endUtc)
             .filter { it.eventType == AnswerNotificationType.YES }
     }
 
-    private fun userTimeContext(telegramUserId: Long): UserTimeContext {
-        val settings = notificationAccessService.findNotificationSettingByTelegramUserId(telegramUserId)
+    private fun userTimeContext(externalUserId: Long): UserTimeContext {
+        val settings = notificationAccessService.findNotificationSettingByExternalUserId(externalUserId)
         val zone = ZoneId.of(settings.telegramUser.userTimeZone)
         val today = LocalDate.now(clock.withZone(zone))
         return UserTimeContext(settings, zone, today)

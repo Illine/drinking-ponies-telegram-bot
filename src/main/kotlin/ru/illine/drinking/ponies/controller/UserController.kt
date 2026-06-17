@@ -22,7 +22,7 @@ class UserController {
         @Parameter(hidden = true)
         @RequestAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) telegramUser: TelegramUserDto,
     ): MeResponse = MeResponse(
-        telegramUserId = telegramUser.telegramId,
+        externalUserId = telegramUser.externalUserId,
         isAdmin = telegramUser.isAdmin,
     )
 }

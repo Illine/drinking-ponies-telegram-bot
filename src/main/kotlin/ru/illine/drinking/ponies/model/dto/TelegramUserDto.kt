@@ -7,7 +7,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class TelegramUserDto(
     @JsonProperty("id")
-    val telegramId: Long,
+    val externalUserId: Long,
     @JsonProperty("first_name")
     val firstName: String?,
     @JsonProperty("last_name")

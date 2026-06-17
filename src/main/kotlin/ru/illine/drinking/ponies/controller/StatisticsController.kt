@@ -35,7 +35,7 @@ class StatisticsController(
         @Parameter(hidden = true)
         @RequestAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) telegramUser: TelegramUserDto,
     ): StatisticsTodayResponse {
-        val entries = statisticsService.getToday(telegramUser.telegramId)
+        val entries = statisticsService.getToday(telegramUser.externalUserId)
         return StatisticsTodayResponse(
             entries = entries.map(WaterStatisticBuilder::toWaterEntry),
         )
@@ -59,7 +59,7 @@ class StatisticsController(
         )
         @RequestParam(name = "to", required = true) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) to: LocalDate,
     ): StatisticsResponse =
-        StatisticsBuilder.toResponse(statisticsService.getStatistics(telegramUser.telegramId, from, to))
+        StatisticsBuilder.toResponse(statisticsService.getStatistics(telegramUser.externalUserId, from, to))
 
     @PostMapping("/water")
     @ResponseStatus(HttpStatus.CREATED)
@@ -70,7 +70,7 @@ class StatisticsController(
         @Valid @RequestBody request: WaterEntryRequest,
     ) {
         waterStatisticService.manualRecordEvent(
-            externalUserId = telegramUser.telegramId,
+            externalUserId = telegramUser.externalUserId,
             consumedAt = request.consumedAt,
             amountMl = request.amountMl,
         )

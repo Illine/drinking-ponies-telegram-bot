@@ -69,19 +69,19 @@ class StatisticsControllerTest @Autowired constructor(
         fun `returns 200 with serialized entries`() {
             val entries = listOf(
                 DtoGenerator.generateWaterStatisticDto(
-                    externalUserId = telegramUser.telegramId,
+                    externalUserId = telegramUser.externalUserId,
                     eventTime = LocalDateTime.of(2026, 5, 7, 8, 15, 0),
                     eventType = AnswerNotificationType.YES,
                     waterAmountMl = 250,
                 ),
                 DtoGenerator.generateWaterStatisticDto(
-                    externalUserId = telegramUser.telegramId,
+                    externalUserId = telegramUser.externalUserId,
                     eventTime = LocalDateTime.of(2026, 5, 7, 13, 0, 0),
                     eventType = AnswerNotificationType.YES,
                     waterAmountMl = 500,
                 ),
             )
-            `when`(statisticsService.getToday(telegramUser.telegramId)).thenReturn(entries)
+            `when`(statisticsService.getToday(telegramUser.externalUserId)).thenReturn(entries)
             val headers = buildHeaders()
 
             val response = restTemplate.exchange(
@@ -96,13 +96,13 @@ class StatisticsControllerTest @Autowired constructor(
             assertEquals(250, body.entries[0].amountMl)
             assertEquals(Instant.parse("2026-05-07T13:00:00Z"), body.entries[1].eventTime)
             assertEquals(500, body.entries[1].amountMl)
-            verify(statisticsService).getToday(telegramUser.telegramId)
+            verify(statisticsService).getToday(telegramUser.externalUserId)
         }
 
         @Test
         @DisplayName("empty list - returns 200 with empty entries")
         fun `returns 200 with empty entries`() {
-            `when`(statisticsService.getToday(telegramUser.telegramId)).thenReturn(emptyList())
+            `when`(statisticsService.getToday(telegramUser.externalUserId)).thenReturn(emptyList())
             val headers = buildHeaders()
 
             val response = restTemplate.exchange(
@@ -148,7 +148,7 @@ class StatisticsControllerTest @Autowired constructor(
         @DisplayName("valid range - returns 200 with full body and forwards from/to to service")
         fun `valid range returns 200`() {
             val dto = dailyDto()
-            `when`(statisticsService.getStatistics(eq(telegramUser.telegramId), eq(from), eq(to))).thenReturn(dto)
+            `when`(statisticsService.getStatistics(eq(telegramUser.externalUserId), eq(from), eq(to))).thenReturn(dto)
             val headers = buildHeaders()
 
             val response = restTemplate.exchange(
@@ -170,7 +170,7 @@ class StatisticsControllerTest @Autowired constructor(
             assertEquals(Instant.parse("2026-04-15T10:30:00Z"), body.firstEntryAt)
             val fromCaptor = argumentCaptor<LocalDate>()
             val toCaptor = argumentCaptor<LocalDate>()
-            verify(statisticsService).getStatistics(eq(telegramUser.telegramId), fromCaptor.capture(), toCaptor.capture())
+            verify(statisticsService).getStatistics(eq(telegramUser.externalUserId), fromCaptor.capture(), toCaptor.capture())
             assertEquals(from, fromCaptor.firstValue)
             assertEquals(to, toCaptor.firstValue)
         }
@@ -179,7 +179,7 @@ class StatisticsControllerTest @Autowired constructor(
         @DisplayName("from == to - returns 200 with 24 hourly buckets")
         fun `from equals to returns hourly`() {
             val day = LocalDate.of(2026, 5, 12)
-            `when`(statisticsService.getStatistics(eq(telegramUser.telegramId), eq(day), eq(day))).thenReturn(hourlyDto())
+            `when`(statisticsService.getStatistics(eq(telegramUser.externalUserId), eq(day), eq(day))).thenReturn(hourlyDto())
             val headers = buildHeaders()
 
             val response = restTemplate.exchange(
@@ -196,7 +196,7 @@ class StatisticsControllerTest @Autowired constructor(
         @Test
         @DisplayName("firstEntryAt = null is rendered as null in response")
         fun `null firstEntryAt rendered as null`() {
-            `when`(statisticsService.getStatistics(eq(telegramUser.telegramId), eq(from), eq(to)))
+            `when`(statisticsService.getStatistics(eq(telegramUser.externalUserId), eq(from), eq(to)))
                 .thenReturn(dailyDto(firstEntryAt = null))
             val headers = buildHeaders()
 
@@ -329,13 +329,13 @@ class StatisticsControllerTest @Autowired constructor(
             )
 
             assertEquals(HttpStatus.CREATED, response.statusCode)
-            val userIdCaptor = argumentCaptor<Long>()
+            val externalUserIdCaptor = argumentCaptor<Long>()
             val consumedAtCaptor = argumentCaptor<Instant>()
             val amountCaptor = argumentCaptor<Int>()
             verify(waterStatisticService).manualRecordEvent(
-                userIdCaptor.capture(), consumedAtCaptor.capture(), amountCaptor.capture()
+                externalUserIdCaptor.capture(), consumedAtCaptor.capture(), amountCaptor.capture()
             )
-            assertEquals(telegramUser.telegramId, userIdCaptor.firstValue)
+            assertEquals(telegramUser.externalUserId, externalUserIdCaptor.firstValue)
             assertEquals(consumedAt, consumedAtCaptor.firstValue)
             assertEquals(250, amountCaptor.firstValue)
         }
@@ -350,13 +350,13 @@ class StatisticsControllerTest @Autowired constructor(
             )
 
             assertEquals(HttpStatus.CREATED, response.statusCode)
-            val userIdCaptor = argumentCaptor<Long>()
+            val externalUserIdCaptor = argumentCaptor<Long>()
             val consumedAtCaptor = nullableArgumentCaptor<Instant>()
             val amountCaptor = argumentCaptor<Int>()
             verify(waterStatisticService).manualRecordEvent(
-                userIdCaptor.capture(), consumedAtCaptor.capture(), amountCaptor.capture()
+                externalUserIdCaptor.capture(), consumedAtCaptor.capture(), amountCaptor.capture()
             )
-            assertEquals(telegramUser.telegramId, userIdCaptor.firstValue)
+            assertEquals(telegramUser.externalUserId, externalUserIdCaptor.firstValue)
             assertEquals(250, amountCaptor.firstValue)
             assertNull(consumedAtCaptor.firstValue)
         }

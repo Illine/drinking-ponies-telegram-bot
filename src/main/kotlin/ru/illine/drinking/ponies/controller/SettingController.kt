@@ -27,7 +27,7 @@ class SettingController(
         @Parameter(hidden = true)
         @RequestAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) telegramUser: TelegramUserDto,
     ): SettingResponse {
-        val settings = notificationSettingsService.getAllSettings(telegramUser.telegramId)
+        val settings = notificationSettingsService.getAllSettings(telegramUser.externalUserId)
         return SettingResponse(
             interval = settings.interval,
             intervalDisplayName = settings.intervalDisplayName,
@@ -51,7 +51,7 @@ class SettingController(
         @Parameter(description = "End time in HH:mm format", example = "08:00", schema = Schema(type = "string", pattern = "HH:mm"))
         @RequestParam(name = "end", required = true) @DateTimeFormat(pattern = "HH:mm") end: LocalTime
     ) {
-        notificationSettingsService.changeQuietMode(telegramUser.telegramId, start, end)
+        notificationSettingsService.changeQuietMode(telegramUser.externalUserId, start, end)
     }
 
     @PutMapping("/timezone")
@@ -63,7 +63,7 @@ class SettingController(
         @Parameter(description = "IANA timezone identifier", example = "Europe/Moscow")
         @RequestParam(name = "timezone", required = true) timezone: String
     ) {
-        notificationSettingsService.changeTimezone(telegramUser.telegramId, timezone)
+        notificationSettingsService.changeTimezone(telegramUser.externalUserId, timezone)
     }
 
     @PutMapping("/interval")
@@ -75,7 +75,7 @@ class SettingController(
         @Parameter(description = "Notification interval enum value", example = "HOUR")
         @RequestParam(name = "interval", required = true) interval: IntervalNotificationType
     ) {
-        notificationSettingsService.changeInterval(telegramUser.telegramId, interval)
+        notificationSettingsService.changeInterval(telegramUser.externalUserId, interval)
     }
 
     @PutMapping("/notification-status")
@@ -87,7 +87,7 @@ class SettingController(
         @Parameter(description = "Enable or disable notifications", example = "true")
         @RequestParam(name = "active", required = true) active: Boolean
     ) {
-        notificationSettingsService.changeNotificationStatus(telegramUser.telegramId, active)
+        notificationSettingsService.changeNotificationStatus(telegramUser.externalUserId, active)
     }
 
     @PutMapping("/goal")
@@ -102,6 +102,6 @@ class SettingController(
         )
         @RequestParam(name = "goalMl", required = true) goalMl: Int
     ) {
-        notificationSettingsService.changeDailyGoal(telegramUser.telegramId, goalMl)
+        notificationSettingsService.changeDailyGoal(telegramUser.externalUserId, goalMl)
     }
 }

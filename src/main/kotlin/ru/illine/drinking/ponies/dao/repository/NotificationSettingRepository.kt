@@ -20,7 +20,7 @@ interface NotificationSettingRepository : JpaRepository<NotificationSettingEntit
         """,
         nativeQuery = true
     )
-    fun isEnabledByTelegramUserId(@Param("externalUserId") externalUserId: Long): Boolean
+    fun isEnabledByExternalUserId(@Param("externalUserId") externalUserId: Long): Boolean
 
     @Modifying
     @Query(

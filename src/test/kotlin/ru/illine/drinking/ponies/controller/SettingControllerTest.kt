@@ -274,7 +274,7 @@ class SettingControllerTest @Autowired constructor(
             val response = restTemplate.exchange(url, HttpMethod.PUT, HttpEntity<Void>(headers), Void::class.java)
 
             assertEquals(HttpStatus.NO_CONTENT, response.statusCode)
-            verify(notificationSettingsService).changeNotificationStatus(telegramUser.telegramId, active)
+            verify(notificationSettingsService).changeNotificationStatus(telegramUser.externalUserId, active)
         }
 
         @Test
@@ -324,7 +324,7 @@ class SettingControllerTest @Autowired constructor(
             val response = restTemplate.exchange(url, HttpMethod.PUT, HttpEntity<Void>(headers), Void::class.java)
 
             assertEquals(HttpStatus.NO_CONTENT, response.statusCode)
-            verify(notificationSettingsService).changeDailyGoal(telegramUser.telegramId, 2500)
+            verify(notificationSettingsService).changeDailyGoal(telegramUser.externalUserId, 2500)
         }
 
         @Test

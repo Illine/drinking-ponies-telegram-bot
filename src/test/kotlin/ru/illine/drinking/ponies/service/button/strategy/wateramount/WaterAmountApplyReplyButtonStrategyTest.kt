@@ -30,7 +30,7 @@ import java.time.ZoneOffset
 @DisplayName("WaterAmountApplyReplyButtonStrategy Unit Test")
 class WaterAmountApplyReplyButtonStrategyTest {
 
-    private val userId = 1L
+    private val externalUserId = 1L
     private val chatId = 2L
     private val messageId = 3
     private val fixedNow = LocalDateTime.of(2025, 1, 1, 14, 0, 0)
@@ -61,8 +61,8 @@ class WaterAmountApplyReplyButtonStrategyTest {
     @EnumSource(WaterAmountType::class)
     @DisplayName("reply(): deletes reply markup on original message")
     fun `reply deletes reply markup`(waterAmountType: WaterAmountType) {
-        val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = userId)
-        `when`(notificationSettingsService.resetNotificationTimer(userId, fixedNow)).thenReturn(notificationDto)
+        val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = externalUserId)
+        `when`(notificationSettingsService.resetNotificationTimer(externalUserId, fixedNow)).thenReturn(notificationDto)
 
         strategy.reply(buildCallbackQuery(waterAmountType.queryData.toString()))
 
@@ -73,20 +73,20 @@ class WaterAmountApplyReplyButtonStrategyTest {
     @EnumSource(WaterAmountType::class)
     @DisplayName("reply(): updates last notification time to now()")
     fun `reply updates notification time`(waterAmountType: WaterAmountType) {
-        val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = userId)
-        `when`(notificationSettingsService.resetNotificationTimer(userId, fixedNow)).thenReturn(notificationDto)
+        val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = externalUserId)
+        `when`(notificationSettingsService.resetNotificationTimer(externalUserId, fixedNow)).thenReturn(notificationDto)
 
         strategy.reply(buildCallbackQuery(waterAmountType.queryData.toString()))
 
-        verify(notificationSettingsService).resetNotificationTimer(userId, fixedNow)
+        verify(notificationSettingsService).resetNotificationTimer(externalUserId, fixedNow)
     }
 
     @ParameterizedTest
     @EnumSource(WaterAmountType::class)
     @DisplayName("reply(): sends YES confirmation message")
     fun `reply sends confirmation message`(waterAmountType: WaterAmountType) {
-        val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = userId)
-        `when`(notificationSettingsService.resetNotificationTimer(userId, fixedNow)).thenReturn(notificationDto)
+        val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = externalUserId)
+        `when`(notificationSettingsService.resetNotificationTimer(externalUserId, fixedNow)).thenReturn(notificationDto)
 
         val captor = ArgumentCaptor.forClass(SendMessage::class.java)
         strategy.reply(buildCallbackQuery(waterAmountType.queryData.toString()))
@@ -101,8 +101,8 @@ class WaterAmountApplyReplyButtonStrategyTest {
     @EnumSource(WaterAmountType::class)
     @DisplayName("reply(): records water statistic with correct water amount")
     fun `reply records statistic with correct water amount`(waterAmountType: WaterAmountType) {
-        val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = userId)
-        `when`(notificationSettingsService.resetNotificationTimer(userId, fixedNow)).thenReturn(notificationDto)
+        val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = externalUserId)
+        `when`(notificationSettingsService.resetNotificationTimer(externalUserId, fixedNow)).thenReturn(notificationDto)
 
         strategy.reply(buildCallbackQuery(waterAmountType.queryData.toString()))
 
@@ -116,8 +116,8 @@ class WaterAmountApplyReplyButtonStrategyTest {
     @Test
     @DisplayName("reply(): falls back to ML_250 when queryData doesn't match any WaterAmountType")
     fun `reply falls back to ML_250 for unknown queryData`() {
-        val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = userId)
-        `when`(notificationSettingsService.resetNotificationTimer(userId, fixedNow)).thenReturn(notificationDto)
+        val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = externalUserId)
+        `when`(notificationSettingsService.resetNotificationTimer(externalUserId, fixedNow)).thenReturn(notificationDto)
 
         strategy.reply(buildCallbackQuery("00000000-0000-0000-0000-000000000000"))
 
@@ -131,14 +131,14 @@ class WaterAmountApplyReplyButtonStrategyTest {
     @Test
     @DisplayName("reply(): executes operations in correct order")
     fun `reply executes in correct order`() {
-        val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = userId)
-        `when`(notificationSettingsService.resetNotificationTimer(userId, fixedNow)).thenReturn(notificationDto)
+        val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = externalUserId)
+        `when`(notificationSettingsService.resetNotificationTimer(externalUserId, fixedNow)).thenReturn(notificationDto)
 
         strategy.reply(buildCallbackQuery(WaterAmountType.ML_250.queryData.toString()))
 
         val inOrder = inOrder(messageEditorService, notificationSettingsService, waterStatisticService, sender)
         inOrder.verify(messageEditorService).deleteReplyMarkup(chatId, messageId)
-        inOrder.verify(notificationSettingsService).resetNotificationTimer(userId, fixedNow)
+        inOrder.verify(notificationSettingsService).resetNotificationTimer(externalUserId, fixedNow)
         inOrder.verify(waterStatisticService).recordEvent(
             notificationDto.telegramUser,
             AnswerNotificationType.YES,
@@ -172,8 +172,8 @@ class WaterAmountApplyReplyButtonStrategyTest {
     @Test
     @DisplayName("reply(): sends YES confirmation message even when recordEvent throws an exception")
     fun `reply sends confirmation message when recordEvent throws`() {
-        val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = userId)
-        `when`(notificationSettingsService.resetNotificationTimer(userId, fixedNow)).thenReturn(notificationDto)
+        val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = externalUserId)
+        `when`(notificationSettingsService.resetNotificationTimer(externalUserId, fixedNow)).thenReturn(notificationDto)
         doThrow(RuntimeException("statistic error")).`when`(waterStatisticService)
             .recordEvent(any(), any(), anyInt())
 
@@ -188,7 +188,7 @@ class WaterAmountApplyReplyButtonStrategyTest {
 
     private fun buildCallbackQuery(queryData: String): CallbackQuery {
         val user = mock(User::class.java)
-        `when`(user.id).thenReturn(userId)
+        `when`(user.id).thenReturn(externalUserId)
 
         val message = mock(Message::class.java)
         `when`(message.chatId).thenReturn(chatId)

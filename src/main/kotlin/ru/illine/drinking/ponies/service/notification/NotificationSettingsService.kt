@@ -10,36 +10,36 @@ import java.time.LocalTime
 
 interface NotificationSettingsService {
 
-    fun getAllSettings(telegramUserId: Long): SettingDto
+    fun getAllSettings(externalUserId: Long): SettingDto
 
-    fun getNextNotificationAt(telegramUserId: Long): Instant
+    fun getNextNotificationAt(externalUserId: Long): Instant
 
-    fun getNotificationSettings(telegramUserId: Long): NotificationSettingDto
+    fun getNotificationSettings(externalUserId: Long): NotificationSettingDto
 
     fun getAllNotificationSettings(): Collection<NotificationSettingDto>
 
-    fun getQuietMode(telegramUserId: Long): Pair<LocalTime, LocalTime>
+    fun getQuietMode(externalUserId: Long): Pair<LocalTime, LocalTime>
 
-    fun resetNotificationTimer(telegramUserId: Long, time: LocalDateTime): NotificationSettingDto
+    fun resetNotificationTimer(externalUserId: Long, time: LocalDateTime): NotificationSettingDto
 
-    fun changeInterval(telegramUserId: Long, notificationInterval: IntervalNotificationType): NotificationSettingDto
+    fun changeInterval(externalUserId: Long, notificationInterval: IntervalNotificationType): NotificationSettingDto
 
-    fun changeQuietMode(userId: Long, start: LocalTime, end: LocalTime)
+    fun changeQuietMode(externalUserId: Long, start: LocalTime, end: LocalTime)
 
-    fun disableQuietMode(userId: Long)
+    fun disableQuietMode(externalUserId: Long)
 
-    fun isEnabledNotifications(telegramUserId: Long): Boolean
+    fun isEnabledNotifications(externalUserId: Long): Boolean
 
-    fun changeNotificationStatus(telegramUserId: Long, active: Boolean)
+    fun changeNotificationStatus(externalUserId: Long, active: Boolean)
 
-    fun changeTimezone(telegramUserId: Long, timezone: String)
+    fun changeTimezone(externalUserId: Long, timezone: String)
 
-    fun pauseNotifications(telegramUserId: Long, minutes: Long)
+    fun pauseNotifications(externalUserId: Long, minutes: Long)
 
-    fun cancelPause(telegramUserId: Long)
+    fun cancelPause(externalUserId: Long)
 
-    fun getPauseState(telegramUserId: Long): PauseStateResponse
+    fun getPauseState(externalUserId: Long): PauseStateResponse
 
-    fun changeDailyGoal(telegramUserId: Long, goalMl: Int)
+    fun changeDailyGoal(externalUserId: Long, goalMl: Int)
 
 }

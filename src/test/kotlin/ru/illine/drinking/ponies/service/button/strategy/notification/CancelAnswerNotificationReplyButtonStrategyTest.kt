@@ -29,7 +29,7 @@ import java.time.ZoneOffset
 @DisplayName("CancelAnswerNotificationReplyButtonStrategy Unit Test")
 class CancelAnswerNotificationReplyButtonStrategyTest {
 
-    private val userId = 1L
+    private val externalUserId = 1L
     private val chatId = 2L
     private val messageId = 3
     private val fixedNow = LocalDateTime.of(2025, 1, 1, 14, 0, 0)
@@ -59,8 +59,8 @@ class CancelAnswerNotificationReplyButtonStrategyTest {
     @Test
     @DisplayName("reply(): edits original message with CANCEL display name")
     fun `reply edits original message`() {
-        val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = userId)
-        `when`(notificationSettingsService.resetNotificationTimer(userId, fixedNow)).thenReturn(notificationDto)
+        val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = externalUserId)
+        `when`(notificationSettingsService.resetNotificationTimer(externalUserId, fixedNow)).thenReturn(notificationDto)
 
         strategy.reply(buildCallbackQuery())
 
@@ -72,19 +72,19 @@ class CancelAnswerNotificationReplyButtonStrategyTest {
     @Test
     @DisplayName("reply(): updates last notification time to now(clock)")
     fun `reply updates notification time`() {
-        val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = userId)
-        `when`(notificationSettingsService.resetNotificationTimer(userId, fixedNow)).thenReturn(notificationDto)
+        val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = externalUserId)
+        `when`(notificationSettingsService.resetNotificationTimer(externalUserId, fixedNow)).thenReturn(notificationDto)
 
         strategy.reply(buildCallbackQuery())
 
-        verify(notificationSettingsService).resetNotificationTimer(userId, fixedNow)
+        verify(notificationSettingsService).resetNotificationTimer(externalUserId, fixedNow)
     }
 
     @Test
     @DisplayName("reply(): records water statistic with CANCEL event type")
     fun `reply records statistic`() {
-        val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = userId)
-        `when`(notificationSettingsService.resetNotificationTimer(userId, fixedNow)).thenReturn(notificationDto)
+        val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = externalUserId)
+        `when`(notificationSettingsService.resetNotificationTimer(externalUserId, fixedNow)).thenReturn(notificationDto)
 
         strategy.reply(buildCallbackQuery())
 
@@ -94,8 +94,8 @@ class CancelAnswerNotificationReplyButtonStrategyTest {
     @Test
     @DisplayName("reply(): sends CANCEL confirmation message")
     fun `reply sends confirmation message`() {
-        val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = userId)
-        `when`(notificationSettingsService.resetNotificationTimer(userId, fixedNow)).thenReturn(notificationDto)
+        val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = externalUserId)
+        `when`(notificationSettingsService.resetNotificationTimer(externalUserId, fixedNow)).thenReturn(notificationDto)
 
         val captor = ArgumentCaptor.forClass(SendMessage::class.java)
         strategy.reply(buildCallbackQuery())
@@ -131,8 +131,8 @@ class CancelAnswerNotificationReplyButtonStrategyTest {
     @Test
     @DisplayName("reply(): sends CANCEL confirmation message even when recordEvent throws an exception")
     fun `reply sends confirmation message when recordEvent throws`() {
-        val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = userId)
-        `when`(notificationSettingsService.resetNotificationTimer(userId, fixedNow)).thenReturn(notificationDto)
+        val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = externalUserId)
+        `when`(notificationSettingsService.resetNotificationTimer(externalUserId, fixedNow)).thenReturn(notificationDto)
         doThrow(RuntimeException("statistic error")).`when`(waterStatisticService)
             .recordEvent(any(), any(), anyInt())
 
@@ -147,7 +147,7 @@ class CancelAnswerNotificationReplyButtonStrategyTest {
 
     private fun buildCallbackQuery(): CallbackQuery {
         val user = mock(User::class.java)
-        `when`(user.id).thenReturn(userId)
+        `when`(user.id).thenReturn(externalUserId)
 
         val message = mock(Message::class.java)
         `when`(message.chatId).thenReturn(chatId)

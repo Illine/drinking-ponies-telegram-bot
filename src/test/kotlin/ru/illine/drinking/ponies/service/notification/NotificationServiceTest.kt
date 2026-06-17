@@ -19,7 +19,7 @@ import ru.illine.drinking.ponies.test.tag.UnitTest
 @DisplayName("NotificationService Unit Test")
 class NotificationServiceTest {
 
-    private val userId = 1L
+    private val externalUserId = 1L
     private val chatId = 2L
 
     private lateinit var sender: TelegramClient
@@ -39,34 +39,34 @@ class NotificationServiceTest {
     @Test
     @DisplayName("start(): existing user - sends greeting and default settings, finds existing settings")
     fun `start existing user`() {
-        val dto = DtoGenerator.generateNotificationDto(externalUserId = userId)
-        doReturn(true).`when`(notificationAccessService).existsByTelegramUserId(userId)
-        `when`(notificationAccessService.findNotificationSettingByTelegramUserId(userId)).thenReturn(dto)
+        val dto = DtoGenerator.generateNotificationDto(externalUserId = externalUserId)
+        doReturn(true).`when`(notificationAccessService).existsByExternalUserId(externalUserId)
+        `when`(notificationAccessService.findNotificationSettingByExternalUserId(externalUserId)).thenReturn(dto)
 
         service.start(buildMessageContext())
 
         verify(sender, times(2)).execute(any<SendMessage>())
-        verify(notificationAccessService).findNotificationSettingByTelegramUserId(userId)
+        verify(notificationAccessService).findNotificationSettingByExternalUserId(externalUserId)
         verify(notificationAccessService, never()).save(any(), any(), any())
     }
 
     @Test
     @DisplayName("start(): new user - creates user, saves settings, sends default settings message")
     fun `start new user`() {
-        val dto = DtoGenerator.generateNotificationDto(externalUserId = userId)
-        doReturn(false).`when`(notificationAccessService).existsByTelegramUserId(userId)
-        `when`(notificationAccessService.findNotificationSettingByTelegramUserId(userId)).thenReturn(dto)
+        val dto = DtoGenerator.generateNotificationDto(externalUserId = externalUserId)
+        doReturn(false).`when`(notificationAccessService).existsByExternalUserId(externalUserId)
+        `when`(notificationAccessService.findNotificationSettingByExternalUserId(externalUserId)).thenReturn(dto)
 
         service.start(buildMessageContext())
 
         verify(notificationAccessService).save(any(), any(), any())
-        verify(notificationAccessService).findNotificationSettingByTelegramUserId(userId)
+        verify(notificationAccessService).findNotificationSettingByExternalUserId(externalUserId)
         verify(sender, times(2)).execute(any<SendMessage>())
     }
 
     private fun buildMessageContext(): MessageContext {
         val user = mock(User::class.java)
-        `when`(user.id).thenReturn(userId)
+        `when`(user.id).thenReturn(externalUserId)
         `when`(user.userName).thenReturn("testUser")
 
         val context = mock(MessageContext::class.java)

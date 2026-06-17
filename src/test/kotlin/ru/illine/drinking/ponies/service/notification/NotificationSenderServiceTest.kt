@@ -29,7 +29,7 @@ import java.time.ZoneOffset
 @DisplayName("NotificationSenderService Unit Test")
 class NotificationSenderServiceTest {
 
-    private val userId = 1L
+    private val externalUserId = 1L
     private val chatId = 2L
 
     private val retryIntervalMinutes = 1L
@@ -81,7 +81,7 @@ class NotificationSenderServiceTest {
     @DisplayName("sendNotifications(): sends notification messages, increments attempts, updates settings")
     fun `sendNotifications sends and updates`() {
         val dto = DtoGenerator.generateNotificationDto(
-            externalUserId = userId,
+            externalUserId = externalUserId,
             externalChatId = chatId,
             notificationAttempts = 0,
             previousNotificationMessageId = 10
@@ -107,14 +107,14 @@ class NotificationSenderServiceTest {
     @Test
     @DisplayName("sendNotifications(): 403 error - disables user and excludes from settings update")
     fun `sendNotifications on 403 disables notifications`() {
-        val dto = DtoGenerator.generateNotificationDto(externalUserId = userId, externalChatId = chatId)
+        val dto = DtoGenerator.generateNotificationDto(externalUserId = externalUserId, externalChatId = chatId)
         val exception = mock(TelegramApiRequestException::class.java)
         `when`(exception.errorCode).thenReturn(403)
         doThrow(exception).`when`(sender).execute(any<SendMessage>())
 
         service.sendNotifications(listOf(dto))
 
-        verify(notificationAccessService).disableNotifications(userId)
+        verify(notificationAccessService).disableNotifications(externalUserId)
         verify(notificationAccessService).updateNotificationSettings(anyCollection())
     }
 
@@ -132,7 +132,7 @@ class NotificationSenderServiceTest {
     @DisplayName("suspendNotifications(): sends suspend message, resets attempts and time, updates settings")
     fun `suspendNotifications sends and updates`() {
         val dto = DtoGenerator.generateNotificationDto(
-            externalUserId = userId,
+            externalUserId = externalUserId,
             externalChatId = chatId,
             notificationAttempts = 3,
             previousNotificationMessageId = 10
@@ -150,7 +150,7 @@ class NotificationSenderServiceTest {
     @Test
     @DisplayName("suspendNotifications(): records water statistic events for each sent notification")
     fun `suspendNotifications records water statistics`() {
-        val dto = DtoGenerator.generateNotificationDto(externalUserId = userId, externalChatId = chatId)
+        val dto = DtoGenerator.generateNotificationDto(externalUserId = externalUserId, externalChatId = chatId)
 
         service.suspendNotifications(listOf(dto))
 
@@ -160,21 +160,21 @@ class NotificationSenderServiceTest {
     @Test
     @DisplayName("suspendNotifications(): 403 error - disables user and excludes from settings update")
     fun `suspendNotifications on 403 disables notifications`() {
-        val dto = DtoGenerator.generateNotificationDto(externalUserId = userId, externalChatId = chatId)
+        val dto = DtoGenerator.generateNotificationDto(externalUserId = externalUserId, externalChatId = chatId)
         val exception = mock(TelegramApiRequestException::class.java)
         `when`(exception.errorCode).thenReturn(403)
         doThrow(exception).`when`(sender).execute(any<SendMessage>())
 
         service.suspendNotifications(listOf(dto))
 
-        verify(notificationAccessService).disableNotifications(userId)
+        verify(notificationAccessService).disableNotifications(externalUserId)
         verify(notificationAccessService).updateNotificationSettings(anyCollection())
     }
 
     @Test
     @DisplayName("sendNotifications(): non-403 error - rethrows exception")
     fun `sendNotifications rethrows non-403 exception`() {
-        val dto = DtoGenerator.generateNotificationDto(externalUserId = userId, externalChatId = chatId)
+        val dto = DtoGenerator.generateNotificationDto(externalUserId = externalUserId, externalChatId = chatId)
         val exception = mock(TelegramApiRequestException::class.java)
         `when`(exception.errorCode).thenReturn(500)
         doThrow(exception).`when`(sender).execute(any<SendMessage>())
@@ -187,7 +187,7 @@ class NotificationSenderServiceTest {
     @Test
     @DisplayName("sendNotifications(): null errorCode - rethrows exception")
     fun `sendNotifications rethrows null errorCode exception`() {
-        val dto = DtoGenerator.generateNotificationDto(externalUserId = userId, externalChatId = chatId)
+        val dto = DtoGenerator.generateNotificationDto(externalUserId = externalUserId, externalChatId = chatId)
         val exception = mock(TelegramApiRequestException::class.java)
         doReturn(null).`when`(exception).errorCode
         doThrow(exception).`when`(sender).execute(any<SendMessage>())
@@ -200,7 +200,7 @@ class NotificationSenderServiceTest {
     @Test
     @DisplayName("suspendNotifications(): non-403 error - rethrows exception")
     fun `suspendNotifications rethrows non-403 exception`() {
-        val dto = DtoGenerator.generateNotificationDto(externalUserId = userId, externalChatId = chatId)
+        val dto = DtoGenerator.generateNotificationDto(externalUserId = externalUserId, externalChatId = chatId)
         val exception = mock(TelegramApiRequestException::class.java)
         `when`(exception.errorCode).thenReturn(500)
         doThrow(exception).`when`(sender).execute(any<SendMessage>())
