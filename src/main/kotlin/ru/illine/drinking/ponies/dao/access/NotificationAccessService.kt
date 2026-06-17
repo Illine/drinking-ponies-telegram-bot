@@ -11,9 +11,9 @@ interface NotificationAccessService {
 
     fun findAllNotificationSettings(): Set<NotificationSettingDto>
 
-    fun findNotificationSettingByTelegramUserId(telegramUserId: Long): NotificationSettingDto
+    fun findNotificationSettingByExternalUserId(externalUserId: Long): NotificationSettingDto
 
-    fun existsByTelegramUserId(telegramUserId: Long): Boolean
+    fun existsByExternalUserId(externalUserId: Long): Boolean
 
     fun save(
         user: TelegramUserDto,
@@ -22,27 +22,27 @@ interface NotificationAccessService {
     ): TelegramUserDto
 
     fun updateNotificationSettings(
-        telegramUserId: Long, notificationInterval: IntervalNotificationType
+        externalUserId: Long, notificationInterval: IntervalNotificationType
     ): NotificationSettingDto
 
-    fun updateTimeOfLastNotification(telegramUserId: Long, time: LocalDateTime): NotificationSettingDto
+    fun updateTimeOfLastNotification(externalUserId: Long, time: LocalDateTime): NotificationSettingDto
 
     fun updateNotificationSettings(settings: Collection<NotificationSettingDto>): Set<NotificationSettingDto>
 
-    fun isEnabledNotifications(telegramUserId: Long): Boolean
+    fun isEnabledNotifications(externalUserId: Long): Boolean
 
-    fun enableNotifications(telegramUserId: Long)
+    fun enableNotifications(externalUserId: Long)
 
-    fun disableNotifications(telegramUserId: Long)
+    fun disableNotifications(externalUserId: Long)
 
-    fun changeQuietMode(userId: Long, start: LocalTime, end: LocalTime)
+    fun changeQuietMode(externalUserId: Long, start: LocalTime, end: LocalTime)
 
-    fun disableQuietMode(userId: Long)
+    fun disableQuietMode(externalUserId: Long)
 
-    fun changeTimezone(telegramUserId: Long, timezone: String)
+    fun changeTimezone(externalUserId: Long, timezone: String)
 
-    fun setPause(telegramUserId: Long, pauseUntil: LocalDateTime?): NotificationSettingDto
+    fun setPause(externalUserId: Long, pauseUntil: LocalDateTime?): NotificationSettingDto
 
-    fun updateDailyGoal(telegramUserId: Long, goalMl: Int)
+    fun updateDailyGoal(externalUserId: Long, goalMl: Int)
 
 }

@@ -49,7 +49,7 @@ class UserControllerTest @Autowired constructor(
     private val NON_ADMIN_USER_ID = 2L
     private val MISSING_USER_ID = 0L
 
-    private val telegramUser = DtoGenerator.generateTelegramUserDto(telegramId = ADMIN_USER_ID)
+    private val telegramUser = DtoGenerator.generateTelegramUserDto(externalUserId = ADMIN_USER_ID)
 
     @BeforeEach
     fun setUp() {
@@ -79,14 +79,14 @@ class UserControllerTest @Autowired constructor(
 
             assertEquals(HttpStatus.OK, response.statusCode)
             assertNotNull(response.body)
-            assertEquals(ADMIN_USER_ID, response.body!!.telegramUserId)
+            assertEquals(ADMIN_USER_ID, response.body!!.externalUserId)
             assertEquals(true, response.body!!.isAdmin)
         }
 
         @Test
         @DisplayName("non-admin user - returns 200 with isAdmin=false")
         fun `returns 200 with isAdmin false for non-admin`() {
-            `when`(telegramValidatorService.map(any())).thenReturn(telegramUser.copy(telegramId = NON_ADMIN_USER_ID))
+            `when`(telegramValidatorService.map(any())).thenReturn(telegramUser.copy(externalUserId = NON_ADMIN_USER_ID))
             val headers = buildHeaders()
 
             val response = restTemplate.exchange(
@@ -95,14 +95,14 @@ class UserControllerTest @Autowired constructor(
 
             assertEquals(HttpStatus.OK, response.statusCode)
             assertNotNull(response.body)
-            assertEquals(NON_ADMIN_USER_ID, response.body!!.telegramUserId)
+            assertEquals(NON_ADMIN_USER_ID, response.body!!.externalUserId)
             assertEquals(false, response.body!!.isAdmin)
         }
 
         @Test
         @DisplayName("user not in DB - returns 200 with isAdmin=false")
         fun `returns 200 with isAdmin false for user not in db`() {
-            `when`(telegramValidatorService.map(any())).thenReturn(telegramUser.copy(telegramId = MISSING_USER_ID))
+            `when`(telegramValidatorService.map(any())).thenReturn(telegramUser.copy(externalUserId = MISSING_USER_ID))
             val headers = buildHeaders()
 
             val response = restTemplate.exchange(
@@ -111,7 +111,7 @@ class UserControllerTest @Autowired constructor(
 
             assertEquals(HttpStatus.OK, response.statusCode)
             assertNotNull(response.body)
-            assertEquals(MISSING_USER_ID, response.body!!.telegramUserId)
+            assertEquals(MISSING_USER_ID, response.body!!.externalUserId)
             assertEquals(false, response.body!!.isAdmin)
         }
 

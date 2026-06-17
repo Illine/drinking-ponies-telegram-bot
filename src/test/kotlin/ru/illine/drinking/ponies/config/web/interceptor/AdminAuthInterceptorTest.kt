@@ -26,7 +26,7 @@ class AdminAuthInterceptorTest {
     private lateinit var interceptor: AdminAuthInterceptor
 
     private val adminUser = TelegramUserDto(
-        telegramId = 1L,
+        externalUserId = 1L,
         firstName = "Admin",
         lastName = null,
         username = null,
@@ -34,7 +34,7 @@ class AdminAuthInterceptorTest {
     )
 
     private val nonAdminUser = TelegramUserDto(
-        telegramId = 2L,
+        externalUserId = 2L,
         firstName = "User",
         lastName = null,
         username = null,

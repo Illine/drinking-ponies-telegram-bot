@@ -27,7 +27,7 @@ class AdminAuthInterceptor : HandlerInterceptor {
             return true
         }
 
-        logger.warn("Forbidden admin access for telegramId [{}]", telegramUser.telegramId)
+        logger.warn("Forbidden admin access for externalUserId [{}]", telegramUser.externalUserId)
         response.status = HttpServletResponse.SC_FORBIDDEN
         response.setHeader(AuthErrorType.HEADER_NAME, AuthErrorType.FORBIDDEN_ADMIN.value)
         return false

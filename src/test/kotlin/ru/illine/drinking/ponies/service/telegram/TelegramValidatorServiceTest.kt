@@ -82,7 +82,7 @@ class TelegramValidatorServiceTest {
 
         val result = service.map(initData)
 
-        assertEquals(1L, result.telegramId)
+        assertEquals(1L, result.externalUserId)
         assertEquals("First Name", result.firstName)
     }
 

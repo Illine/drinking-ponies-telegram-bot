@@ -31,7 +31,7 @@ import java.util.stream.Stream
 @DisplayName("StatisticsService Unit Test")
 class StatisticsServiceTest {
 
-    private val userId = 1L
+    private val externalUserId = 1L
 
     private lateinit var notificationAccessService: NotificationAccessService
     private lateinit var waterStatisticAccessService: WaterStatisticAccessService
@@ -51,9 +51,9 @@ class StatisticsServiceTest {
     }
 
     private fun stubSettings(zone: String = "UTC", dailyGoalMl: Int = 2000) {
-        whenever(notificationAccessService.findNotificationSettingByTelegramUserId(userId))
+        whenever(notificationAccessService.findNotificationSettingByExternalUserId(externalUserId))
             .thenReturn(DtoGenerator.generateNotificationDto(
-                externalUserId = userId, userTimeZone = zone, dailyGoalMl = dailyGoalMl
+                externalUserId = externalUserId, userTimeZone = zone, dailyGoalMl = dailyGoalMl
             ))
     }
 
@@ -89,17 +89,17 @@ class StatisticsServiceTest {
         val expectedFromService = emptyList<WaterStatisticDto>()
         stubEvents(expectedFromService)
 
-        val result = service.getToday(userId)
+        val result = service.getToday(externalUserId)
 
         val startCaptor = argumentCaptor<LocalDateTime>()
         val endCaptor = argumentCaptor<LocalDateTime>()
         verify(waterStatisticAccessService).findByUserAndEventTimeBetween(
-            eq(userId), startCaptor.capture(), endCaptor.capture()
+            eq(externalUserId), startCaptor.capture(), endCaptor.capture()
         )
         assertEquals(expectedStart, startCaptor.firstValue)
         assertEquals(expectedEnd, endCaptor.firstValue)
         assertSame(expectedFromService, result)
-        verify(notificationAccessService).findNotificationSettingByTelegramUserId(userId)
+        verify(notificationAccessService).findNotificationSettingByExternalUserId(externalUserId)
     }
 
     @Test
@@ -109,14 +109,14 @@ class StatisticsServiceTest {
         stubSettings(zone = "Europe/Moscow")
         val expected = listOf(
             DtoGenerator.generateWaterStatisticDto(
-                externalUserId = userId,
+                externalUserId = externalUserId,
                 eventTime = LocalDateTime.of(2026, 5, 8, 8, 15),
                 waterAmountMl = 250,
             ),
         )
         stubEvents(expected)
 
-        val result = service.getToday(userId)
+        val result = service.getToday(externalUserId)
 
         assertEquals(expected, result)
     }
@@ -130,7 +130,7 @@ class StatisticsServiceTest {
         stubEvents(
             listOf(
                 DtoGenerator.generateWaterStatisticDto(
-                    externalUserId = userId,
+                    externalUserId = externalUserId,
                     eventTime = LocalDateTime.of(2026, 5, 12, 8, 15),
                     waterAmountMl = 250,
                 )
@@ -139,7 +139,7 @@ class StatisticsServiceTest {
         stubFirstEntry(LocalDateTime.of(2026, 5, 1, 9, 0))
         stubInsight("insight day")
 
-        val result = service.getStatistics(userId, today, today)
+        val result = service.getStatistics(externalUserId, today, today)
 
         assertEquals(24, result.points.size)
         assertEquals("08:00", result.points[8].label)
@@ -160,12 +160,12 @@ class StatisticsServiceTest {
         stubEvents(
             listOf(
                 DtoGenerator.generateWaterStatisticDto(
-                    externalUserId = userId,
+                    externalUserId = externalUserId,
                     eventTime = LocalDateTime.of(2026, 5, 4, 10, 0),
                     waterAmountMl = 2100,
                 ),
                 DtoGenerator.generateWaterStatisticDto(
-                    externalUserId = userId,
+                    externalUserId = externalUserId,
                     eventTime = LocalDateTime.of(2026, 5, 6, 10, 0),
                     waterAmountMl = 2400,
                 ),
@@ -174,7 +174,7 @@ class StatisticsServiceTest {
         stubFirstEntry(null)
         stubInsight("insight week")
 
-        val result = service.getStatistics(userId, LocalDate.of(2026, 5, 4), LocalDate.of(2026, 5, 10))
+        val result = service.getStatistics(externalUserId, LocalDate.of(2026, 5, 4), LocalDate.of(2026, 5, 10))
 
         assertEquals(7, result.points.size)
         assertEquals("2026-05-04", result.points[0].label)
@@ -199,7 +199,7 @@ class StatisticsServiceTest {
         stubEvents(
             listOf(
                 DtoGenerator.generateWaterStatisticDto(
-                    externalUserId = userId,
+                    externalUserId = externalUserId,
                     eventTime = LocalDateTime.of(2026, 5, 1, 9, 30),
                     waterAmountMl = 400,
                 )
@@ -208,7 +208,7 @@ class StatisticsServiceTest {
         stubFirstEntry(null)
         stubInsight()
 
-        val result = service.getStatistics(userId, past, past)
+        val result = service.getStatistics(externalUserId, past, past)
 
         assertEquals(24, result.points.size)
         assertEquals(400, result.points[9].valueMl)
@@ -226,19 +226,19 @@ class StatisticsServiceTest {
         stubEvents(
             listOf(
                 DtoGenerator.generateWaterStatisticDto(
-                    externalUserId = userId,
+                    externalUserId = externalUserId,
                     eventTime = LocalDateTime.of(2026, 5, 12, 8, 0),
                     eventType = AnswerNotificationType.YES,
                     waterAmountMl = 500,
                 ),
                 DtoGenerator.generateWaterStatisticDto(
-                    externalUserId = userId,
+                    externalUserId = externalUserId,
                     eventTime = LocalDateTime.of(2026, 5, 12, 10, 0),
                     eventType = AnswerNotificationType.SNOOZE,
                     waterAmountMl = 100,
                 ),
                 DtoGenerator.generateWaterStatisticDto(
-                    externalUserId = userId,
+                    externalUserId = externalUserId,
                     eventTime = LocalDateTime.of(2026, 5, 12, 14, 0),
                     eventType = AnswerNotificationType.CANCEL,
                     waterAmountMl = 200,
@@ -248,7 +248,7 @@ class StatisticsServiceTest {
         stubFirstEntry(null)
         stubInsight()
 
-        val result = service.getStatistics(userId, today, today)
+        val result = service.getStatistics(externalUserId, today, today)
 
         assertEquals(500, result.averageMlPerDay)
         assertEquals(500, result.points[8].valueMl)
@@ -267,7 +267,7 @@ class StatisticsServiceTest {
         stubSettings()
         val recentMet = (0L..6L).map { offset ->
             DtoGenerator.generateWaterStatisticDto(
-                externalUserId = userId,
+                externalUserId = externalUserId,
                 eventTime = today.minusDays(offset).atTime(10, 0),
                 waterAmountMl = 2200,
             )
@@ -276,7 +276,7 @@ class StatisticsServiceTest {
         stubFirstEntry(null)
         stubInsight()
 
-        val result = service.getStatistics(userId, LocalDate.of(2026, 4, 1), LocalDate.of(2026, 4, 30))
+        val result = service.getStatistics(externalUserId, LocalDate.of(2026, 4, 1), LocalDate.of(2026, 4, 30))
 
         assertEquals(7, result.currentStreakDays)
     }
@@ -291,7 +291,7 @@ class StatisticsServiceTest {
         stubSettings()
         val events = (0L..500L).map { offset ->
             DtoGenerator.generateWaterStatisticDto(
-                externalUserId = userId,
+                externalUserId = externalUserId,
                 eventTime = today.minusDays(offset).atTime(10, 0),
                 waterAmountMl = 2200,
             )
@@ -301,7 +301,7 @@ class StatisticsServiceTest {
         stubInsight()
 
         val result = service.getStatistics(
-            userId, today.minusDays(500), today
+            externalUserId, today.minusDays(500), today
         )
 
         assertEquals(367, result.currentStreakDays)
@@ -319,13 +319,13 @@ class StatisticsServiceTest {
             listOf(
                 // outside range, fetched only for streak
                 DtoGenerator.generateWaterStatisticDto(
-                    externalUserId = userId,
+                    externalUserId = externalUserId,
                     eventTime = LocalDateTime.of(2026, 5, 1, 10, 0),
                     waterAmountMl = 9999,
                 ),
                 // inside range
                 DtoGenerator.generateWaterStatisticDto(
-                    externalUserId = userId,
+                    externalUserId = externalUserId,
                     eventTime = LocalDateTime.of(2026, 5, 17, 10, 0),
                     waterAmountMl = 2500,
                 ),
@@ -335,7 +335,7 @@ class StatisticsServiceTest {
         stubInsight()
 
         val result = service.getStatistics(
-            userId, LocalDate.of(2026, 5, 15), today
+            externalUserId, LocalDate.of(2026, 5, 15), today
         )
 
         assertNotNull(result.bestDay)
@@ -351,7 +351,7 @@ class StatisticsServiceTest {
         stubSettings()
 
         val ex = assertThrows(IllegalArgumentException::class.java) {
-            service.getStatistics(userId, LocalDate.of(2026, 5, 10), LocalDate.of(2026, 5, 9))
+            service.getStatistics(externalUserId, LocalDate.of(2026, 5, 10), LocalDate.of(2026, 5, 9))
         }
         assertTrue(ex.message!!.contains("'from' must be before or equal to 'to'"))
     }
@@ -364,7 +364,7 @@ class StatisticsServiceTest {
         stubSettings()
 
         val ex = assertThrows(IllegalArgumentException::class.java) {
-            service.getStatistics(userId, today.plusDays(1), today.plusDays(2))
+            service.getStatistics(externalUserId, today.plusDays(1), today.plusDays(2))
         }
         assertTrue(ex.message!!.contains("'from' must not be in the future"))
     }
@@ -379,10 +379,10 @@ class StatisticsServiceTest {
         stubFirstEntry(null)
         stubInsight()
 
-        val result = service.getStatistics(userId, today, today)
+        val result = service.getStatistics(externalUserId, today, today)
 
         assertNull(result.firstEntryAt)
-        verify(waterStatisticAccessService).findEarliestEventTimeByUser(userId)
+        verify(waterStatisticAccessService).findEarliestEventTimeByUser(externalUserId)
     }
 
     @Test
@@ -395,7 +395,7 @@ class StatisticsServiceTest {
         stubFirstEntry(LocalDateTime.of(2026, 1, 15, 7, 45))
         stubInsight()
 
-        val result = service.getStatistics(userId, today, today)
+        val result = service.getStatistics(externalUserId, today, today)
 
         assertEquals(Instant.parse("2026-01-15T07:45:00Z"), result.firstEntryAt)
     }
@@ -409,7 +409,7 @@ class StatisticsServiceTest {
         stubEvents(
             listOf(
                 DtoGenerator.generateWaterStatisticDto(
-                    externalUserId = userId,
+                    externalUserId = externalUserId,
                     eventTime = LocalDateTime.of(2026, 5, 12, 10, 0),
                     waterAmountMl = 2200,
                 )
@@ -418,7 +418,7 @@ class StatisticsServiceTest {
         stubFirstEntry(null)
         stubInsight("text")
 
-        val result = service.getStatistics(userId, today, today)
+        val result = service.getStatistics(externalUserId, today, today)
 
         val ctxCaptor = argumentCaptor<InsightStatsContext>()
         verify(messageProvider).getMessage(eq(MessageSpec.InsightStats), ctxCaptor.capture())

@@ -194,7 +194,7 @@ class NotificationControllerTest @Autowired constructor(
             )
 
             assertEquals(HttpStatus.NO_CONTENT, response.statusCode)
-            verify(notificationSettingsService).pauseNotifications(telegramUser.telegramId, 60)
+            verify(notificationSettingsService).pauseNotifications(telegramUser.externalUserId, 60)
             verify(notificationSettingsService, never()).cancelPause(anyLong())
         }
 
@@ -208,7 +208,7 @@ class NotificationControllerTest @Autowired constructor(
             )
 
             assertEquals(HttpStatus.NO_CONTENT, response.statusCode)
-            verify(notificationSettingsService).cancelPause(telegramUser.telegramId)
+            verify(notificationSettingsService).cancelPause(telegramUser.externalUserId)
             verify(notificationSettingsService, never()).pauseNotifications(anyLong(), anyLong())
         }
 

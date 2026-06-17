@@ -55,7 +55,7 @@ class AdminAuthInterceptorIntegrationTest @Autowired constructor(
     private val NON_ADMIN_USER_ID = 2L
 
     private val telegramUser = TelegramUserDto(
-        telegramId = ADMIN_USER_ID,
+        externalUserId = ADMIN_USER_ID,
         firstName = "First Name",
         lastName = null,
         username = "username"
@@ -91,7 +91,7 @@ class AdminAuthInterceptorIntegrationTest @Autowired constructor(
         @Test
         @DisplayName("non-admin user - returns 403 with X-Auth-Error-Code forbidden_admin")
         fun `non-admin user returns 403 with forbidden_admin header`() {
-            `when`(telegramValidatorService.map(any())).thenReturn(telegramUser.copy(telegramId = NON_ADMIN_USER_ID))
+            `when`(telegramValidatorService.map(any())).thenReturn(telegramUser.copy(externalUserId = NON_ADMIN_USER_ID))
 
             val response = restTemplate.exchange(
                 "/systems/admin-test", HttpMethod.GET, HttpEntity<Void>(buildHeaders()), Void::class.java

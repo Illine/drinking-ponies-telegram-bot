@@ -32,7 +32,7 @@ class WaterAmountApplyReplyButtonStrategy(
             callbackQuery.message.messageId
         )
 
-        val userId = callbackQuery.from.id
+        val externalUserId = callbackQuery.from.id
         val chatId = callbackQuery.message.chatId
         val queryData = callbackQuery.data
 
@@ -44,12 +44,12 @@ class WaterAmountApplyReplyButtonStrategy(
 
         logger.info(
             "A telegram user [{}] for telegram chat [{}] drank [{}] ml of water",
-            userId,
+            externalUserId,
             chatId,
             waterAmountType.amountMl
         )
 
-        notificationSettingsService.resetNotificationTimer(userId, LocalDateTime.now(clock))
+        notificationSettingsService.resetNotificationTimer(externalUserId, LocalDateTime.now(clock))
             .also { setting ->
                 runCatching {
                     waterStatisticService.recordEvent(

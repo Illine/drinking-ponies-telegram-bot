@@ -113,12 +113,12 @@ class DtoGenerator {
         )
 
         fun generateTelegramUserDto(
-            telegramId: Long = 1L,
+            externalUserId: Long = 1L,
             firstName: String? = "First Name",
             lastName: String? = null,
             username: String? = "username",
         ): TelegramUserDto = TelegramUserDto(
-            telegramId = telegramId,
+            externalUserId = externalUserId,
             firstName = firstName,
             lastName = lastName,
             username = username,

@@ -32,7 +32,7 @@ class SnoozeApplyReplyButtonStrategy(
             callbackQuery.message.messageId
         )
 
-        val userId = callbackQuery.from.id
+        val externalUserId = callbackQuery.from.id
         val chatId = callbackQuery.message.chatId
         val queryData = callbackQuery.data
 
@@ -40,12 +40,12 @@ class SnoozeApplyReplyButtonStrategy(
 
         logger.info(
             "A telegram user [{}] for telegram chat [{}] will snooze notification for [{}] minutes",
-            userId,
+            externalUserId,
             chatId,
             snoozeType.minutes
         )
 
-        val notificationSetting = notificationSettingsService.getNotificationSettings(userId)
+        val notificationSetting = notificationSettingsService.getNotificationSettings(externalUserId)
         val nextNotificationTime =
             TimeHelper.nextNotificationTimeByNow(
                 clock,
@@ -53,7 +53,7 @@ class SnoozeApplyReplyButtonStrategy(
                 snoozeType.minutes
             )
 
-        notificationSettingsService.resetNotificationTimer(userId, nextNotificationTime)
+        notificationSettingsService.resetNotificationTimer(externalUserId, nextNotificationTime)
             .also { setting ->
                 runCatching {
                     waterStatisticService.recordEvent(setting.telegramUser, AnswerNotificationType.SNOOZE)

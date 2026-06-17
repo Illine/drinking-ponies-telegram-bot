@@ -108,7 +108,7 @@ class TelegramAuthInterceptorTest {
     @DisplayName("preHandle(): valid signature - enriches isAdmin=true and sets telegramUser attribute")
     fun `preHandle valid signature enriches isAdmin true`() {
         val initData = "valid-init-data"
-        val telegramUser = TelegramUserDto(telegramId = 1L, firstName = "Test", lastName = null, username = null)
+        val telegramUser = TelegramUserDto(externalUserId = 1L, firstName = "Test", lastName = null, username = null)
         `when`(request.method).thenReturn("POST")
         `when`(request.getHeader(headerName)).thenReturn(initData)
         `when`(validatorService.verifySignature(any())).thenReturn(true)
@@ -129,7 +129,7 @@ class TelegramAuthInterceptorTest {
     @DisplayName("preHandle(): valid signature - enriches isAdmin=false when access service returns false")
     fun `preHandle valid signature enriches isAdmin false`() {
         val initData = "valid-init-data"
-        val telegramUser = TelegramUserDto(telegramId = 2L, firstName = "Test", lastName = null, username = null)
+        val telegramUser = TelegramUserDto(externalUserId = 2L, firstName = "Test", lastName = null, username = null)
         `when`(request.method).thenReturn("POST")
         `when`(request.getHeader(headerName)).thenReturn(initData)
         `when`(validatorService.verifySignature(any())).thenReturn(true)

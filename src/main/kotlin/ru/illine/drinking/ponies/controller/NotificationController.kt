@@ -28,7 +28,7 @@ class NotificationController(
         @Parameter(hidden = true)
         @RequestAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) telegramUser: TelegramUserDto,
     ): NotificationNextResponse {
-        val nextAt = notificationSettingsService.getNextNotificationAt(telegramUser.telegramId)
+        val nextAt = notificationSettingsService.getNextNotificationAt(telegramUser.externalUserId)
         return NotificationNextResponse(nextNotificationAt = nextAt)
     }
 
@@ -37,7 +37,7 @@ class NotificationController(
     fun getPauseState(
         @Parameter(hidden = true)
         @RequestAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) telegramUser: TelegramUserDto,
-    ): PauseStateResponse = notificationSettingsService.getPauseState(telegramUser.telegramId)
+    ): PauseStateResponse = notificationSettingsService.getPauseState(telegramUser.externalUserId)
 
     @PutMapping("/pause")
     @ResponseStatus(HttpStatus.NO_CONTENT)
@@ -49,9 +49,9 @@ class NotificationController(
         @RequestParam(name = "minutes", required = true) @Min(0) @Max(300) minutes: Long
     ) {
         if (minutes == 0L) {
-            notificationSettingsService.cancelPause(telegramUser.telegramId)
+            notificationSettingsService.cancelPause(telegramUser.externalUserId)
         } else {
-            notificationSettingsService.pauseNotifications(telegramUser.telegramId, minutes)
+            notificationSettingsService.pauseNotifications(telegramUser.externalUserId, minutes)
         }
     }
 }

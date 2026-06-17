@@ -49,7 +49,7 @@ class TelegramAuthInterceptor(
 
         if (validSignature) {
             val telegramUser = telegramValidatorService.map(initData)
-            val isAdmin = telegramUserAccessService.findIsAdminByExternalUserId(telegramUser.telegramId)
+            val isAdmin = telegramUserAccessService.findIsAdminByExternalUserId(telegramUser.externalUserId)
             val enriched = telegramUser.copy(isAdmin = isAdmin)
             request.setAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE, enriched)
             return true

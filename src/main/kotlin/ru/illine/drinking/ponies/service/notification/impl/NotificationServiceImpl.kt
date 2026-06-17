@@ -27,15 +27,15 @@ class NotificationServiceImpl(
             TelegramMessageConstants.START_GREETING_MESSAGE.format(messageContext.user().userName)
         ).apply { sender.execute(this) }
 
-        val userId = messageContext.user().id
+        val externalUserId = messageContext.user().id
         val chatId = messageContext.chatId()
 
-        val setting = notificationAccessService.existsByTelegramUserId(userId).check(
+        val setting = notificationAccessService.existsByExternalUserId(externalUserId).check(
             ifTrue = {
-                notificationAccessService.findNotificationSettingByTelegramUserId(userId)
+                notificationAccessService.findNotificationSettingByExternalUserId(externalUserId)
             },
             ifFalse = {
-                createNewUser(userId, chatId)
+                createNewUser(externalUserId, chatId)
             }
         )
 
@@ -46,14 +46,14 @@ class NotificationServiceImpl(
     }
 
     private fun createNewUser(
-        userId: Long,
+        externalUserId: Long,
         chatId: Long
     ): NotificationSettingDto {
-        val user = TelegramUserDto.create(userId)
+        val user = TelegramUserDto.create(externalUserId)
         val chat = TelegramChatDto.create(chatId, user)
         val setting = NotificationSettingDto.create(user, chat)
 
         notificationAccessService.save(user, chat, setting)
-        return notificationAccessService.findNotificationSettingByTelegramUserId(userId)
+        return notificationAccessService.findNotificationSettingByExternalUserId(externalUserId)
     }
 }
