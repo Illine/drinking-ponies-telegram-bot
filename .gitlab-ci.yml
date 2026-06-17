@@ -1,6 +1,6 @@
 include:
   - project: dptb/drinking-ponies-ci-templates
-    ref: develop
+    ref: v1.0.0
     file: dptb-ci.gitlab-ci.yml
   - local: .ansible.gitlab-ci.yml
 
