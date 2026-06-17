@@ -73,7 +73,7 @@ rollback-database:
   before_script:
     - !reference [.run-ansible, before_script]
 
-deploy-service:
+deploy-app:
   extends:
     - .run-ansible
   dependencies:
