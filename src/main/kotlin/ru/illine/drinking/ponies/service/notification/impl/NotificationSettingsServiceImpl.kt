@@ -32,7 +32,7 @@ class NotificationSettingsServiceImpl(
     override fun getAllSettings(externalUserId: Long): SettingDto {
         logger.info("Getting all notification settings for telegram user [$externalUserId]")
 
-        val active = notificationAccessService.isEnabledNotifications(externalUserId)
+        val active = notificationAccessService.findIsEnabledNotificationsByExternalUserId(externalUserId)
         if (!active) {
             logger.debug("Not enabled notifications for externalUserId [$externalUserId], returning empty settings")
             return SettingDto(notificationActive = false)
@@ -82,25 +82,25 @@ class NotificationSettingsServiceImpl(
     override fun changeQuietMode(externalUserId: Long, start: LocalTime, end: LocalTime) {
         logger.info("Change time of quiet mode for telegram user [$externalUserId], start: [$start], end: [$end]")
         require(start != end) { "Start must be before end" }
-        notificationAccessService.changeQuietMode(externalUserId, start, end)
+        notificationAccessService.updateQuietMode(externalUserId, start, end)
     }
 
     override fun disableQuietMode(externalUserId: Long) {
         logger.info("Disabling quiet mode for user [$externalUserId]")
-        notificationAccessService.disableQuietMode(externalUserId)
+        notificationAccessService.updateQuietModeDisabled(externalUserId)
     }
 
     override fun isEnabledNotifications(externalUserId: Long): Boolean {
         logger.info("Checking if notifications are enabled for telegram user [$externalUserId]")
-        return notificationAccessService.isEnabledNotifications(externalUserId)
+        return notificationAccessService.findIsEnabledNotificationsByExternalUserId(externalUserId)
     }
 
     override fun changeNotificationStatus(externalUserId: Long, active: Boolean) {
         logger.info("Changing notification status for telegram user [$externalUserId] to [$active]")
         if (active) {
-            notificationAccessService.enableNotifications(externalUserId)
+            notificationAccessService.updateNotificationsEnabled(externalUserId)
         } else {
-            notificationAccessService.disableNotifications(externalUserId)
+            notificationAccessService.updateNotificationsDisabled(externalUserId)
         }
     }
 
@@ -111,19 +111,19 @@ class NotificationSettingsServiceImpl(
         } catch (e: Exception) {
             throw IllegalArgumentException("Invalid timezone: $timezone", e)
         }
-        notificationAccessService.changeTimezone(externalUserId, timezone)
+        notificationAccessService.updateTimezone(externalUserId, timezone)
     }
 
     override fun pauseNotifications(externalUserId: Long, minutes: Long) {
         logger.info("Pausing notifications for telegram user [$externalUserId] for [$minutes] minutes")
         require(minutes > 0) { "Pause duration must be positive: $minutes" }
         val pauseUntil = LocalDateTime.now(clock).plusMinutes(minutes)
-        notificationAccessService.setPause(externalUserId, pauseUntil)
+        notificationAccessService.updatePause(externalUserId, pauseUntil)
     }
 
     override fun cancelPause(externalUserId: Long) {
         logger.info("Cancelling pause for telegram user [$externalUserId]")
-        notificationAccessService.setPause(externalUserId, null)
+        notificationAccessService.updatePause(externalUserId, null)
     }
 
     override fun changeDailyGoal(externalUserId: Long, goalMl: Int) {

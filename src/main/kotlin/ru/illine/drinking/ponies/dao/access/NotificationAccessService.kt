@@ -29,19 +29,19 @@ interface NotificationAccessService {
 
     fun updateNotificationSettings(settings: Collection<NotificationSettingDto>): Set<NotificationSettingDto>
 
-    fun isEnabledNotifications(externalUserId: Long): Boolean
+    fun findIsEnabledNotificationsByExternalUserId(externalUserId: Long): Boolean
 
-    fun enableNotifications(externalUserId: Long)
+    fun updateNotificationsEnabled(externalUserId: Long)
 
-    fun disableNotifications(externalUserId: Long)
+    fun updateNotificationsDisabled(externalUserId: Long)
 
-    fun changeQuietMode(externalUserId: Long, start: LocalTime, end: LocalTime)
+    fun updateQuietMode(externalUserId: Long, start: LocalTime, end: LocalTime)
 
-    fun disableQuietMode(externalUserId: Long)
+    fun updateQuietModeDisabled(externalUserId: Long)
 
-    fun changeTimezone(externalUserId: Long, timezone: String)
+    fun updateTimezone(externalUserId: Long, timezone: String)
 
-    fun setPause(externalUserId: Long, pauseUntil: LocalDateTime?): NotificationSettingDto
+    fun updatePause(externalUserId: Long, pauseUntil: LocalDateTime?): NotificationSettingDto
 
     fun updateDailyGoal(externalUserId: Long, goalMl: Int)
 

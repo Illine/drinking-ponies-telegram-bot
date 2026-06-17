@@ -164,25 +164,25 @@ class NotificationAccessServiceTest @Autowired constructor(
     }
 
     @Test
-    @DisplayName("enableNotifications(): changed 'enabled' flag as true")
-    fun `successful enableNotifications`() {
+    @DisplayName("updateNotificationsEnabled(): changed 'enabled' flag as true")
+    fun `successful updateNotificationsEnabled`() {
         assertDoesNotThrow(
             ThrowingSupplier {
-                accessService.enableNotifications(DISABLED_EXTERNAL_USER_ID)
+                accessService.updateNotificationsEnabled(DISABLED_EXTERNAL_USER_ID)
             }
         )
-        assertTrue(accessService.isEnabledNotifications(DISABLED_EXTERNAL_USER_ID))
+        assertTrue(accessService.findIsEnabledNotificationsByExternalUserId(DISABLED_EXTERNAL_USER_ID))
     }
 
     @Test
-    @DisplayName("disableNotifications(): changed 'enabled' flag as false")
-    fun `successful disableNotifications`() {
+    @DisplayName("updateNotificationsDisabled(): changed 'enabled' flag as false")
+    fun `successful updateNotificationsDisabled`() {
         assertDoesNotThrow(
             ThrowingSupplier {
-                accessService.disableNotifications(DEFAULT_EXTERNAL_USER_ID)
+                accessService.updateNotificationsDisabled(DEFAULT_EXTERNAL_USER_ID)
             }
         )
-        assertFalse(accessService.isEnabledNotifications(DEFAULT_EXTERNAL_USER_ID))
+        assertFalse(accessService.findIsEnabledNotificationsByExternalUserId(DEFAULT_EXTERNAL_USER_ID))
     }
 
     @Test
@@ -214,14 +214,14 @@ class NotificationAccessServiceTest @Autowired constructor(
     }
 
     @Test
-    @DisplayName("changeQuietMode(): persists quiet mode start and end times")
-    fun `successful changeQuietMode`() {
+    @DisplayName("updateQuietMode(): persists quiet mode start and end times")
+    fun `successful updateQuietMode`() {
         val expectedStart = LocalTime.of(22, 0)
         val expectedEnd = LocalTime.of(8, 0)
 
         assertDoesNotThrow(
             ThrowingSupplier {
-                accessService.changeQuietMode(DEFAULT_EXTERNAL_USER_ID, expectedStart, expectedEnd)
+                accessService.updateQuietMode(DEFAULT_EXTERNAL_USER_ID, expectedStart, expectedEnd)
             }
         )
 
@@ -231,13 +231,13 @@ class NotificationAccessServiceTest @Autowired constructor(
     }
 
     @Test
-    @DisplayName("disableQuietMode(): clears quiet mode start and end times")
-    fun `successful disableQuietMode`() {
-        accessService.changeQuietMode(DEFAULT_EXTERNAL_USER_ID, LocalTime.of(22, 0), LocalTime.of(8, 0))
+    @DisplayName("updateQuietModeDisabled(): clears quiet mode start and end times")
+    fun `successful updateQuietModeDisabled`() {
+        accessService.updateQuietMode(DEFAULT_EXTERNAL_USER_ID, LocalTime.of(22, 0), LocalTime.of(8, 0))
 
         assertDoesNotThrow(
             ThrowingSupplier {
-                accessService.disableQuietMode(DEFAULT_EXTERNAL_USER_ID)
+                accessService.updateQuietModeDisabled(DEFAULT_EXTERNAL_USER_ID)
             }
         )
 
@@ -247,13 +247,13 @@ class NotificationAccessServiceTest @Autowired constructor(
     }
 
     @Test
-    @DisplayName("changeTimezone(): persists new timezone for existing user")
-    fun `successful changeTimezone`() {
+    @DisplayName("updateTimezone(): persists new timezone for existing user")
+    fun `successful updateTimezone`() {
         val newTimezone = "America/New_York"
 
         assertDoesNotThrow(
             ThrowingSupplier {
-                accessService.changeTimezone(DEFAULT_EXTERNAL_USER_ID, newTimezone)
+                accessService.updateTimezone(DEFAULT_EXTERNAL_USER_ID, newTimezone)
             }
         )
 
@@ -262,10 +262,10 @@ class NotificationAccessServiceTest @Autowired constructor(
     }
 
     @Test
-    @DisplayName("changeTimezone(): throws IllegalArgumentException when user does not exist")
-    fun `failure changeTimezone not found`() {
+    @DisplayName("updateTimezone(): throws IllegalArgumentException when user does not exist")
+    fun `failure updateTimezone not found`() {
         assertThrows<IllegalArgumentException> {
-            accessService.changeTimezone(NOT_EXISTED_USER_ID, "Europe/Berlin")
+            accessService.updateTimezone(NOT_EXISTED_USER_ID, "Europe/Berlin")
         }
     }
 
@@ -327,7 +327,7 @@ class NotificationAccessServiceTest @Autowired constructor(
     fun `successful updateNotificationSettings clears pauseUntil on interval change`() {
         getMutableClock().setTime("2025-06-15T10:00:00Z")
         val pauseUntil = LocalDateTime.of(2025, 6, 15, 14, 0)
-        accessService.setPause(DEFAULT_EXTERNAL_USER_ID, pauseUntil)
+        accessService.updatePause(DEFAULT_EXTERNAL_USER_ID, pauseUntil)
 
         val actual = assertDoesNotThrow(
             ThrowingSupplier {
@@ -341,15 +341,15 @@ class NotificationAccessServiceTest @Autowired constructor(
     }
 
     @Test
-    @DisplayName("setPause(): sets pauseUntil and shifts timeOfLastNotification to pauseUntil minus interval")
-    fun `successful setPause sets pauseUntil and shifts timeOfLastNotification`() {
+    @DisplayName("updatePause(): sets pauseUntil and shifts timeOfLastNotification to pauseUntil minus interval")
+    fun `successful updatePause sets pauseUntil and shifts timeOfLastNotification`() {
         val pauseUntil = LocalDateTime.of(2025, 6, 15, 14, 0)
         // SQL fixture sets DEFAULT_EXTERNAL_USER_ID with TWO_HOURS interval (120 minutes)
         val expectedTimeOfLastNotification = pauseUntil.minusMinutes(IntervalNotificationType.TWO_HOURS.minutes)
 
         val actual = assertDoesNotThrow(
             ThrowingSupplier {
-                accessService.setPause(DEFAULT_EXTERNAL_USER_ID, pauseUntil)
+                accessService.updatePause(DEFAULT_EXTERNAL_USER_ID, pauseUntil)
             }
         )
 
@@ -358,15 +358,15 @@ class NotificationAccessServiceTest @Autowired constructor(
     }
 
     @Test
-    @DisplayName("setPause(): does NOT reset notificationAttempts when pause is set")
-    fun `successful setPause keeps notificationAttempts`() {
+    @DisplayName("updatePause(): does NOT reset notificationAttempts when pause is set")
+    fun `successful updatePause keeps notificationAttempts`() {
         val pauseUntil = LocalDateTime.of(2025, 6, 15, 14, 0)
         // SQL fixture seeds notification_attempts = 1 for DEFAULT_EXTERNAL_USER_ID
         val before = accessService.findNotificationSettingByExternalUserId(DEFAULT_EXTERNAL_USER_ID)
 
         val actual = assertDoesNotThrow(
             ThrowingSupplier {
-                accessService.setPause(DEFAULT_EXTERNAL_USER_ID, pauseUntil)
+                accessService.updatePause(DEFAULT_EXTERNAL_USER_ID, pauseUntil)
             }
         )
 
@@ -374,16 +374,16 @@ class NotificationAccessServiceTest @Autowired constructor(
     }
 
     @Test
-    @DisplayName("setPause(): with null pauseUntil resets pauseUntil to null and timeOfLastNotification to now")
-    fun `successful setPause cancel resets to now`() {
+    @DisplayName("updatePause(): with null pauseUntil resets pauseUntil to null and timeOfLastNotification to now")
+    fun `successful updatePause cancel resets to now`() {
         getMutableClock().setTime("2025-06-15T14:00:00Z")
         val expectedTime = LocalDateTime.now(clock)
         // First put user into paused state
-        accessService.setPause(DEFAULT_EXTERNAL_USER_ID, LocalDateTime.of(2025, 6, 15, 18, 0))
+        accessService.updatePause(DEFAULT_EXTERNAL_USER_ID, LocalDateTime.of(2025, 6, 15, 18, 0))
 
         val actual = assertDoesNotThrow(
             ThrowingSupplier {
-                accessService.setPause(DEFAULT_EXTERNAL_USER_ID, null)
+                accessService.updatePause(DEFAULT_EXTERNAL_USER_ID, null)
             }
         )
 
@@ -392,13 +392,13 @@ class NotificationAccessServiceTest @Autowired constructor(
     }
 
     @Test
-    @DisplayName("setPause(): cancel does NOT reset notificationAttempts")
-    fun `successful setPause cancel keeps notificationAttempts`() {
+    @DisplayName("updatePause(): cancel does NOT reset notificationAttempts")
+    fun `successful updatePause cancel keeps notificationAttempts`() {
         val before = accessService.findNotificationSettingByExternalUserId(DEFAULT_EXTERNAL_USER_ID)
 
         val actual = assertDoesNotThrow(
             ThrowingSupplier {
-                accessService.setPause(DEFAULT_EXTERNAL_USER_ID, null)
+                accessService.updatePause(DEFAULT_EXTERNAL_USER_ID, null)
             }
         )
 
@@ -406,15 +406,15 @@ class NotificationAccessServiceTest @Autowired constructor(
     }
 
     @Test
-    @DisplayName("setPause(): re-pause overwrites previous pauseUntil and timeOfLastNotification")
-    fun `successful setPause re-pause overwrites`() {
+    @DisplayName("updatePause(): re-pause overwrites previous pauseUntil and timeOfLastNotification")
+    fun `successful updatePause re-pause overwrites`() {
         val firstPause = LocalDateTime.of(2025, 6, 15, 14, 0)
         val secondPause = LocalDateTime.of(2025, 6, 15, 18, 0)
-        accessService.setPause(DEFAULT_EXTERNAL_USER_ID, firstPause)
+        accessService.updatePause(DEFAULT_EXTERNAL_USER_ID, firstPause)
 
         val actual = assertDoesNotThrow(
             ThrowingSupplier {
-                accessService.setPause(DEFAULT_EXTERNAL_USER_ID, secondPause)
+                accessService.updatePause(DEFAULT_EXTERNAL_USER_ID, secondPause)
             }
         )
 
@@ -426,49 +426,49 @@ class NotificationAccessServiceTest @Autowired constructor(
     }
 
     @Test
-    @DisplayName("setPause(): persists pauseUntil so subsequent reads return it")
-    fun `successful setPause persists pauseUntil`() {
+    @DisplayName("updatePause(): persists pauseUntil so subsequent reads return it")
+    fun `successful updatePause persists pauseUntil`() {
         val pauseUntil = LocalDateTime.of(2025, 6, 15, 14, 0)
 
-        accessService.setPause(DEFAULT_EXTERNAL_USER_ID, pauseUntil)
+        accessService.updatePause(DEFAULT_EXTERNAL_USER_ID, pauseUntil)
 
         val reloaded = accessService.findNotificationSettingByExternalUserId(DEFAULT_EXTERNAL_USER_ID)
         assertEquals(pauseUntil, reloaded.pauseUntil)
     }
 
     @Test
-    @DisplayName("setPause(): throws NotificationSettingsNotFoundException when record not found by externalUserId")
-    fun `failure setPause not found`() {
+    @DisplayName("updatePause(): throws NotificationSettingsNotFoundException when record not found by externalUserId")
+    fun `failure updatePause not found`() {
         assertThrows<NotificationSettingsNotFoundException> {
-            accessService.setPause(NOT_EXISTED_USER_ID, LocalDateTime.of(2025, 6, 15, 14, 0))
+            accessService.updatePause(NOT_EXISTED_USER_ID, LocalDateTime.of(2025, 6, 15, 14, 0))
         }
     }
 
     @Test
-    @DisplayName("setPause(): throws NotificationSettingsNotFoundException when record not found by externalUserId on cancel")
-    fun `failure setPause cancel not found`() {
+    @DisplayName("updatePause(): throws NotificationSettingsNotFoundException when record not found by externalUserId on cancel")
+    fun `failure updatePause cancel not found`() {
         assertThrows<NotificationSettingsNotFoundException> {
-            accessService.setPause(NOT_EXISTED_USER_ID, null)
+            accessService.updatePause(NOT_EXISTED_USER_ID, null)
         }
     }
 
     @Test
-    @DisplayName("setPause(): throws NotificationSettingsNotFoundException for disabled user (filtered by @SQLRestriction)")
-    fun `failure setPause disabled user`() {
+    @DisplayName("updatePause(): throws NotificationSettingsNotFoundException for disabled user (filtered by @SQLRestriction)")
+    fun `failure updatePause disabled user`() {
         assertThrows<NotificationSettingsNotFoundException> {
-            accessService.setPause(DISABLED_EXTERNAL_USER_ID, LocalDateTime.of(2025, 6, 15, 14, 0))
+            accessService.updatePause(DISABLED_EXTERNAL_USER_ID, LocalDateTime.of(2025, 6, 15, 14, 0))
         }
     }
 
     @Test
-    @DisplayName("changeQuietMode(): clears active pauseUntil")
-    fun `changeQuietMode clears active pauseUntil`() {
+    @DisplayName("updateQuietMode(): clears active pauseUntil")
+    fun `updateQuietMode clears active pauseUntil`() {
         val pauseUntil = LocalDateTime.of(2025, 6, 15, 14, 0)
-        accessService.setPause(DEFAULT_EXTERNAL_USER_ID, pauseUntil)
+        accessService.updatePause(DEFAULT_EXTERNAL_USER_ID, pauseUntil)
 
         assertDoesNotThrow(
             ThrowingSupplier {
-                accessService.changeQuietMode(DEFAULT_EXTERNAL_USER_ID, LocalTime.of(22, 0), LocalTime.of(8, 0))
+                accessService.updateQuietMode(DEFAULT_EXTERNAL_USER_ID, LocalTime.of(22, 0), LocalTime.of(8, 0))
             }
         )
 
@@ -479,15 +479,15 @@ class NotificationAccessServiceTest @Autowired constructor(
     }
 
     @Test
-    @DisplayName("disableQuietMode(): clears active pauseUntil")
-    fun `disableQuietMode clears active pauseUntil`() {
+    @DisplayName("updateQuietModeDisabled(): clears active pauseUntil")
+    fun `updateQuietModeDisabled clears active pauseUntil`() {
         val pauseUntil = LocalDateTime.of(2025, 6, 15, 14, 0)
-        accessService.changeQuietMode(DEFAULT_EXTERNAL_USER_ID, LocalTime.of(22, 0), LocalTime.of(8, 0))
-        accessService.setPause(DEFAULT_EXTERNAL_USER_ID, pauseUntil)
+        accessService.updateQuietMode(DEFAULT_EXTERNAL_USER_ID, LocalTime.of(22, 0), LocalTime.of(8, 0))
+        accessService.updatePause(DEFAULT_EXTERNAL_USER_ID, pauseUntil)
 
         assertDoesNotThrow(
             ThrowingSupplier {
-                accessService.disableQuietMode(DEFAULT_EXTERNAL_USER_ID)
+                accessService.updateQuietModeDisabled(DEFAULT_EXTERNAL_USER_ID)
             }
         )
 
@@ -498,18 +498,18 @@ class NotificationAccessServiceTest @Autowired constructor(
     }
 
     @Test
-    @DisplayName("disableNotifications(): clears active pauseUntil before disabling")
-    fun `disableNotifications clears active pauseUntil`() {
+    @DisplayName("updateNotificationsDisabled(): clears active pauseUntil before disabling")
+    fun `updateNotificationsDisabled clears active pauseUntil`() {
         val pauseUntil = LocalDateTime.of(2025, 6, 15, 14, 0)
-        accessService.setPause(DEFAULT_EXTERNAL_USER_ID, pauseUntil)
+        accessService.updatePause(DEFAULT_EXTERNAL_USER_ID, pauseUntil)
 
         assertDoesNotThrow(
             ThrowingSupplier {
-                accessService.disableNotifications(DEFAULT_EXTERNAL_USER_ID)
+                accessService.updateNotificationsDisabled(DEFAULT_EXTERNAL_USER_ID)
             }
         )
         // While disabled the entity is filtered out by @SQLRestriction, so re-enable to read it.
-        accessService.enableNotifications(DEFAULT_EXTERNAL_USER_ID)
+        accessService.updateNotificationsEnabled(DEFAULT_EXTERNAL_USER_ID)
 
         val actual = accessService.findNotificationSettingByExternalUserId(DEFAULT_EXTERNAL_USER_ID)
         assertNull(actual.pauseUntil)
@@ -546,7 +546,7 @@ class NotificationAccessServiceTest @Autowired constructor(
         val newGoalForFirst = 2500
         val before = accessService.findNotificationSettingByExternalUserId(DEFAULT_EXTERNAL_USER_ID)
         // DISABLED_EXTERNAL_USER_ID is filtered by @SQLRestriction, so re-enable to read it back.
-        accessService.enableNotifications(DISABLED_EXTERNAL_USER_ID)
+        accessService.updateNotificationsEnabled(DISABLED_EXTERNAL_USER_ID)
         val secondBefore = accessService.findNotificationSettingByExternalUserId(DISABLED_EXTERNAL_USER_ID)
 
         accessService.updateDailyGoal(DEFAULT_EXTERNAL_USER_ID, newGoalForFirst)
@@ -559,11 +559,11 @@ class NotificationAccessServiceTest @Autowired constructor(
     }
 
     @Test
-    @DisplayName("setPause(null): on already-expired pause, clears pauseUntil but does NOT reset timeOfLastNotification")
-    fun `setPause cancel after pause expired keeps timeOfLastNotification`() {
+    @DisplayName("updatePause(null): on already-expired pause, clears pauseUntil but does NOT reset timeOfLastNotification")
+    fun `updatePause cancel after pause expired keeps timeOfLastNotification`() {
         getMutableClock().setTime("2025-06-15T10:00:00Z")
         val pauseUntil = LocalDateTime.of(2025, 6, 15, 11, 0)
-        accessService.setPause(DEFAULT_EXTERNAL_USER_ID, pauseUntil)
+        accessService.updatePause(DEFAULT_EXTERNAL_USER_ID, pauseUntil)
         val timerWhilePaused = pauseUntil.minusMinutes(IntervalNotificationType.TWO_HOURS.minutes)
 
         // Advance clock past pauseUntil so the pause is expired.
@@ -571,7 +571,7 @@ class NotificationAccessServiceTest @Autowired constructor(
 
         val actual = assertDoesNotThrow(
             ThrowingSupplier {
-                accessService.setPause(DEFAULT_EXTERNAL_USER_ID, null)
+                accessService.updatePause(DEFAULT_EXTERNAL_USER_ID, null)
             }
         )
 

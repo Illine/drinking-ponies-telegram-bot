@@ -42,7 +42,7 @@ class NotificationSettingsServiceTest {
 
         service.changeQuietMode(externalUserId, start, end)
 
-        verify(notificationAccessService).changeQuietMode(externalUserId, start, end)
+        verify(notificationAccessService).updateQuietMode(externalUserId, start, end)
     }
 
     @Test
@@ -60,7 +60,7 @@ class NotificationSettingsServiceTest {
     fun `disableQuietMode disables quiet mode`() {
         service.disableQuietMode(externalUserId)
 
-        verify(notificationAccessService).disableQuietMode(externalUserId)
+        verify(notificationAccessService).updateQuietModeDisabled(externalUserId)
     }
 
     @Test
@@ -103,23 +103,23 @@ class NotificationSettingsServiceTest {
     @Test
     @DisplayName("isEnabledNotifications(): delegates to access service")
     fun `isEnabledNotifications delegates to access service`() {
-        `when`(notificationAccessService.isEnabledNotifications(externalUserId)).thenReturn(true)
+        `when`(notificationAccessService.findIsEnabledNotificationsByExternalUserId(externalUserId)).thenReturn(true)
 
         val result = service.isEnabledNotifications(externalUserId)
 
         assertEquals(true, result)
-        verify(notificationAccessService).isEnabledNotifications(externalUserId)
+        verify(notificationAccessService).findIsEnabledNotificationsByExternalUserId(externalUserId)
     }
 
     @Test
     @DisplayName("isEnabledNotifications(): returns false when disabled")
     fun `isEnabledNotifications returns false when disabled`() {
-        `when`(notificationAccessService.isEnabledNotifications(externalUserId)).thenReturn(false)
+        `when`(notificationAccessService.findIsEnabledNotificationsByExternalUserId(externalUserId)).thenReturn(false)
 
         val result = service.isEnabledNotifications(externalUserId)
 
         assertEquals(false, result)
-        verify(notificationAccessService).isEnabledNotifications(externalUserId)
+        verify(notificationAccessService).findIsEnabledNotificationsByExternalUserId(externalUserId)
     }
 
     @Test
@@ -188,8 +188,8 @@ class NotificationSettingsServiceTest {
     fun `changeNotificationStatus enables when active true`() {
         service.changeNotificationStatus(externalUserId, true)
 
-        verify(notificationAccessService).enableNotifications(externalUserId)
-        verify(notificationAccessService, never()).disableNotifications(anyLong())
+        verify(notificationAccessService).updateNotificationsEnabled(externalUserId)
+        verify(notificationAccessService, never()).updateNotificationsDisabled(anyLong())
     }
 
     @Test
@@ -197,8 +197,8 @@ class NotificationSettingsServiceTest {
     fun `changeNotificationStatus disables when active false`() {
         service.changeNotificationStatus(externalUserId, false)
 
-        verify(notificationAccessService).disableNotifications(externalUserId)
-        verify(notificationAccessService, never()).enableNotifications(anyLong())
+        verify(notificationAccessService).updateNotificationsDisabled(externalUserId)
+        verify(notificationAccessService, never()).updateNotificationsEnabled(anyLong())
     }
 
     @Test
@@ -208,7 +208,7 @@ class NotificationSettingsServiceTest {
 
         service.changeTimezone(externalUserId, timezone)
 
-        verify(notificationAccessService).changeTimezone(externalUserId, timezone)
+        verify(notificationAccessService).updateTimezone(externalUserId, timezone)
     }
 
     @ParameterizedTest
@@ -219,7 +219,7 @@ class NotificationSettingsServiceTest {
             service.changeTimezone(externalUserId, timezone)
         }
 
-        verify(notificationAccessService, never()).changeTimezone(anyLong(), anyString())
+        verify(notificationAccessService, never()).updateTimezone(anyLong(), anyString())
     }
 
     @Test
@@ -240,7 +240,7 @@ class NotificationSettingsServiceTest {
     @Test
     @DisplayName("getAllSettings(): returns SettingDto with all fields when notifications are enabled")
     fun `getAllSettings returns full dto when enabled`() {
-        `when`(notificationAccessService.isEnabledNotifications(externalUserId)).thenReturn(true)
+        `when`(notificationAccessService.findIsEnabledNotificationsByExternalUserId(externalUserId)).thenReturn(true)
         val notificationDto = DtoGenerator.generateNotificationDto(
             externalUserId = externalUserId,
             notificationInterval = IntervalNotificationType.HOUR,
@@ -260,14 +260,14 @@ class NotificationSettingsServiceTest {
         assertEquals("08:00", result.quietModeEnd)
         assertEquals("Europe/Moscow", result.timezone)
         assertEquals(2000, result.dailyGoalMl)
-        verify(notificationAccessService).isEnabledNotifications(externalUserId)
+        verify(notificationAccessService).findIsEnabledNotificationsByExternalUserId(externalUserId)
         verify(notificationAccessService).findNotificationSettingByExternalUserId(externalUserId)
     }
 
     @Test
     @DisplayName("getAllSettings(): returns SettingDto with only notificationActive=false when notifications are disabled")
     fun `getAllSettings returns minimal dto when disabled`() {
-        `when`(notificationAccessService.isEnabledNotifications(externalUserId)).thenReturn(false)
+        `when`(notificationAccessService.findIsEnabledNotificationsByExternalUserId(externalUserId)).thenReturn(false)
 
         val result = service.getAllSettings(externalUserId)
 
@@ -279,7 +279,7 @@ class NotificationSettingsServiceTest {
         assertEquals(null, result.quietModeEnd)
         assertEquals(null, result.timezone)
         assertEquals(null, result.dailyGoalMl)
-        verify(notificationAccessService).isEnabledNotifications(externalUserId)
+        verify(notificationAccessService).findIsEnabledNotificationsByExternalUserId(externalUserId)
         verify(notificationAccessService, never()).findNotificationSettingByExternalUserId(anyLong())
     }
 
@@ -291,7 +291,7 @@ class NotificationSettingsServiceTest {
 
         service.pauseNotifications(externalUserId, minutes)
 
-        verify(notificationAccessService).setPause(externalUserId, expectedPauseUntil)
+        verify(notificationAccessService).updatePause(externalUserId, expectedPauseUntil)
     }
 
     @ParameterizedTest
@@ -302,7 +302,7 @@ class NotificationSettingsServiceTest {
             service.pauseNotifications(externalUserId, minutes)
         }
 
-        verify(notificationAccessService, never()).setPause(anyLong(), any())
+        verify(notificationAccessService, never()).updatePause(anyLong(), any())
     }
 
     @Test
@@ -310,7 +310,7 @@ class NotificationSettingsServiceTest {
     fun `cancelPause delegates with null`() {
         service.cancelPause(externalUserId)
 
-        verify(notificationAccessService).setPause(externalUserId, null)
+        verify(notificationAccessService).updatePause(externalUserId, null)
     }
 
     @Test
@@ -375,8 +375,8 @@ class NotificationSettingsServiceTest {
         service.pauseNotifications(externalUserId, firstMinutes)
         service.pauseNotifications(externalUserId, secondMinutes)
 
-        verify(notificationAccessService).setPause(externalUserId, firstExpected)
-        verify(notificationAccessService).setPause(externalUserId, secondExpected)
+        verify(notificationAccessService).updatePause(externalUserId, firstExpected)
+        verify(notificationAccessService).updatePause(externalUserId, secondExpected)
     }
 
     @Test
@@ -384,7 +384,7 @@ class NotificationSettingsServiceTest {
     fun `pauseNotifications does not cancel`() {
         service.pauseNotifications(externalUserId, 30L)
 
-        verify(notificationAccessService, never()).setPause(externalUserId, null)
+        verify(notificationAccessService, never()).updatePause(externalUserId, null)
     }
 
     @ParameterizedTest

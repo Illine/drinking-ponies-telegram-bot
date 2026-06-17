@@ -114,7 +114,7 @@ class NotificationSenderServiceTest {
 
         service.sendNotifications(listOf(dto))
 
-        verify(notificationAccessService).disableNotifications(externalUserId)
+        verify(notificationAccessService).updateNotificationsDisabled(externalUserId)
         verify(notificationAccessService).updateNotificationSettings(anyCollection())
     }
 
@@ -167,7 +167,7 @@ class NotificationSenderServiceTest {
 
         service.suspendNotifications(listOf(dto))
 
-        verify(notificationAccessService).disableNotifications(externalUserId)
+        verify(notificationAccessService).updateNotificationsDisabled(externalUserId)
         verify(notificationAccessService).updateNotificationSettings(anyCollection())
     }
 
@@ -208,6 +208,6 @@ class NotificationSenderServiceTest {
         assertThrows(TelegramApiRequestException::class.java) {
             service.suspendNotifications(listOf(dto))
         }
-        verify(notificationAccessService, never()).disableNotifications(any())
+        verify(notificationAccessService, never()).updateNotificationsDisabled(any())
     }
 }

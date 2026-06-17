@@ -117,13 +117,13 @@ class NotificationAccessServiceImpl(
     }
 
     @Transactional
-    override fun enableNotifications(externalUserId: Long) {
+    override fun updateNotificationsEnabled(externalUserId: Long) {
         logger.debug("A notification settings will be enabled (enabled = true) by externalUserId [$externalUserId]")
         settingRepository.switchEnabled(externalUserId, true)
     }
 
     @Transactional
-    override fun disableNotifications(externalUserId: Long) {
+    override fun updateNotificationsDisabled(externalUserId: Long) {
         logger.debug("A notification settings will be disabled (enabled = false) by externalUserId [$externalUserId]")
         settingRepository.clearPause(externalUserId)
         settingRepository.switchEnabled(externalUserId, false)
@@ -168,27 +168,27 @@ class NotificationAccessServiceImpl(
     }
 
     @Transactional(readOnly = true)
-    override fun isEnabledNotifications(externalUserId: Long): Boolean {
+    override fun findIsEnabledNotificationsByExternalUserId(externalUserId: Long): Boolean {
         logger.debug("Checking if notifications are active by externalUserId: [$externalUserId]")
         return settingRepository.isEnabledByExternalUserId(externalUserId)
     }
 
     @Transactional
-    override fun changeQuietMode(externalUserId: Long, start: LocalTime, end: LocalTime) {
+    override fun updateQuietMode(externalUserId: Long, start: LocalTime, end: LocalTime) {
         logger.debug("The quiet mod will be updated for a user [{}], start time: [{}], end time: [{}]", externalUserId, start, end)
         settingRepository.clearPause(externalUserId)
         settingRepository.updateQuietMode(externalUserId, start, end)
     }
 
     @Transactional
-    override fun disableQuietMode(externalUserId: Long) {
+    override fun updateQuietModeDisabled(externalUserId: Long) {
         logger.debug("The quiet mod will be disabled for a user [$externalUserId]")
         settingRepository.clearPause(externalUserId)
         settingRepository.updateQuietMode(externalUserId)
     }
 
     @Transactional
-    override fun changeTimezone(externalUserId: Long, timezone: String) {
+    override fun updateTimezone(externalUserId: Long, timezone: String) {
         logger.debug("Changing timezone for user [$externalUserId] to [$timezone]")
         val user = requireNotNull(
             userRepository.findByExternalUserId(externalUserId),
@@ -199,7 +199,7 @@ class NotificationAccessServiceImpl(
     }
 
     @Transactional
-    override fun setPause(externalUserId: Long, pauseUntil: LocalDateTime?): NotificationSettingDto {
+    override fun updatePause(externalUserId: Long, pauseUntil: LocalDateTime?): NotificationSettingDto {
         logger.debug("Setting pause for externalUserId [$externalUserId] to [$pauseUntil]")
 
         val setting = requireSettings(externalUserId)

@@ -97,7 +97,7 @@ class NotificationSenderServiceImpl(
                     "User (externalUserId: [{}]) blocked the bot, disabling notifications",
                     notification.telegramUser.externalUserId
                 )
-                notificationAccessService.disableNotifications(notification.telegramUser.externalUserId)
+                notificationAccessService.updateNotificationsDisabled(notification.telegramUser.externalUserId)
                 false
             } else {
                 throw e
