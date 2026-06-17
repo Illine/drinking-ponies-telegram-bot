@@ -1,10 +1,15 @@
 include:
-  - local: .common.gitlab-ci.yml
+  - project: dptb/drinking-ponies-ci-templates
+    ref: develop
+    file: dptb-ci.gitlab-ci.yml
   - local: .ansible.gitlab-ci.yml
-  - local: .post.gitlab-ci.yml
 
+# Canonical dptb stage order from the umbrella template, plus this service's own
+# `migration` stage (liquibase) that the shared pipeline does not define.
 stages:
   - pre
+  - validate
+  - pre-build
   - test
   - build
   - migration
@@ -28,27 +33,6 @@ variables:
 
 default:
   interruptible: true
-
-generate-version:
-  extends: .default-tags
-  stage: pre
-  image:
-    name: gittools/gitversion:6.5.0
-    entrypoint: [""]
-  variables:
-    GIT_DEPTH: 0
-  before_script:
-    - git fetch --tags
-  script:
-    - /tools/dotnet-gitversion /showconfig
-    - /tools/dotnet-gitversion /diag /verbosity Diagnostic
-    - /tools/dotnet-gitversion /output buildserver
-  artifacts:
-    expire_in: 1 day
-    reports:
-      dotenv: gitversion.properties
-    paths:
-      - gitversion.properties
 
 test:
   extends: .default-tags
@@ -95,6 +79,8 @@ build-jar:
   image: gradle:8.4-jdk17
   needs:
     - test
+    - job: validate-bump-marker
+      optional: true
   variables:
     GRADLE_USER_HOME: ".gradle"
   cache:
