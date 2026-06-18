@@ -21,13 +21,12 @@ class WebConfig(
 
     override fun addInterceptors(registry: InterceptorRegistry) {
         registry.addInterceptor(telegramAuthInterceptor)
-            .addPathPatterns(
-                "/settings",
-                "/settings/**",
-                "/notifications/**",
-                "/users/**",
-                "/systems/**",
-                "/statistics/**"
+            .addPathPatterns("/**")
+            .excludePathPatterns(
+                "/docs/**",
+                "/swagger-ui/**",
+                "/v3/api-docs/**",
+                "/actuator/**"
             )
 
         registry.addInterceptor(adminAuthInterceptor)

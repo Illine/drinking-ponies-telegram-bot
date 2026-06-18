@@ -111,6 +111,34 @@ class LocalMessageProviderTest {
     }
 
     @Test
+    @DisplayName("getMessage(): avg >= goal but goal <= 0 does NOT trigger AVG_GOOD (guards against bogus daily goal)")
+    fun `avg above non-positive goal does not trigger specific bucket`() {
+        // Predicate is `avgMlPerDay >= dailyGoalMl && dailyGoalMl > 0`.
+        // With dailyGoalMl=0 the first part is true (0 >= 0) but the guard `> 0` must veto the AVG_GOOD rule,
+        // so only the fallback bucket may surface - never the "выше цели"/"перебирает" phrasing.
+        val outcomes = (0L until 100L).map { seed ->
+            LocalMessageProvider(Random(seed))
+                .getMessage(
+                    MessageSpec.InsightStats,
+                    DtoGenerator.generateInsightStatsContext(
+                        currentStreakDays = 0,
+                        avgMlPerDay = 0,
+                        dailyGoalMl = 0,
+                        bestDay = null,
+                    )
+                ).text
+        }
+
+        outcomes.forEach { text ->
+            assertFalse(
+                text.contains("выше цели") || text.contains("перебирает"),
+                "AVG_GOOD must not trigger when dailyGoalMl <= 0, got: $text"
+            )
+            assertTrue(text.isNotBlank(), "fallback must produce non-empty text")
+        }
+    }
+
+    @Test
     @DisplayName("getMessage(): bestDay set with valueMl > 0 renders BEST_DAY phrasing reachably")
     fun `bestDay rule surfaces value`() {
         val outcomes = (0L until 100L).map { seed ->
