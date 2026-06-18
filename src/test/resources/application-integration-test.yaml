@@ -49,6 +49,12 @@ telegram-bot:
     notification:
       cron: "*/15 * * * * *"
 
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+
 logbook:
   strategy: body-only-if-status-at-least
   minimum-status: 200
