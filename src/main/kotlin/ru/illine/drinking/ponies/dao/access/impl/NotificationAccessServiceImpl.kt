@@ -137,7 +137,10 @@ class NotificationAccessServiceImpl(
             .map {
                 val user = TelegramUserBuilder.toEntity(it.telegramUser)
                 val chat = TelegramChatBuilder.toEntity(it.telegramChat, user)
-                NotificationSettingBuilder.toEntity(it, user, chat)
+                NotificationSettingBuilder.toEntity(it, user, chat).also { setting ->
+                    user.notificationSettings = setting
+                    user.telegramChats += chat
+                }
             }
             .apply { settingRepository.saveAll(this) }
             .map {

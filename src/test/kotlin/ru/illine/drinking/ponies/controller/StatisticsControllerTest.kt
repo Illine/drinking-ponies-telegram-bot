@@ -164,9 +164,10 @@ class StatisticsControllerTest @Autowired constructor(
             assertEquals(dto.averageMlPerDay, body.averageMlPerDay)
             assertEquals(dto.currentStreakDays, body.currentStreakDays)
             assertEquals(dto.insightText, body.insight.text)
-            assertEquals(LocalDate.of(2026, 5, 6), body.bestDay!!.date)
-            assertEquals(2400, body.bestDay!!.valueMl)
-            assertEquals(DayOfWeek.WEDNESDAY, body.bestDay!!.weekday)
+            val bestDay = body.bestDay!!
+            assertEquals(LocalDate.of(2026, 5, 6), bestDay.date)
+            assertEquals(2400, bestDay.valueMl)
+            assertEquals(DayOfWeek.WEDNESDAY, bestDay.weekday)
             assertEquals(Instant.parse("2026-04-15T10:30:00Z"), body.firstEntryAt)
             val fromCaptor = argumentCaptor<LocalDate>()
             val toCaptor = argumentCaptor<LocalDate>()

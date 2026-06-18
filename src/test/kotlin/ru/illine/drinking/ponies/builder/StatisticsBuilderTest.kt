@@ -43,9 +43,10 @@ class StatisticsBuilderTest {
         assertEquals(2000, response.dailyGoalMl)
         assertEquals(1950, response.averageMlPerDay)
         assertNotNull(response.bestDay)
-        assertEquals(LocalDate.of(2026, 5, 5), response.bestDay!!.date)
-        assertEquals(2100, response.bestDay!!.valueMl)
-        assertEquals(DayOfWeek.TUESDAY, response.bestDay!!.weekday)
+        val bestDay = response.bestDay!!
+        assertEquals(LocalDate.of(2026, 5, 5), bestDay.date)
+        assertEquals(2100, bestDay.valueMl)
+        assertEquals(DayOfWeek.TUESDAY, bestDay.weekday)
         assertEquals(3, response.currentStreakDays)
         assertEquals("Котик, ты пьёшь водицу 3 дней подряд - так держать!", response.insight.text)
         assertEquals(Instant.parse("2026-04-15T10:30:00Z"), response.firstEntryAt)
