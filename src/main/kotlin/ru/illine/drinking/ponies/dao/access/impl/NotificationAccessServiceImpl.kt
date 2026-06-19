@@ -3,14 +3,14 @@ package ru.illine.drinking.ponies.dao.access.impl
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import ru.illine.drinking.ponies.builder.NotificationSettingBuilder
-import ru.illine.drinking.ponies.builder.TelegramChatBuilder
-import ru.illine.drinking.ponies.builder.TelegramUserBuilder
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
 import ru.illine.drinking.ponies.dao.repository.NotificationSettingRepository
 import ru.illine.drinking.ponies.dao.repository.TelegramChatRepository
 import ru.illine.drinking.ponies.dao.repository.TelegramUserRepository
 import ru.illine.drinking.ponies.exception.NotificationSettingsNotFoundException
+import ru.illine.drinking.ponies.mapper.NotificationSettingMapper
+import ru.illine.drinking.ponies.mapper.TelegramChatMapper
+import ru.illine.drinking.ponies.mapper.TelegramUserMapper
 import ru.illine.drinking.ponies.model.base.IntervalNotificationType
 import ru.illine.drinking.ponies.model.dto.internal.NotificationSettingDto
 import ru.illine.drinking.ponies.model.dto.internal.TelegramChatDto
@@ -36,9 +36,9 @@ class NotificationAccessServiceImpl(
 
         return settingRepository.findAll()
             .map {
-                val user = TelegramUserBuilder.toDto(it.telegramUser)
-                val chat = TelegramChatBuilder.toDto(it.telegramChat, user)
-                NotificationSettingBuilder.toDto(it, user, chat)
+                val user = TelegramUserMapper.toDto(it.telegramUser)
+                val chat = TelegramChatMapper.toDto(it.telegramChat, user)
+                NotificationSettingMapper.toDto(it, user, chat)
             }
             .toSet()
     }
@@ -48,9 +48,9 @@ class NotificationAccessServiceImpl(
         logger.debug("Finding a Notification by externalUserId [$externalUserId]")
 
         return requireSettings(externalUserId).let {
-            val user = TelegramUserBuilder.toDto(it.telegramUser)
-            val chat = TelegramChatBuilder.toDto(it.telegramChat, user)
-            NotificationSettingBuilder.toDto(it, user, chat)
+            val user = TelegramUserMapper.toDto(it.telegramUser)
+            val chat = TelegramChatMapper.toDto(it.telegramChat, user)
+            NotificationSettingMapper.toDto(it, user, chat)
         }
     }
 
@@ -74,20 +74,20 @@ class NotificationAccessServiceImpl(
         val userEntity =
             userRepository.findByExternalUserId(
                 externalUserId
-            ) ?: TelegramUserBuilder.toEntity(user)
+            ) ?: TelegramUserMapper.toEntity(user)
 
         val chatEntity =
-            chatRepository.findByExternalChatId(externalChatId) ?: TelegramChatBuilder.toEntity(chat, userEntity)
+            chatRepository.findByExternalChatId(externalChatId) ?: TelegramChatMapper.toEntity(chat, userEntity)
 
         val settingEntity =
             settingRepository.findByTelegramUser_ExternalUserId(
                 externalUserId
-            ) ?: NotificationSettingBuilder.toEntity(setting, userEntity, chatEntity)
+            ) ?: NotificationSettingMapper.toEntity(setting, userEntity, chatEntity)
 
         userEntity.addTelegramChat(chatEntity)
         userEntity.notificationSettings = settingEntity
 
-        return userRepository.save(userEntity).let { TelegramUserBuilder.toDto(it) }
+        return userRepository.save(userEntity).let { TelegramUserMapper.toDto(it) }
     }
 
     @Transactional
@@ -110,9 +110,9 @@ class NotificationAccessServiceImpl(
         }
 
         return settings.let {
-            val user = TelegramUserBuilder.toDto(it.telegramUser)
-            val chat = TelegramChatBuilder.toDto(it.telegramChat, user)
-            NotificationSettingBuilder.toDto(it, user, chat)
+            val user = TelegramUserMapper.toDto(it.telegramUser)
+            val chat = TelegramChatMapper.toDto(it.telegramChat, user)
+            NotificationSettingMapper.toDto(it, user, chat)
         }
     }
 
@@ -135,18 +135,18 @@ class NotificationAccessServiceImpl(
 
         return settings
             .map {
-                val user = TelegramUserBuilder.toEntity(it.telegramUser)
-                val chat = TelegramChatBuilder.toEntity(it.telegramChat, user)
-                NotificationSettingBuilder.toEntity(it, user, chat).also { setting ->
+                val user = TelegramUserMapper.toEntity(it.telegramUser)
+                val chat = TelegramChatMapper.toEntity(it.telegramChat, user)
+                NotificationSettingMapper.toEntity(it, user, chat).also { setting ->
                     user.notificationSettings = setting
                     user.telegramChats += chat
                 }
             }
             .apply { settingRepository.saveAll(this) }
             .map {
-                val user = TelegramUserBuilder.toDto(it.telegramUser)
-                val chat = TelegramChatBuilder.toDto(it.telegramChat, user)
-                NotificationSettingBuilder.toDto(it, user, chat)
+                val user = TelegramUserMapper.toDto(it.telegramUser)
+                val chat = TelegramChatMapper.toDto(it.telegramChat, user)
+                NotificationSettingMapper.toDto(it, user, chat)
             }
             .toSet()
     }
@@ -164,9 +164,9 @@ class NotificationAccessServiceImpl(
             }.let {
                 settingRepository.save(it)
             }.let {
-                val user = TelegramUserBuilder.toDto(it.telegramUser)
-                val chat = TelegramChatBuilder.toDto(it.telegramChat, user)
-                NotificationSettingBuilder.toDto(it, user, chat)
+                val user = TelegramUserMapper.toDto(it.telegramUser)
+                val chat = TelegramChatMapper.toDto(it.telegramChat, user)
+                NotificationSettingMapper.toDto(it, user, chat)
             }
     }
 
@@ -225,9 +225,9 @@ class NotificationAccessServiceImpl(
             }.let {
                 settingRepository.save(it)
             }.let {
-                val user = TelegramUserBuilder.toDto(it.telegramUser)
-                val chat = TelegramChatBuilder.toDto(it.telegramChat, user)
-                NotificationSettingBuilder.toDto(it, user, chat)
+                val user = TelegramUserMapper.toDto(it.telegramUser)
+                val chat = TelegramChatMapper.toDto(it.telegramChat, user)
+                NotificationSettingMapper.toDto(it, user, chat)
             }
     }
 

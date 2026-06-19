@@ -1,4 +1,4 @@
-package ru.illine.drinking.ponies.builder
+package ru.illine.drinking.ponies.mapper
 
 import ru.illine.drinking.ponies.model.dto.SettingDto
 import ru.illine.drinking.ponies.model.dto.internal.NotificationSettingDto
@@ -10,7 +10,7 @@ import ru.illine.drinking.ponies.util.TimeHelper
 // express all of this as @Mapping(expression=...), which it does not verify, giving no real
 // safety over this named-constructor form. Correctness is guarded by
 // NotificationSettingsServiceTest."getAllSettings returns full dto when enabled", which asserts every field.
-object SettingBuilder {
+object SettingMapper {
     fun toDto(settings: NotificationSettingDto): SettingDto = SettingDto(
         interval = settings.notificationInterval.name,
         intervalDisplayName = settings.notificationInterval.displayName,

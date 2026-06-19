@@ -1,4 +1,4 @@
-package ru.illine.drinking.ponies.builder
+package ru.illine.drinking.ponies.mapper
 
 import io.mcarle.konvert.api.Konvert
 import io.mcarle.konvert.api.Konverter
@@ -28,17 +28,6 @@ interface WaterStatisticMapper {
         ]
     )
     fun toWaterEntry(dto: WaterStatisticDto): WaterEntry
-}
 
-object WaterStatisticBuilder {
-    private val mapper: WaterStatisticMapper = Konverter.get<WaterStatisticMapper>()
-
-    fun toDto(entity: WaterStatisticEntity, user: TelegramUserDto): WaterStatisticDto =
-        mapper.toDto(entity, user)
-
-    fun toEntity(dto: WaterStatisticDto, user: TelegramUserEntity): WaterStatisticEntity =
-        mapper.toEntity(dto, user)
-
-    fun toWaterEntry(dto: WaterStatisticDto): WaterEntry =
-        mapper.toWaterEntry(dto)
+    companion object : WaterStatisticMapper by Konverter.get<WaterStatisticMapper>()
 }

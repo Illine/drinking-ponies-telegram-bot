@@ -7,7 +7,7 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.*
-import ru.illine.drinking.ponies.builder.SettingResponseBuilder
+import ru.illine.drinking.ponies.mapper.SettingResponseMapper
 import ru.illine.drinking.ponies.model.base.IntervalNotificationType
 import ru.illine.drinking.ponies.model.dto.TelegramUserDto
 import ru.illine.drinking.ponies.model.dto.response.SettingResponse
@@ -29,7 +29,7 @@ class SettingController(
         @RequestAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) telegramUser: TelegramUserDto,
     ): SettingResponse {
         val settings = notificationSettingsService.getAllSettings(telegramUser.externalUserId)
-        return SettingResponseBuilder.toResponse(settings)
+        return SettingResponseMapper.toResponse(settings)
     }
 
     @PutMapping("/quiet-mode")

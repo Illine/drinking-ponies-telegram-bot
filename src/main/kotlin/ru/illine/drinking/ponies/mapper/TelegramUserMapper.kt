@@ -1,4 +1,4 @@
-package ru.illine.drinking.ponies.builder
+package ru.illine.drinking.ponies.mapper
 
 import io.mcarle.konvert.api.Konverter
 import ru.illine.drinking.ponies.model.dto.internal.TelegramUserDto
@@ -8,12 +8,6 @@ import ru.illine.drinking.ponies.model.entity.TelegramUserEntity
 interface TelegramUserMapper {
     fun toDto(entity: TelegramUserEntity): TelegramUserDto
     fun toEntity(dto: TelegramUserDto): TelegramUserEntity
-}
 
-object TelegramUserBuilder {
-    private val mapper: TelegramUserMapper = Konverter.get<TelegramUserMapper>()
-
-    fun toDto(entity: TelegramUserEntity): TelegramUserDto = mapper.toDto(entity)
-
-    fun toEntity(dto: TelegramUserDto): TelegramUserEntity = mapper.toEntity(dto)
+    companion object : TelegramUserMapper by Konverter.get<TelegramUserMapper>()
 }
