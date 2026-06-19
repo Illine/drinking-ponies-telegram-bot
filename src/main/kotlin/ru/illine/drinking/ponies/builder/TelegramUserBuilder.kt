@@ -1,26 +1,19 @@
 package ru.illine.drinking.ponies.builder
 
+import io.mcarle.konvert.api.Konverter
 import ru.illine.drinking.ponies.model.dto.internal.TelegramUserDto
 import ru.illine.drinking.ponies.model.entity.TelegramUserEntity
 
-object TelegramUserBuilder {
-    fun toDto(entity: TelegramUserEntity): TelegramUserDto =
-        TelegramUserDto(
-            id = entity.id,
-            externalUserId = entity.externalUserId,
-            userTimeZone = entity.userTimeZone,
-            isAdmin = entity.isAdmin,
-            created = entity.created,
-            deleted = entity.deleted,
-        )
+@Konverter
+interface TelegramUserMapper {
+    fun toDto(entity: TelegramUserEntity): TelegramUserDto
+    fun toEntity(dto: TelegramUserDto): TelegramUserEntity
+}
 
-    fun toEntity(dto: TelegramUserDto): TelegramUserEntity =
-        TelegramUserEntity(
-            id = dto.id,
-            externalUserId = dto.externalUserId,
-            userTimeZone = dto.userTimeZone,
-            isAdmin = dto.isAdmin,
-            created = dto.created,
-            deleted = dto.deleted,
-        )
+object TelegramUserBuilder {
+    private val mapper: TelegramUserMapper = Konverter.get<TelegramUserMapper>()
+
+    fun toDto(entity: TelegramUserEntity): TelegramUserDto = mapper.toDto(entity)
+
+    fun toEntity(dto: TelegramUserDto): TelegramUserEntity = mapper.toEntity(dto)
 }

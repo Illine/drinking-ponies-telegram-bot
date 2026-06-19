@@ -182,9 +182,10 @@ class StatisticsServiceTest {
         assertEquals("2026-05-06", result.points[2].label)
         assertEquals(2400, result.points[2].valueMl)
         assertNotNull(result.bestDay)
-        assertEquals(LocalDate.of(2026, 5, 6), result.bestDay!!.date)
-        assertEquals(2400, result.bestDay!!.valueMl)
-        assertEquals(DayOfWeek.WEDNESDAY, result.bestDay!!.weekday)
+        val bestDay = result.bestDay!!
+        assertEquals(LocalDate.of(2026, 5, 6), bestDay.date)
+        assertEquals(2400, bestDay.valueMl)
+        assertEquals(DayOfWeek.WEDNESDAY, bestDay.weekday)
         assertEquals((2100 + 2400) / 7, result.averageMlPerDay)
         assertNull(result.firstEntryAt)
     }
@@ -339,8 +340,9 @@ class StatisticsServiceTest {
         )
 
         assertNotNull(result.bestDay)
-        assertEquals(LocalDate.of(2026, 5, 17), result.bestDay!!.date)
-        assertEquals(2500, result.bestDay!!.valueMl)
+        val bestDay = result.bestDay!!
+        assertEquals(LocalDate.of(2026, 5, 17), bestDay.date)
+        assertEquals(2500, bestDay.valueMl)
     }
 
     @Test

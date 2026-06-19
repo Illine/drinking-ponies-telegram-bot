@@ -11,6 +11,7 @@ plugins {
     alias(libs.plugins.kotlin.spring)
     alias(libs.plugins.kotlin.jpa)
     alias(libs.plugins.kotlin.kapt)
+    alias(libs.plugins.ksp)
 }
 
 group = "ru.illine"
@@ -50,6 +51,7 @@ dependencies {
     implementation(libs.commons.codec)
     implementation(libs.commons.lang3)
     implementation(libs.springdoc.openapi.starter.webmvc.ui)
+    implementation(libs.konvert.api)
 
     liquibaseRuntime(libs.liquibase.core)
     liquibaseRuntime(libs.liquibase.groovy.dsl)
@@ -62,6 +64,7 @@ dependencies {
     runtimeOnly(libs.micrometer.exposition.formats)
 
     kapt(libs.spring.boot.configuration.processor)
+    ksp(libs.konvert)
 
     testImplementation(libs.spring.boot.starter.test) {
         exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
@@ -79,6 +82,13 @@ allOpen {
     annotation("jakarta.persistence.Entity")
     annotation("jakarta.persistence.MappedSuperclass")
     annotation("jakarta.persistence.Embeddable")
+}
+
+ksp {
+    // Konvert: make the build fail on incomplete or invalid mappings - the core goal of DPTB-136.
+    arg("konvert.invalid-mapping-strategy", "fail")
+    arg("konvert.non-constructor-properties-mapping", "all")
+    arg("konvert.enforce-not-null", "true")
 }
 
 liquibase {
