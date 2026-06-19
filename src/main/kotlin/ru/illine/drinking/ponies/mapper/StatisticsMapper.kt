@@ -1,4 +1,4 @@
-package ru.illine.drinking.ponies.builder
+package ru.illine.drinking.ponies.mapper
 
 import io.mcarle.konvert.api.Konvert
 import io.mcarle.konvert.api.Konverter
@@ -25,10 +25,6 @@ interface StatisticsMapper {
     fun toPoint(dto: StatisticsPointDto): StatisticsPoint
 
     fun toBestDay(dto: BestDayDto): BestDayInfo
-}
 
-object StatisticsBuilder {
-    private val mapper: StatisticsMapper = Konverter.get<StatisticsMapper>()
-
-    fun toResponse(dto: StatisticsDto): StatisticsResponse = mapper.toResponse(dto)
+    companion object : StatisticsMapper by Konverter.get<StatisticsMapper>()
 }

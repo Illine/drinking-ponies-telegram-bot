@@ -2,8 +2,8 @@ package ru.illine.drinking.ponies.service.notification.impl
 
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
-import ru.illine.drinking.ponies.builder.SettingBuilder
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
+import ru.illine.drinking.ponies.mapper.SettingMapper
 import ru.illine.drinking.ponies.model.base.IntervalNotificationType
 import ru.illine.drinking.ponies.model.dto.SettingDto
 import ru.illine.drinking.ponies.model.dto.internal.NotificationSettingDto
@@ -39,7 +39,7 @@ class NotificationSettingsServiceImpl(
         }
 
         logger.debug("Settings for externalUserId [$externalUserId] has been enabled")
-        return getNotificationSettings(externalUserId).let { SettingBuilder.toDto(it) }
+        return getNotificationSettings(externalUserId).let { SettingMapper.toDto(it) }
     }
 
     override fun getNotificationSettings(externalUserId: Long): NotificationSettingDto {

@@ -1,4 +1,4 @@
-package ru.illine.drinking.ponies.builder
+package ru.illine.drinking.ponies.mapper
 
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.DisplayName
@@ -14,8 +14,8 @@ import java.time.LocalDate
 import kotlin.reflect.full.memberProperties
 
 @UnitTest
-@DisplayName("StatisticsBuilder Unit Test")
-class StatisticsBuilderTest {
+@DisplayName("StatisticsMapper Unit Test")
+class StatisticsMapperTest {
 
     @Test
     @DisplayName("toResponse(): maps every field from StatisticsDto to StatisticsResponse")
@@ -33,7 +33,7 @@ class StatisticsBuilderTest {
             firstEntryAt = Instant.parse("2026-04-15T10:30:00Z"),
         )
 
-        val response = StatisticsBuilder.toResponse(dto)
+        val response = StatisticsMapper.toResponse(dto)
 
         assertEquals(2, response.points.size)
         assertEquals("2026-05-04", response.points[0].label)
@@ -65,7 +65,7 @@ class StatisticsBuilderTest {
             firstEntryAt = null,
         )
 
-        val response = StatisticsBuilder.toResponse(dto)
+        val response = StatisticsMapper.toResponse(dto)
 
         assertNull(response.firstEntryAt)
     }
@@ -98,7 +98,7 @@ class StatisticsBuilderTest {
             firstEntryAt = null,
         )
 
-        val response = StatisticsBuilder.toResponse(dto)
+        val response = StatisticsMapper.toResponse(dto)
 
         assertNull(response.bestDay)
         assertEquals(0, response.points.size)

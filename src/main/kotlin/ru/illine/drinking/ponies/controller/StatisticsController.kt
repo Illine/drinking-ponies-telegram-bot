@@ -9,8 +9,8 @@ import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.HttpStatus
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
-import ru.illine.drinking.ponies.builder.StatisticsBuilder
-import ru.illine.drinking.ponies.builder.WaterStatisticBuilder
+import ru.illine.drinking.ponies.mapper.StatisticsMapper
+import ru.illine.drinking.ponies.mapper.WaterStatisticMapper
 import ru.illine.drinking.ponies.model.dto.TelegramUserDto
 import ru.illine.drinking.ponies.model.dto.request.WaterEntryRequest
 import ru.illine.drinking.ponies.model.dto.response.StatisticsResponse
@@ -37,7 +37,7 @@ class StatisticsController(
     ): StatisticsTodayResponse {
         val entries = statisticsService.getToday(telegramUser.externalUserId)
         return StatisticsTodayResponse(
-            entries = entries.map(WaterStatisticBuilder::toWaterEntry),
+            entries = entries.map(WaterStatisticMapper::toWaterEntry),
         )
     }
 
@@ -59,7 +59,7 @@ class StatisticsController(
         )
         @RequestParam(name = "to", required = true) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) to: LocalDate,
     ): StatisticsResponse =
-        StatisticsBuilder.toResponse(statisticsService.getStatistics(telegramUser.externalUserId, from, to))
+        StatisticsMapper.toResponse(statisticsService.getStatistics(telegramUser.externalUserId, from, to))
 
     @PostMapping("/water")
     @ResponseStatus(HttpStatus.CREATED)

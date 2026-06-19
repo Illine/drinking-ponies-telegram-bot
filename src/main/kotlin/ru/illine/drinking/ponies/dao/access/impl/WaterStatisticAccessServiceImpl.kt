@@ -5,12 +5,12 @@ import org.springframework.cache.annotation.CacheEvict
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import ru.illine.drinking.ponies.builder.TelegramUserBuilder
-import ru.illine.drinking.ponies.builder.WaterStatisticBuilder
 import ru.illine.drinking.ponies.config.cache.CacheConfig
 import ru.illine.drinking.ponies.dao.access.WaterStatisticAccessService
 import ru.illine.drinking.ponies.dao.repository.TelegramUserRepository
 import ru.illine.drinking.ponies.dao.repository.WaterStatisticRepository
+import ru.illine.drinking.ponies.mapper.TelegramUserMapper
+import ru.illine.drinking.ponies.mapper.WaterStatisticMapper
 import ru.illine.drinking.ponies.model.dto.internal.WaterStatisticDto
 import java.time.LocalDateTime
 
@@ -33,7 +33,7 @@ class WaterStatisticAccessServiceImpl(
         )
         return waterStatisticRepository
             .findByUserAndEventTimeBetween(externalUserId, startInclusive, endExclusive)
-            .map { WaterStatisticBuilder.toDto(it, TelegramUserBuilder.toDto(it.telegramUser)) }
+            .map { WaterStatisticMapper.toDto(it, TelegramUserMapper.toDto(it.telegramUser)) }
     }
 
     @Transactional(readOnly = true)
@@ -53,8 +53,8 @@ class WaterStatisticAccessServiceImpl(
             { "Not found a Telegram User by externalUserId [${dto.telegramUser.externalUserId}]" }
         )
 
-        return waterStatisticRepository.save(WaterStatisticBuilder.toEntity(dto, userEntity))
-            .let { WaterStatisticBuilder.toDto(it, TelegramUserBuilder.toDto(it.telegramUser)) }
+        return waterStatisticRepository.save(WaterStatisticMapper.toEntity(dto, userEntity))
+            .let { WaterStatisticMapper.toDto(it, TelegramUserMapper.toDto(it.telegramUser)) }
     }
 
     @Transactional
@@ -71,9 +71,9 @@ class WaterStatisticAccessServiceImpl(
                 if (userEntity == null) {
                     logger.warn("Not found user by external id: [{}], skipping", statistic.telegramUser.externalUserId)
                 }
-                userEntity?.let { WaterStatisticBuilder.toEntity(statistic, userEntity) }
+                userEntity?.let { WaterStatisticMapper.toEntity(statistic, userEntity) }
             }
             .let { waterStatisticRepository.saveAll(it) }
-            .map { WaterStatisticBuilder.toDto(it, TelegramUserBuilder.toDto(it.telegramUser)) }
+            .map { WaterStatisticMapper.toDto(it, TelegramUserMapper.toDto(it.telegramUser)) }
     }
 }
