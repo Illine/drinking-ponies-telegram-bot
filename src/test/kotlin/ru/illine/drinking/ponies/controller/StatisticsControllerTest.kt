@@ -9,11 +9,14 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.MethodSource
 import org.junit.jupiter.params.provider.ValueSource
-import org.mockito.Mockito.*
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.eq
 import org.mockito.kotlin.nullableArgumentCaptor
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
+import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.web.client.TestRestTemplate
 import org.springframework.http.*
@@ -50,8 +53,8 @@ class StatisticsControllerTest @Autowired constructor(
 
     @BeforeEach
     fun setUp() {
-        `when`(telegramValidatorService.verifySignature(any())).thenReturn(true)
-        `when`(telegramValidatorService.map(any())).thenReturn(telegramUser)
+        whenever(telegramValidatorService.verifySignature(any())).thenReturn(true)
+        whenever(telegramValidatorService.map(any())).thenReturn(telegramUser)
     }
 
     private fun buildHeaders(): HttpHeaders {
@@ -81,7 +84,7 @@ class StatisticsControllerTest @Autowired constructor(
                     waterAmountMl = 500,
                 ),
             )
-            `when`(statisticsService.getToday(telegramUser.externalUserId)).thenReturn(entries)
+            whenever(statisticsService.getToday(telegramUser.externalUserId)).thenReturn(entries)
             val headers = buildHeaders()
 
             val response = restTemplate.exchange(
@@ -102,7 +105,7 @@ class StatisticsControllerTest @Autowired constructor(
         @Test
         @DisplayName("empty list - returns 200 with empty entries")
         fun `returns 200 with empty entries`() {
-            `when`(statisticsService.getToday(telegramUser.externalUserId)).thenReturn(emptyList())
+            whenever(statisticsService.getToday(telegramUser.externalUserId)).thenReturn(emptyList())
             val headers = buildHeaders()
 
             val response = restTemplate.exchange(
@@ -148,7 +151,7 @@ class StatisticsControllerTest @Autowired constructor(
         @DisplayName("valid range - returns 200 with full body and forwards from/to to service")
         fun `valid range returns 200`() {
             val dto = dailyDto()
-            `when`(statisticsService.getStatistics(eq(telegramUser.externalUserId), eq(from), eq(to))).thenReturn(dto)
+            whenever(statisticsService.getStatistics(eq(telegramUser.externalUserId), eq(from), eq(to))).thenReturn(dto)
             val headers = buildHeaders()
 
             val response = restTemplate.exchange(
@@ -180,7 +183,7 @@ class StatisticsControllerTest @Autowired constructor(
         @DisplayName("from == to - returns 200 with 24 hourly buckets")
         fun `from equals to returns hourly`() {
             val day = LocalDate.of(2026, 5, 12)
-            `when`(statisticsService.getStatistics(eq(telegramUser.externalUserId), eq(day), eq(day))).thenReturn(hourlyDto())
+            whenever(statisticsService.getStatistics(eq(telegramUser.externalUserId), eq(day), eq(day))).thenReturn(hourlyDto())
             val headers = buildHeaders()
 
             val response = restTemplate.exchange(
@@ -197,7 +200,7 @@ class StatisticsControllerTest @Autowired constructor(
         @Test
         @DisplayName("firstEntryAt = null is rendered as null in response")
         fun `null firstEntryAt rendered as null`() {
-            `when`(statisticsService.getStatistics(eq(telegramUser.externalUserId), eq(from), eq(to)))
+            whenever(statisticsService.getStatistics(eq(telegramUser.externalUserId), eq(from), eq(to)))
                 .thenReturn(dailyDto(firstEntryAt = null))
             val headers = buildHeaders()
 
@@ -213,7 +216,7 @@ class StatisticsControllerTest @Autowired constructor(
         @Test
         @DisplayName("service throws IllegalArgumentException (e.g. from > to in user TZ) - returns 400")
         fun `service IllegalArgumentException returns 400`() {
-            `when`(statisticsService.getStatistics(any(), any(), any()))
+            whenever(statisticsService.getStatistics(any(), any(), any()))
                 .thenThrow(IllegalArgumentException("Invalid parameter: 'from' must be before or equal to 'to'"))
             val headers = buildHeaders()
 
@@ -295,7 +298,7 @@ class StatisticsControllerTest @Autowired constructor(
         @DisplayName("notifications disabled (NotificationSettingsNotFoundException) - returns 404")
         fun `returns 404 when settings not found`() {
             doThrow(NotificationSettingsNotFoundException("not found"))
-                .`when`(statisticsService).getStatistics(any(), any(), any())
+                .whenever(statisticsService).getStatistics(any(), any(), any())
             val headers = buildHeaders()
 
             val response = restTemplate.exchange(
@@ -366,7 +369,7 @@ class StatisticsControllerTest @Autowired constructor(
         @DisplayName("service throws IllegalArgumentException - returns 400 (handler maps to BAD_REQUEST)")
         fun `returns 400 on service IllegalArgumentException`() {
             doThrow(IllegalArgumentException("invalid"))
-                .`when`(waterStatisticService).manualRecordEvent(any(), any(), any())
+                .whenever(waterStatisticService).manualRecordEvent(any(), any(), any())
             val body = objectMapper.writeValueAsString(DtoGenerator.generateWaterEntryRequest(pastInstant(), 250))
 
             val response = restTemplate.exchange(
@@ -439,7 +442,7 @@ class StatisticsControllerTest @Autowired constructor(
         @Test
         @DisplayName("invalid signature - returns 403")
         fun `returns 403 on invalid signature`() {
-            `when`(telegramValidatorService.verifySignature(any())).thenReturn(false)
+            whenever(telegramValidatorService.verifySignature(any())).thenReturn(false)
             val body = objectMapper.writeValueAsString(DtoGenerator.generateWaterEntryRequest(pastInstant(), 250))
 
             val response = restTemplate.exchange(

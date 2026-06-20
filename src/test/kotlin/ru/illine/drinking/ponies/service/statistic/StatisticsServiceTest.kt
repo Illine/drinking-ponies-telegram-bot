@@ -7,11 +7,11 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
-import org.mockito.Mockito.mock
-import org.mockito.Mockito.verify
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.eq
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
 import ru.illine.drinking.ponies.dao.access.WaterStatisticAccessService
@@ -40,9 +40,9 @@ class StatisticsServiceTest {
 
     @BeforeEach
     fun setUp() {
-        notificationAccessService = mock(NotificationAccessService::class.java)
-        waterStatisticAccessService = mock(WaterStatisticAccessService::class.java)
-        messageProvider = mock(MessageProvider::class.java)
+        notificationAccessService = mock<NotificationAccessService>()
+        waterStatisticAccessService = mock<WaterStatisticAccessService>()
+        messageProvider = mock<MessageProvider>()
     }
 
     private fun stubInsight(text: String = "insight") {

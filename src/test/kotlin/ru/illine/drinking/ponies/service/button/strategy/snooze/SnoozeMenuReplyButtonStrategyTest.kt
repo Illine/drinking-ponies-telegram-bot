@@ -6,8 +6,10 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
-import org.mockito.ArgumentCaptor
-import org.mockito.Mockito.*
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.api.objects.message.Message
@@ -31,8 +33,8 @@ class SnoozeMenuReplyButtonStrategyTest {
 
     @BeforeEach
     fun setUp() {
-        sender = mock(TelegramClient::class.java)
-        messageEditorService = mock(MessageEditorService::class.java)
+        sender = mock<TelegramClient>()
+        messageEditorService = mock<MessageEditorService>()
         strategy = SnoozeMenuReplyButtonStrategy(sender, messageEditorService)
     }
 
@@ -52,12 +54,12 @@ class SnoozeMenuReplyButtonStrategyTest {
     @DisplayName("reply(): sends snooze menu message with buttons")
     fun `reply sends snooze menu message`() {
         val callbackQuery = buildCallbackQuery()
-        val captor = ArgumentCaptor.forClass(SendMessage::class.java)
+        val captor = argumentCaptor<SendMessage>()
 
         strategy.reply(callbackQuery)
 
         verify(sender).execute(captor.capture())
-        val sent = captor.value
+        val sent = captor.firstValue
         assertEquals(chatId.toString(), sent.chatId)
         assertEquals(TelegramMessageConstants.NOTIFICATION_SNOOZE_MENU_MESSAGE, sent.text)
         val buttons = (sent.replyMarkup as org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup).keyboard
@@ -87,12 +89,12 @@ class SnoozeMenuReplyButtonStrategyTest {
     }
 
     private fun buildCallbackQuery(): CallbackQuery {
-        val message = mock(Message::class.java)
-        `when`(message.chatId).thenReturn(chatId)
-        `when`(message.messageId).thenReturn(messageId)
+        val message = mock<Message>()
+        whenever(message.chatId).thenReturn(chatId)
+        whenever(message.messageId).thenReturn(messageId)
 
-        val callbackQuery = mock(CallbackQuery::class.java)
-        `when`(callbackQuery.message).thenReturn(message)
+        val callbackQuery = mock<CallbackQuery>()
+        whenever(callbackQuery.message).thenReturn(message)
         return callbackQuery
     }
 }

@@ -22,6 +22,8 @@ class CustomP6SpyLoggerTest {
     @Test
     @DisplayName("init(): does nothing when field is not found")
     fun `init skips when field not found`() {
+        // Exception to the mockito-kotlin style: mockito-kotlin 5.2.1 has no mockStatic wrapper,
+        // so static mocking uses the raw Mockito API (mockStatic + MockedStatic.`when`).
         mockStatic(ReflectionUtils::class.java).use { mocked: MockedStatic<ReflectionUtils> ->
             mocked.`when`<Any?> { ReflectionUtils.findField(any(), anyString()) }.thenReturn(null)
 

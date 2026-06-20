@@ -7,7 +7,12 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
-import org.mockito.Mockito.*
+import org.mockito.kotlin.any
+import org.mockito.kotlin.anyOrNull
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
 import ru.illine.drinking.ponies.model.base.IntervalNotificationType
 import ru.illine.drinking.ponies.service.notification.impl.NotificationSettingsServiceImpl
@@ -28,8 +33,8 @@ class NotificationSettingsServiceTest {
 
     @BeforeEach
     fun setUp() {
-        notificationAccessService = mock(NotificationAccessService::class.java)
-        notificationTimeService = mock(NotificationTimeService::class.java)
+        notificationAccessService = mock<NotificationAccessService>()
+        notificationTimeService = mock<NotificationTimeService>()
         clock = Clock.fixed(Instant.parse("2025-01-01T12:00:00Z"), ZoneOffset.UTC)
         service = NotificationSettingsServiceImpl(notificationAccessService, notificationTimeService, clock)
     }
@@ -67,7 +72,7 @@ class NotificationSettingsServiceTest {
     @DisplayName("getNotificationSettings(): delegates to access service")
     fun `getNotificationSettings delegates to access service`() {
         val expected = DtoGenerator.generateNotificationDto(externalUserId = externalUserId)
-        `when`(notificationAccessService.findNotificationSettingByExternalUserId(externalUserId)).thenReturn(expected)
+        whenever(notificationAccessService.findNotificationSettingByExternalUserId(externalUserId)).thenReturn(expected)
 
         val result = service.getNotificationSettings(externalUserId)
 
@@ -79,7 +84,7 @@ class NotificationSettingsServiceTest {
     @DisplayName("getAllNotificationSettings(): delegates to access service")
     fun `getAllNotificationSettings delegates to access service`() {
         val expected = setOf(DtoGenerator.generateNotificationDto())
-        `when`(notificationAccessService.findAllNotificationSettings()).thenReturn(expected)
+        whenever(notificationAccessService.findAllNotificationSettings()).thenReturn(expected)
 
         val result = service.getAllNotificationSettings()
 
@@ -92,7 +97,7 @@ class NotificationSettingsServiceTest {
     fun `resetNotificationTimer delegates to access service`() {
         val time = LocalDateTime.of(2026, 4, 5, 12, 0)
         val expected = DtoGenerator.generateNotificationDto(externalUserId = externalUserId)
-        `when`(notificationAccessService.updateTimeOfLastNotification(externalUserId, time)).thenReturn(expected)
+        whenever(notificationAccessService.updateTimeOfLastNotification(externalUserId, time)).thenReturn(expected)
 
         val result = service.resetNotificationTimer(externalUserId, time)
 
@@ -103,7 +108,7 @@ class NotificationSettingsServiceTest {
     @Test
     @DisplayName("isEnabledNotifications(): delegates to access service")
     fun `isEnabledNotifications delegates to access service`() {
-        `when`(notificationAccessService.findIsEnabledNotificationsByExternalUserId(externalUserId)).thenReturn(true)
+        whenever(notificationAccessService.findIsEnabledNotificationsByExternalUserId(externalUserId)).thenReturn(true)
 
         val result = service.isEnabledNotifications(externalUserId)
 
@@ -114,7 +119,7 @@ class NotificationSettingsServiceTest {
     @Test
     @DisplayName("isEnabledNotifications(): returns false when disabled")
     fun `isEnabledNotifications returns false when disabled`() {
-        `when`(notificationAccessService.findIsEnabledNotificationsByExternalUserId(externalUserId)).thenReturn(false)
+        whenever(notificationAccessService.findIsEnabledNotificationsByExternalUserId(externalUserId)).thenReturn(false)
 
         val result = service.isEnabledNotifications(externalUserId)
 
@@ -127,7 +132,7 @@ class NotificationSettingsServiceTest {
     fun `changeInterval delegates to access service`() {
         val interval = IntervalNotificationType.TWO_HOURS
         val expected = DtoGenerator.generateNotificationDto(externalUserId = externalUserId)
-        `when`(notificationAccessService.updateNotificationSettings(externalUserId, interval)).thenReturn(expected)
+        whenever(notificationAccessService.updateNotificationSettings(externalUserId, interval)).thenReturn(expected)
 
         val result = service.changeInterval(externalUserId, interval)
 
@@ -145,7 +150,7 @@ class NotificationSettingsServiceTest {
             quietModeStart = expectedStart,
             quietModeEnd = expectedEnd
         )
-        `when`(notificationAccessService.findNotificationSettingByExternalUserId(externalUserId)).thenReturn(dto)
+        whenever(notificationAccessService.findNotificationSettingByExternalUserId(externalUserId)).thenReturn(dto)
 
         val result = service.getQuietMode(externalUserId)
 
@@ -161,7 +166,7 @@ class NotificationSettingsServiceTest {
             quietModeStart = null,
             quietModeEnd = LocalTime.of(8, 0)
         )
-        `when`(notificationAccessService.findNotificationSettingByExternalUserId(externalUserId)).thenReturn(dto)
+        whenever(notificationAccessService.findNotificationSettingByExternalUserId(externalUserId)).thenReturn(dto)
 
         assertThrows(IllegalStateException::class.java) {
             service.getQuietMode(externalUserId)
@@ -176,7 +181,7 @@ class NotificationSettingsServiceTest {
             quietModeStart = LocalTime.of(23, 0),
             quietModeEnd = null
         )
-        `when`(notificationAccessService.findNotificationSettingByExternalUserId(externalUserId)).thenReturn(dto)
+        whenever(notificationAccessService.findNotificationSettingByExternalUserId(externalUserId)).thenReturn(dto)
 
         assertThrows(IllegalStateException::class.java) {
             service.getQuietMode(externalUserId)
@@ -189,7 +194,7 @@ class NotificationSettingsServiceTest {
         service.changeNotificationStatus(externalUserId, true)
 
         verify(notificationAccessService).updateNotificationsEnabled(externalUserId)
-        verify(notificationAccessService, never()).updateNotificationsDisabled(anyLong())
+        verify(notificationAccessService, never()).updateNotificationsDisabled(any<Long>())
     }
 
     @Test
@@ -198,7 +203,7 @@ class NotificationSettingsServiceTest {
         service.changeNotificationStatus(externalUserId, false)
 
         verify(notificationAccessService).updateNotificationsDisabled(externalUserId)
-        verify(notificationAccessService, never()).updateNotificationsEnabled(anyLong())
+        verify(notificationAccessService, never()).updateNotificationsEnabled(any<Long>())
     }
 
     @Test
@@ -219,7 +224,7 @@ class NotificationSettingsServiceTest {
             service.changeTimezone(externalUserId, timezone)
         }
 
-        verify(notificationAccessService, never()).updateTimezone(anyLong(), anyString())
+        verify(notificationAccessService, never()).updateTimezone(any<Long>(), any<String>())
     }
 
     @Test
@@ -227,8 +232,8 @@ class NotificationSettingsServiceTest {
     fun `getNextNotificationAt delegates to time service`() {
         val dto = DtoGenerator.generateNotificationDto(externalUserId = externalUserId)
         val expectedInstant = Instant.parse("2025-01-01T11:00:00Z")
-        `when`(notificationAccessService.findNotificationSettingByExternalUserId(externalUserId)).thenReturn(dto)
-        `when`(notificationTimeService.calculateNextNotificationAt(dto)).thenReturn(expectedInstant)
+        whenever(notificationAccessService.findNotificationSettingByExternalUserId(externalUserId)).thenReturn(dto)
+        whenever(notificationTimeService.calculateNextNotificationAt(dto)).thenReturn(expectedInstant)
 
         val result = service.getNextNotificationAt(externalUserId)
 
@@ -240,7 +245,7 @@ class NotificationSettingsServiceTest {
     @Test
     @DisplayName("getAllSettings(): returns SettingDto with all fields when notifications are enabled")
     fun `getAllSettings returns full dto when enabled`() {
-        `when`(notificationAccessService.findIsEnabledNotificationsByExternalUserId(externalUserId)).thenReturn(true)
+        whenever(notificationAccessService.findIsEnabledNotificationsByExternalUserId(externalUserId)).thenReturn(true)
         val notificationDto = DtoGenerator.generateNotificationDto(
             externalUserId = externalUserId,
             notificationInterval = IntervalNotificationType.HOUR,
@@ -248,7 +253,7 @@ class NotificationSettingsServiceTest {
             quietModeStart = LocalTime.of(23, 0),
             quietModeEnd = LocalTime.of(8, 0),
         )
-        `when`(notificationAccessService.findNotificationSettingByExternalUserId(externalUserId)).thenReturn(notificationDto)
+        whenever(notificationAccessService.findNotificationSettingByExternalUserId(externalUserId)).thenReturn(notificationDto)
 
         val result = service.getAllSettings(externalUserId)
 
@@ -267,7 +272,7 @@ class NotificationSettingsServiceTest {
     @Test
     @DisplayName("getAllSettings(): returns SettingDto with only notificationActive=false when notifications are disabled")
     fun `getAllSettings returns minimal dto when disabled`() {
-        `when`(notificationAccessService.findIsEnabledNotificationsByExternalUserId(externalUserId)).thenReturn(false)
+        whenever(notificationAccessService.findIsEnabledNotificationsByExternalUserId(externalUserId)).thenReturn(false)
 
         val result = service.getAllSettings(externalUserId)
 
@@ -280,7 +285,7 @@ class NotificationSettingsServiceTest {
         assertEquals(null, result.timezone)
         assertEquals(null, result.dailyGoalMl)
         verify(notificationAccessService).findIsEnabledNotificationsByExternalUserId(externalUserId)
-        verify(notificationAccessService, never()).findNotificationSettingByExternalUserId(anyLong())
+        verify(notificationAccessService, never()).findNotificationSettingByExternalUserId(any<Long>())
     }
 
     @Test
@@ -302,7 +307,7 @@ class NotificationSettingsServiceTest {
             service.pauseNotifications(externalUserId, minutes)
         }
 
-        verify(notificationAccessService, never()).updatePause(anyLong(), any())
+        verify(notificationAccessService, never()).updatePause(any<Long>(), anyOrNull())
     }
 
     @Test
@@ -318,7 +323,7 @@ class NotificationSettingsServiceTest {
     fun `getPauseState returns paused true when active`() {
         val pauseUntil = LocalDateTime.of(2025, 1, 1, 13, 0)
         val dto = DtoGenerator.generateNotificationDto(externalUserId = externalUserId, pauseUntil = pauseUntil)
-        `when`(notificationAccessService.findNotificationSettingByExternalUserId(externalUserId)).thenReturn(dto)
+        whenever(notificationAccessService.findNotificationSettingByExternalUserId(externalUserId)).thenReturn(dto)
 
         val result = service.getPauseState(externalUserId)
 
@@ -331,7 +336,7 @@ class NotificationSettingsServiceTest {
     fun `getPauseState returns paused false when pauseUntil expired`() {
         val pauseUntil = LocalDateTime.of(2025, 1, 1, 11, 0)
         val dto = DtoGenerator.generateNotificationDto(externalUserId = externalUserId, pauseUntil = pauseUntil)
-        `when`(notificationAccessService.findNotificationSettingByExternalUserId(externalUserId)).thenReturn(dto)
+        whenever(notificationAccessService.findNotificationSettingByExternalUserId(externalUserId)).thenReturn(dto)
 
         val result = service.getPauseState(externalUserId)
 
@@ -343,7 +348,7 @@ class NotificationSettingsServiceTest {
     @DisplayName("getPauseState(): returns paused=false and null pauseUntil when pauseUntil is null")
     fun `getPauseState returns paused false when pauseUntil null`() {
         val dto = DtoGenerator.generateNotificationDto(externalUserId = externalUserId, pauseUntil = null)
-        `when`(notificationAccessService.findNotificationSettingByExternalUserId(externalUserId)).thenReturn(dto)
+        whenever(notificationAccessService.findNotificationSettingByExternalUserId(externalUserId)).thenReturn(dto)
 
         val result = service.getPauseState(externalUserId)
 
@@ -356,7 +361,7 @@ class NotificationSettingsServiceTest {
     fun `getPauseState returns paused false when pauseUntil equals now`() {
         val pauseUntil = LocalDateTime.of(2025, 1, 1, 12, 0)
         val dto = DtoGenerator.generateNotificationDto(externalUserId = externalUserId, pauseUntil = pauseUntil)
-        `when`(notificationAccessService.findNotificationSettingByExternalUserId(externalUserId)).thenReturn(dto)
+        whenever(notificationAccessService.findNotificationSettingByExternalUserId(externalUserId)).thenReturn(dto)
 
         val result = service.getPauseState(externalUserId)
 
@@ -404,7 +409,7 @@ class NotificationSettingsServiceTest {
             service.changeDailyGoal(externalUserId, goalMl)
         }
 
-        verify(notificationAccessService, never()).updateDailyGoal(anyLong(), anyInt())
+        verify(notificationAccessService, never()).updateDailyGoal(any<Long>(), any<Int>())
     }
 
     @Test
@@ -416,7 +421,7 @@ class NotificationSettingsServiceTest {
             pauseUntil = pauseUntil,
             notificationAttempts = 3
         )
-        `when`(notificationAccessService.findNotificationSettingByExternalUserId(externalUserId)).thenReturn(dto)
+        whenever(notificationAccessService.findNotificationSettingByExternalUserId(externalUserId)).thenReturn(dto)
 
         val result = service.getPauseState(externalUserId)
 

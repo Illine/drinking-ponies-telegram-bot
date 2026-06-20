@@ -7,8 +7,11 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
-import org.mockito.Mockito.*
 import org.mockito.kotlin.any
+import org.mockito.kotlin.doThrow
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
+import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.web.client.TestRestTemplate
 import org.springframework.http.HttpEntity
@@ -40,8 +43,8 @@ class SettingControllerTest @Autowired constructor(
 
     @BeforeEach
     fun setUp() {
-        `when`(telegramValidatorService.verifySignature(any())).thenReturn(true)
-        `when`(telegramValidatorService.map(any())).thenReturn(telegramUser)
+        whenever(telegramValidatorService.verifySignature(any())).thenReturn(true)
+        whenever(telegramValidatorService.map(any())).thenReturn(telegramUser)
     }
 
     private fun buildHeaders(): HttpHeaders {
@@ -59,7 +62,7 @@ class SettingControllerTest @Autowired constructor(
         fun `returns 200 with all settings`() {
             val expectedInterval = IntervalNotificationType.HOUR_AND_HALF
             val settingDto = DtoGenerator.generateSettingDto()
-            `when`(notificationSettingsService.getAllSettings(any())).thenReturn(settingDto)
+            whenever(notificationSettingsService.getAllSettings(any())).thenReturn(settingDto)
             val headers = buildHeaders()
 
             val response = restTemplate.exchange(
@@ -81,7 +84,7 @@ class SettingControllerTest @Autowired constructor(
         @DisplayName("notifications disabled - returns 200 with notificationActive=false")
         fun `returns 200 with only notificationActive when disabled`() {
             val settingDto = SettingDto(notificationActive = false)
-            `when`(notificationSettingsService.getAllSettings(any())).thenReturn(settingDto)
+            whenever(notificationSettingsService.getAllSettings(any())).thenReturn(settingDto)
             val headers = buildHeaders()
 
             val response = restTemplate.exchange(
@@ -250,7 +253,7 @@ class SettingControllerTest @Autowired constructor(
         @DisplayName("invalid timezone value - returns 400")
         fun `returns 400 when invalid timezone value`() {
             doThrow(IllegalArgumentException("Invalid timezone"))
-                .`when`(notificationSettingsService).changeTimezone(any(), any())
+                .whenever(notificationSettingsService).changeTimezone(any(), any())
             val headers = buildHeaders()
             val url = "/settings/timezone?timezone=Invalid/Zone"
 
@@ -368,7 +371,7 @@ class SettingControllerTest @Autowired constructor(
         @DisplayName("service rejects out-of-range / non-allowed goalMl - returns 400")
         fun `returns 400 when service rejects goalMl`(goalMl: Int) {
             doThrow(IllegalArgumentException("Daily goal must be one of [2000, 2250, 2500, 2750, 3000] ml, got: $goalMl"))
-                .`when`(notificationSettingsService).changeDailyGoal(any(), any())
+                .whenever(notificationSettingsService).changeDailyGoal(any(), any())
             val headers = buildHeaders()
             val url = "/settings/goal?goalMl=$goalMl"
 
