@@ -125,6 +125,17 @@ tasks {
     compileKotlin {
         compilerOptions {
             freeCompilerArgs.add("-Xjsr305=strict")
+            // KT-73255: opt in to the upcoming Kotlin default where a constructor-parameter
+            // annotation without an explicit use-site target is applied to both the parameter
+            // and the property/field. See https://youtrack.jetbrains.com/issue/KT-73255
+            freeCompilerArgs.add("-Xannotation-default-target=param-property")
+        }
+    }
+
+    compileTestKotlin {
+        compilerOptions {
+            // Keep the annotation default target consistent with main (KT-73255).
+            freeCompilerArgs.add("-Xannotation-default-target=param-property")
         }
     }
 
