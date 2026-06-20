@@ -7,11 +7,11 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
-import org.mockito.Mockito.mock
-import org.mockito.Mockito.never
-import org.mockito.Mockito.verify
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
 import ru.illine.drinking.ponies.dao.access.WaterStatisticAccessService
 import ru.illine.drinking.ponies.model.base.AnswerNotificationType
 import ru.illine.drinking.ponies.model.base.WaterEntrySourceType
@@ -37,7 +37,7 @@ class WaterStatisticServiceTest {
 
     @BeforeEach
     fun setUp() {
-        waterStatisticAccessService = mock(WaterStatisticAccessService::class.java)
+        waterStatisticAccessService = mock<WaterStatisticAccessService>()
         service = WaterStatisticServiceImpl(waterStatisticAccessService, fixedClock)
     }
 

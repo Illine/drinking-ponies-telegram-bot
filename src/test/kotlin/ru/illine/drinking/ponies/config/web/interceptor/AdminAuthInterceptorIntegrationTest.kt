@@ -5,8 +5,10 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import org.mockito.Mockito.*
 import org.mockito.kotlin.any
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.boot.test.web.client.TestRestTemplate
@@ -64,8 +66,8 @@ class AdminAuthInterceptorIntegrationTest @Autowired constructor(
     @BeforeEach
     fun setUp() {
         cacheManager.getCache(CacheConfig.USER_IS_ADMIN)?.clear()
-        `when`(telegramValidatorService.verifySignature(any())).thenReturn(true)
-        `when`(telegramValidatorService.map(any())).thenReturn(telegramUser)
+        whenever(telegramValidatorService.verifySignature(any())).thenReturn(true)
+        whenever(telegramValidatorService.map(any())).thenReturn(telegramUser)
     }
 
     private fun buildHeaders(): HttpHeaders {
@@ -91,7 +93,7 @@ class AdminAuthInterceptorIntegrationTest @Autowired constructor(
         @Test
         @DisplayName("non-admin user - returns 403 with X-Auth-Error-Code forbidden_admin")
         fun `non-admin user returns 403 with forbidden_admin header`() {
-            `when`(telegramValidatorService.map(any())).thenReturn(telegramUser.copy(externalUserId = NON_ADMIN_USER_ID))
+            whenever(telegramValidatorService.map(any())).thenReturn(telegramUser.copy(externalUserId = NON_ADMIN_USER_ID))
 
             val response = restTemplate.exchange(
                 "/systems/admin-test", HttpMethod.GET, HttpEntity<Void>(buildHeaders()), Void::class.java
@@ -107,7 +109,7 @@ class AdminAuthInterceptorIntegrationTest @Autowired constructor(
         @Test
         @DisplayName("expired auth_date - returns 403 with X-Auth-Error-Code session_expired (auth runs first)")
         fun `expired auth_date returns 403 with session_expired header`() {
-            `when`(telegramValidatorService.verifySignature(any())).thenReturn(false)
+            whenever(telegramValidatorService.verifySignature(any())).thenReturn(false)
 
             val response = restTemplate.exchange(
                 "/systems/admin-test", HttpMethod.GET, HttpEntity<Void>(buildHeaders()), Void::class.java

@@ -6,8 +6,8 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
+import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.web.client.TestRestTemplate
 import org.springframework.cache.CacheManager
@@ -54,8 +54,8 @@ class UserControllerTest @Autowired constructor(
     @BeforeEach
     fun setUp() {
         cacheManager.getCache(CacheConfig.USER_IS_ADMIN)?.clear()
-        `when`(telegramValidatorService.verifySignature(any())).thenReturn(true)
-        `when`(telegramValidatorService.map(any())).thenReturn(telegramUser)
+        whenever(telegramValidatorService.verifySignature(any())).thenReturn(true)
+        whenever(telegramValidatorService.map(any())).thenReturn(telegramUser)
     }
 
     private fun buildHeaders(): HttpHeaders {
@@ -86,7 +86,7 @@ class UserControllerTest @Autowired constructor(
         @Test
         @DisplayName("non-admin user - returns 200 with isAdmin=false")
         fun `returns 200 with isAdmin false for non-admin`() {
-            `when`(telegramValidatorService.map(any())).thenReturn(telegramUser.copy(externalUserId = NON_ADMIN_USER_ID))
+            whenever(telegramValidatorService.map(any())).thenReturn(telegramUser.copy(externalUserId = NON_ADMIN_USER_ID))
             val headers = buildHeaders()
 
             val response = restTemplate.exchange(
@@ -102,7 +102,7 @@ class UserControllerTest @Autowired constructor(
         @Test
         @DisplayName("user not in DB - returns 200 with isAdmin=false")
         fun `returns 200 with isAdmin false for user not in db`() {
-            `when`(telegramValidatorService.map(any())).thenReturn(telegramUser.copy(externalUserId = MISSING_USER_ID))
+            whenever(telegramValidatorService.map(any())).thenReturn(telegramUser.copy(externalUserId = MISSING_USER_ID))
             val headers = buildHeaders()
 
             val response = restTemplate.exchange(
@@ -132,7 +132,7 @@ class UserControllerTest @Autowired constructor(
         @Test
         @DisplayName("expired auth_date - returns 403 with X-Auth-Error-Code session_expired")
         fun `returns 403 with session_expired header`() {
-            `when`(telegramValidatorService.verifySignature(any())).thenReturn(false)
+            whenever(telegramValidatorService.verifySignature(any())).thenReturn(false)
             val headers = buildHeaders()
 
             val response = restTemplate.exchange(

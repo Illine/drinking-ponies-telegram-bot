@@ -8,8 +8,12 @@ import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
-import org.mockito.Mockito.*
 import org.mockito.kotlin.any
+import org.mockito.kotlin.doThrow
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
+import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.web.client.TestRestTemplate
 import org.springframework.http.HttpEntity
@@ -42,8 +46,8 @@ class NotificationControllerTest @Autowired constructor(
 
     @BeforeEach
     fun setUp() {
-        `when`(telegramValidatorService.verifySignature(any())).thenReturn(true)
-        `when`(telegramValidatorService.map(any())).thenReturn(telegramUser)
+        whenever(telegramValidatorService.verifySignature(any())).thenReturn(true)
+        whenever(telegramValidatorService.map(any())).thenReturn(telegramUser)
     }
 
     private fun buildHeaders(): HttpHeaders {
@@ -60,7 +64,7 @@ class NotificationControllerTest @Autowired constructor(
         @DisplayName("valid request - returns 200 with next notification time")
         fun `returns 200 with next notification time`() {
             val expectedInstant = Instant.parse("2025-01-01T14:00:00Z")
-            `when`(notificationSettingsService.getNextNotificationAt(any())).thenReturn(expectedInstant)
+            whenever(notificationSettingsService.getNextNotificationAt(any())).thenReturn(expectedInstant)
             val headers = buildHeaders()
 
             val response = restTemplate.exchange(
@@ -77,7 +81,7 @@ class NotificationControllerTest @Autowired constructor(
         @DisplayName("service throws IllegalArgumentException - returns 400")
         fun `returns 400 when service throws`() {
             doThrow(IllegalArgumentException("User not found"))
-                .`when`(notificationSettingsService).getNextNotificationAt(any())
+                .whenever(notificationSettingsService).getNextNotificationAt(any())
             val headers = buildHeaders()
 
             val response = restTemplate.exchange(
@@ -102,7 +106,7 @@ class NotificationControllerTest @Autowired constructor(
         @DisplayName("settings not found (e.g. disabled user) - returns 404")
         fun `returns 404 when settings not found`() {
             doThrow(NotificationSettingsNotFoundException("Not found"))
-                .`when`(notificationSettingsService).getNextNotificationAt(any())
+                .whenever(notificationSettingsService).getNextNotificationAt(any())
             val headers = buildHeaders()
 
             val response = restTemplate.exchange(
@@ -123,7 +127,7 @@ class NotificationControllerTest @Autowired constructor(
         fun `returns 200 with paused true`() {
             val expectedPauseUntil = Instant.parse("2025-01-01T18:00:00Z")
             val expected = PauseStateResponse(paused = true, pauseUntil = expectedPauseUntil)
-            `when`(notificationSettingsService.getPauseState(any())).thenReturn(expected)
+            whenever(notificationSettingsService.getPauseState(any())).thenReturn(expected)
             val headers = buildHeaders()
 
             val response = restTemplate.exchange(
@@ -141,7 +145,7 @@ class NotificationControllerTest @Autowired constructor(
         @DisplayName("not paused - returns 200 with paused=false and null pauseUntil")
         fun `returns 200 with paused false`() {
             val expected = PauseStateResponse(paused = false, pauseUntil = null)
-            `when`(notificationSettingsService.getPauseState(any())).thenReturn(expected)
+            whenever(notificationSettingsService.getPauseState(any())).thenReturn(expected)
             val headers = buildHeaders()
 
             val response = restTemplate.exchange(
@@ -169,7 +173,7 @@ class NotificationControllerTest @Autowired constructor(
         @DisplayName("settings not found (e.g. disabled user) - returns 404")
         fun `returns 404 when settings not found`() {
             doThrow(NotificationSettingsNotFoundException("Not found"))
-                .`when`(notificationSettingsService).getPauseState(any())
+                .whenever(notificationSettingsService).getPauseState(any())
             val headers = buildHeaders()
 
             val response = restTemplate.exchange(
@@ -195,7 +199,7 @@ class NotificationControllerTest @Autowired constructor(
 
             assertEquals(HttpStatus.NO_CONTENT, response.statusCode)
             verify(notificationSettingsService).pauseNotifications(telegramUser.externalUserId, 60)
-            verify(notificationSettingsService, never()).cancelPause(anyLong())
+            verify(notificationSettingsService, never()).cancelPause(any<Long>())
         }
 
         @Test
@@ -209,7 +213,7 @@ class NotificationControllerTest @Autowired constructor(
 
             assertEquals(HttpStatus.NO_CONTENT, response.statusCode)
             verify(notificationSettingsService).cancelPause(telegramUser.externalUserId)
-            verify(notificationSettingsService, never()).pauseNotifications(anyLong(), anyLong())
+            verify(notificationSettingsService, never()).pauseNotifications(any<Long>(), any<Long>())
         }
 
         @ParameterizedTest(name = "[{index}] minutes={0} - returns 400 from @Min/@Max validation")
@@ -267,7 +271,7 @@ class NotificationControllerTest @Autowired constructor(
         @DisplayName("settings not found (e.g. disabled user) - returns 404")
         fun `returns 404 when settings not found`() {
             doThrow(NotificationSettingsNotFoundException("Not found"))
-                .`when`(notificationSettingsService).pauseNotifications(anyLong(), anyLong())
+                .whenever(notificationSettingsService).pauseNotifications(any<Long>(), any<Long>())
             val headers = buildHeaders()
 
             val response = restTemplate.exchange(

@@ -6,9 +6,13 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
-import org.mockito.ArgumentCaptor
-import org.mockito.Mockito.*
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.doThrow
+import org.mockito.kotlin.eq
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.api.objects.User
@@ -44,10 +48,10 @@ class SnoozeApplyReplyButtonStrategyTest {
 
     @BeforeEach
     fun setUp() {
-        sender = mock(TelegramClient::class.java)
-        notificationSettingsService = mock(NotificationSettingsService::class.java)
-        messageEditorService = mock(MessageEditorService::class.java)
-        waterStatisticService = mock(WaterStatisticService::class.java)
+        sender = mock<TelegramClient>()
+        notificationSettingsService = mock<NotificationSettingsService>()
+        messageEditorService = mock<MessageEditorService>()
+        waterStatisticService = mock<WaterStatisticService>()
         strategy = SnoozeApplyReplyButtonStrategy(
             sender,
             notificationSettingsService,
@@ -62,8 +66,8 @@ class SnoozeApplyReplyButtonStrategyTest {
     @DisplayName("reply(): deletes reply markup on original message")
     fun `reply deletes reply markup`(snoozeType: SnoozeNotificationType) {
         val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = externalUserId)
-        `when`(notificationSettingsService.getNotificationSettings(externalUserId)).thenReturn(notificationDto)
-        `when`(notificationSettingsService.resetNotificationTimer(eq(externalUserId), any())).thenReturn(notificationDto)
+        whenever(notificationSettingsService.getNotificationSettings(externalUserId)).thenReturn(notificationDto)
+        whenever(notificationSettingsService.resetNotificationTimer(eq(externalUserId), any())).thenReturn(notificationDto)
 
         val callbackQuery = buildCallbackQuery(snoozeType.queryData.toString())
         strategy.reply(callbackQuery)
@@ -76,8 +80,8 @@ class SnoozeApplyReplyButtonStrategyTest {
     @DisplayName("reply(): next notification fires exactly snoozeMinutes from now")
     fun `reply updates notification time`(snoozeType: SnoozeNotificationType) {
         val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = externalUserId)
-        `when`(notificationSettingsService.getNotificationSettings(externalUserId)).thenReturn(notificationDto)
-        `when`(notificationSettingsService.resetNotificationTimer(eq(externalUserId), any())).thenReturn(notificationDto)
+        whenever(notificationSettingsService.getNotificationSettings(externalUserId)).thenReturn(notificationDto)
+        whenever(notificationSettingsService.resetNotificationTimer(eq(externalUserId), any())).thenReturn(notificationDto)
 
         val callbackQuery = buildCallbackQuery(snoozeType.queryData.toString())
         strategy.reply(callbackQuery)
@@ -92,16 +96,16 @@ class SnoozeApplyReplyButtonStrategyTest {
     @DisplayName("reply(): sends confirmation message with snooze display name")
     fun `reply sends confirmation message`(snoozeType: SnoozeNotificationType) {
         val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = externalUserId)
-        `when`(notificationSettingsService.getNotificationSettings(externalUserId)).thenReturn(notificationDto)
-        `when`(notificationSettingsService.resetNotificationTimer(eq(externalUserId), any())).thenReturn(notificationDto)
+        whenever(notificationSettingsService.getNotificationSettings(externalUserId)).thenReturn(notificationDto)
+        whenever(notificationSettingsService.resetNotificationTimer(eq(externalUserId), any())).thenReturn(notificationDto)
 
         val callbackQuery = buildCallbackQuery(snoozeType.queryData.toString())
-        val captor = ArgumentCaptor.forClass(SendMessage::class.java)
+        val captor = argumentCaptor<SendMessage>()
 
         strategy.reply(callbackQuery)
 
         verify(sender).execute(captor.capture())
-        val sent = captor.value
+        val sent = captor.firstValue
         assertEquals(chatId.toString(), sent.chatId)
         assertEquals(
             TelegramMessageConstants.NOTIFICATION_SUSPEND_MESSAGE.format(snoozeType.displayName),
@@ -113,8 +117,8 @@ class SnoozeApplyReplyButtonStrategyTest {
     @DisplayName("reply(): falls back to TEN_MINS when queryData doesn't match any SnoozeNotificationType")
     fun `reply falls back to TEN_MINS for unknown queryData`() {
         val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = externalUserId)
-        `when`(notificationSettingsService.getNotificationSettings(externalUserId)).thenReturn(notificationDto)
-        `when`(notificationSettingsService.resetNotificationTimer(eq(externalUserId), any())).thenReturn(notificationDto)
+        whenever(notificationSettingsService.getNotificationSettings(externalUserId)).thenReturn(notificationDto)
+        whenever(notificationSettingsService.resetNotificationTimer(eq(externalUserId), any())).thenReturn(notificationDto)
 
         val callbackQuery = buildCallbackQuery("00000000-0000-0000-0000-000000000000")
         strategy.reply(callbackQuery)
@@ -129,8 +133,8 @@ class SnoozeApplyReplyButtonStrategyTest {
     @DisplayName("reply(): records water statistic with SNOOZE event type")
     fun `reply records statistic any type`(snoozeType: SnoozeNotificationType) {
         val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = externalUserId)
-        `when`(notificationSettingsService.getNotificationSettings(externalUserId)).thenReturn(notificationDto)
-        `when`(notificationSettingsService.resetNotificationTimer(eq(externalUserId), any())).thenReturn(notificationDto)
+        whenever(notificationSettingsService.getNotificationSettings(externalUserId)).thenReturn(notificationDto)
+        whenever(notificationSettingsService.resetNotificationTimer(eq(externalUserId), any())).thenReturn(notificationDto)
 
         val callbackQuery = buildCallbackQuery(snoozeType.queryData.toString())
 
@@ -165,33 +169,33 @@ class SnoozeApplyReplyButtonStrategyTest {
     @DisplayName("reply(): sends snooze confirmation message even when recordEvent throws an exception")
     fun `reply sends confirmation message when recordEvent throws`() {
         val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = externalUserId)
-        `when`(notificationSettingsService.getNotificationSettings(externalUserId)).thenReturn(notificationDto)
-        `when`(notificationSettingsService.resetNotificationTimer(any(), any())).thenReturn(notificationDto)
-        doThrow(RuntimeException("statistic error")).`when`(waterStatisticService)
-            .recordEvent(any(), any(), anyInt())
+        whenever(notificationSettingsService.getNotificationSettings(externalUserId)).thenReturn(notificationDto)
+        whenever(notificationSettingsService.resetNotificationTimer(any(), any())).thenReturn(notificationDto)
+        doThrow(RuntimeException("statistic error")).whenever(waterStatisticService)
+            .recordEvent(any(), any(), any<Int>())
 
         val snoozeType = SnoozeNotificationType.TEN_MINS
-        val captor = ArgumentCaptor.forClass(SendMessage::class.java)
+        val captor = argumentCaptor<SendMessage>()
         strategy.reply(buildCallbackQuery(snoozeType.queryData.toString()))
 
         verify(sender).execute(captor.capture())
-        val sent = captor.value
+        val sent = captor.firstValue
         assertEquals(chatId.toString(), sent.chatId)
         assertEquals(TelegramMessageConstants.NOTIFICATION_SUSPEND_MESSAGE.format(snoozeType.displayName), sent.text)
     }
 
     private fun buildCallbackQuery(queryData: String): CallbackQuery {
-        val user = mock(User::class.java)
-        `when`(user.id).thenReturn(externalUserId)
+        val user = mock<User>()
+        whenever(user.id).thenReturn(externalUserId)
 
-        val message = mock(Message::class.java)
-        `when`(message.chatId).thenReturn(chatId)
-        `when`(message.messageId).thenReturn(messageId)
+        val message = mock<Message>()
+        whenever(message.chatId).thenReturn(chatId)
+        whenever(message.messageId).thenReturn(messageId)
 
-        val callbackQuery = mock(CallbackQuery::class.java)
-        `when`(callbackQuery.from).thenReturn(user)
-        `when`(callbackQuery.message).thenReturn(message)
-        `when`(callbackQuery.data).thenReturn(queryData)
+        val callbackQuery = mock<CallbackQuery>()
+        whenever(callbackQuery.from).thenReturn(user)
+        whenever(callbackQuery.message).thenReturn(message)
+        whenever(callbackQuery.data).thenReturn(queryData)
         return callbackQuery
     }
 

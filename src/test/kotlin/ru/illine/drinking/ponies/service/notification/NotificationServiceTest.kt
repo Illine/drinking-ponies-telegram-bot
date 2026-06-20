@@ -3,9 +3,13 @@ package ru.illine.drinking.ponies.service.notification
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
-import org.mockito.Mockito.*
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 import org.telegram.telegrambots.abilitybots.api.objects.MessageContext
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.User
@@ -28,8 +32,8 @@ class NotificationServiceTest {
 
     @BeforeEach
     fun setUp() {
-        sender = mock(TelegramClient::class.java)
-        notificationAccessService = mock(NotificationAccessService::class.java)
+        sender = mock<TelegramClient>()
+        notificationAccessService = mock<NotificationAccessService>()
         service = NotificationServiceImpl(
             sender,
             notificationAccessService
@@ -40,8 +44,8 @@ class NotificationServiceTest {
     @DisplayName("start(): existing user - sends greeting and default settings, finds existing settings")
     fun `start existing user`() {
         val dto = DtoGenerator.generateNotificationDto(externalUserId = externalUserId)
-        doReturn(true).`when`(notificationAccessService).existsByExternalUserId(externalUserId)
-        `when`(notificationAccessService.findNotificationSettingByExternalUserId(externalUserId)).thenReturn(dto)
+        doReturn(true).whenever(notificationAccessService).existsByExternalUserId(externalUserId)
+        whenever(notificationAccessService.findNotificationSettingByExternalUserId(externalUserId)).thenReturn(dto)
 
         service.start(buildMessageContext())
 
@@ -54,8 +58,8 @@ class NotificationServiceTest {
     @DisplayName("start(): new user - creates user, saves settings, sends default settings message")
     fun `start new user`() {
         val dto = DtoGenerator.generateNotificationDto(externalUserId = externalUserId)
-        doReturn(false).`when`(notificationAccessService).existsByExternalUserId(externalUserId)
-        `when`(notificationAccessService.findNotificationSettingByExternalUserId(externalUserId)).thenReturn(dto)
+        doReturn(false).whenever(notificationAccessService).existsByExternalUserId(externalUserId)
+        whenever(notificationAccessService.findNotificationSettingByExternalUserId(externalUserId)).thenReturn(dto)
 
         service.start(buildMessageContext())
 
@@ -65,13 +69,13 @@ class NotificationServiceTest {
     }
 
     private fun buildMessageContext(): MessageContext {
-        val user = mock(User::class.java)
-        `when`(user.id).thenReturn(externalUserId)
-        `when`(user.userName).thenReturn("testUser")
+        val user = mock<User>()
+        whenever(user.id).thenReturn(externalUserId)
+        whenever(user.userName).thenReturn("testUser")
 
-        val context = mock(MessageContext::class.java)
-        `when`(context.user()).thenReturn(user)
-        `when`(context.chatId()).thenReturn(chatId)
+        val context = mock<MessageContext>()
+        whenever(context.user()).thenReturn(user)
+        whenever(context.chatId()).thenReturn(chatId)
         return context
     }
 }

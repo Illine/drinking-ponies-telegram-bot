@@ -6,8 +6,8 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
+import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.web.client.TestRestTemplate
 import org.springframework.http.HttpEntity
@@ -34,8 +34,8 @@ class SystemControllerTest @Autowired constructor(
 
     @BeforeEach
     fun setUp() {
-        `when`(telegramValidatorService.verifySignature(any())).thenReturn(true)
-        `when`(telegramValidatorService.map(any())).thenReturn(telegramUser)
+        whenever(telegramValidatorService.verifySignature(any())).thenReturn(true)
+        whenever(telegramValidatorService.map(any())).thenReturn(telegramUser)
     }
 
     private fun buildHeaders(): HttpHeaders {
@@ -79,7 +79,7 @@ class SystemControllerTest @Autowired constructor(
         @Test
         @DisplayName("expired auth_date - returns 403 with X-Auth-Error-Code session_expired")
         fun `returns 403 with session_expired header`() {
-            `when`(telegramValidatorService.verifySignature(any())).thenReturn(false)
+            whenever(telegramValidatorService.verifySignature(any())).thenReturn(false)
             val headers = buildHeaders()
 
             val response = restTemplate.exchange(

@@ -3,8 +3,13 @@ package ru.illine.drinking.ponies.service.telegram
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
-import org.mockito.Mockito.*
 import org.mockito.kotlin.any
+import org.mockito.kotlin.doThrow
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
+import org.mockito.kotlin.whenever
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageReplyMarkup
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText
@@ -25,7 +30,7 @@ class MessageEditorServiceTest {
 
     @BeforeEach
     fun setUp() {
-        sender = mock(TelegramClient::class.java)
+        sender = mock<TelegramClient>()
         service = MessageEditorServiceImpl(sender)
     }
 
@@ -49,7 +54,7 @@ class MessageEditorServiceTest {
     @Test
     @DisplayName("editReplyMarkup(): deletes old markup and sends new text with keyboard")
     fun `editReplyMarkup with keyboard`() {
-        val keyboard = mock(InlineKeyboardMarkup::class.java)
+        val keyboard = mock<InlineKeyboardMarkup>()
 
         service.editReplyMarkup("new text", chatId, messageId, replyKeyboard = keyboard)
 
@@ -97,7 +102,7 @@ class MessageEditorServiceTest {
     @Test
     @DisplayName("deleteMessage(): catches exception and does not rethrow")
     fun `deleteMessage catches exception`() {
-        doThrow(RuntimeException("Telegram error")).`when`(sender).execute(any<DeleteMessage>())
+        doThrow(RuntimeException("Telegram error")).whenever(sender).execute(any<DeleteMessage>())
 
         service.deleteMessage(chatId, messageId)
 
