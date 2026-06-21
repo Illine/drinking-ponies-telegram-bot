@@ -12,26 +12,22 @@ import javax.validation.constraints.NotNull
 @ConfigurationProperties("cache")
 data class CacheProperties(
     val default: CacheEntry = CacheEntry(),
-    val overrides: Map<String, CacheEntryOverride> = emptyMap()
+    val overrides: Map<String, CacheEntryOverride> = emptyMap(),
 ) {
     data class CacheEntry(
-
         @NotNull
         @DurationMin(seconds = 10)
         var ttl: Duration = Duration.ofMinutes(5),
-
         @Min(1)
         @Max(1000)
-        val maximumSize: Long = 100
+        val maximumSize: Long = 100,
     )
 
     data class CacheEntryOverride(
-
         @DurationMin(seconds = 10)
         val ttl: Duration? = null,
-
         @Min(1)
         @Max(1000)
-        val maximumSize: Long? = null
+        val maximumSize: Long? = null,
     )
 }

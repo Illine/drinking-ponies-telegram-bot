@@ -13,14 +13,14 @@ import java.time.Instant
 data class WaterEntryRequest(
     @field:PastOrPresent
     @Schema(
-        description = "Consumption time in ISO 8601 UTC format. " +
-            "If null or omitted, server's current time is used.",
+        description =
+            "Consumption time in ISO 8601 UTC format. " +
+                "If null or omitted, server's current time is used.",
         example = "2025-01-01T14:00:00Z",
         nullable = true,
         requiredMode = Schema.RequiredMode.NOT_REQUIRED,
     )
     val consumedAt: Instant?,
-
     @field:Min(WaterEntryConstants.MIN_ML)
     @field:Max(WaterEntryConstants.MAX_ML)
     @Schema(

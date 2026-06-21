@@ -1,6 +1,8 @@
 package ru.illine.drinking.ponies.service.button.strategy.notification
 
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
@@ -17,8 +19,8 @@ import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.api.objects.User
 import org.telegram.telegrambots.meta.api.objects.message.Message
 import org.telegram.telegrambots.meta.generics.TelegramClient
-import ru.illine.drinking.ponies.service.notification.NotificationSettingsService
 import ru.illine.drinking.ponies.model.base.AnswerNotificationType
+import ru.illine.drinking.ponies.service.notification.NotificationSettingsService
 import ru.illine.drinking.ponies.service.statistic.WaterStatisticService
 import ru.illine.drinking.ponies.service.telegram.MessageEditorService
 import ru.illine.drinking.ponies.test.generator.DtoGenerator
@@ -31,7 +33,6 @@ import java.time.ZoneOffset
 @UnitTest
 @DisplayName("CancelAnswerNotificationReplyButtonStrategy Unit Test")
 class CancelAnswerNotificationReplyButtonStrategyTest {
-
     private val externalUserId = 1L
     private val chatId = 2L
     private val messageId = 3
@@ -50,25 +51,29 @@ class CancelAnswerNotificationReplyButtonStrategyTest {
         messageEditorService = mock<MessageEditorService>()
         notificationSettingsService = mock<NotificationSettingsService>()
         waterStatisticService = mock<WaterStatisticService>()
-        strategy = CancelAnswerNotificationReplyButtonStrategy(
-            sender,
-            messageEditorService,
-            notificationSettingsService,
-            waterStatisticService,
-            fixedClock
-        )
+        strategy =
+            CancelAnswerNotificationReplyButtonStrategy(
+                sender,
+                messageEditorService,
+                notificationSettingsService,
+                waterStatisticService,
+                fixedClock,
+            )
     }
 
     @Test
     @DisplayName("reply(): edits original message with CANCEL display name")
     fun `reply edits original message`() {
         val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = externalUserId)
-        whenever(notificationSettingsService.resetNotificationTimer(externalUserId, fixedNow)).thenReturn(notificationDto)
+        whenever(
+            notificationSettingsService.resetNotificationTimer(externalUserId, fixedNow),
+        ).thenReturn(notificationDto)
 
         strategy.reply(buildCallbackQuery())
 
-        val expectedText = TelegramMessageConstants.NOTIFICATION_QUESTION_EDITED_MESSAGE_PATTERN
-            .format(AnswerNotificationType.CANCEL.displayName)
+        val expectedText =
+            TelegramMessageConstants.NOTIFICATION_QUESTION_EDITED_MESSAGE_PATTERN
+                .format(AnswerNotificationType.CANCEL.displayName)
         verify(messageEditorService).editReplyMarkup(expectedText, chatId, messageId, true)
     }
 
@@ -76,7 +81,9 @@ class CancelAnswerNotificationReplyButtonStrategyTest {
     @DisplayName("reply(): updates last notification time to now(clock)")
     fun `reply updates notification time`() {
         val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = externalUserId)
-        whenever(notificationSettingsService.resetNotificationTimer(externalUserId, fixedNow)).thenReturn(notificationDto)
+        whenever(
+            notificationSettingsService.resetNotificationTimer(externalUserId, fixedNow),
+        ).thenReturn(notificationDto)
 
         strategy.reply(buildCallbackQuery())
 
@@ -87,7 +94,9 @@ class CancelAnswerNotificationReplyButtonStrategyTest {
     @DisplayName("reply(): records water statistic with CANCEL event type")
     fun `reply records statistic`() {
         val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = externalUserId)
-        whenever(notificationSettingsService.resetNotificationTimer(externalUserId, fixedNow)).thenReturn(notificationDto)
+        whenever(
+            notificationSettingsService.resetNotificationTimer(externalUserId, fixedNow),
+        ).thenReturn(notificationDto)
 
         strategy.reply(buildCallbackQuery())
 
@@ -98,7 +107,9 @@ class CancelAnswerNotificationReplyButtonStrategyTest {
     @DisplayName("reply(): sends CANCEL confirmation message")
     fun `reply sends confirmation message`() {
         val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = externalUserId)
-        whenever(notificationSettingsService.resetNotificationTimer(externalUserId, fixedNow)).thenReturn(notificationDto)
+        whenever(
+            notificationSettingsService.resetNotificationTimer(externalUserId, fixedNow),
+        ).thenReturn(notificationDto)
 
         val captor = argumentCaptor<SendMessage>()
         strategy.reply(buildCallbackQuery())
@@ -135,8 +146,11 @@ class CancelAnswerNotificationReplyButtonStrategyTest {
     @DisplayName("reply(): sends CANCEL confirmation message even when recordEvent throws an exception")
     fun `reply sends confirmation message when recordEvent throws`() {
         val notificationDto = DtoGenerator.generateNotificationDto(externalUserId = externalUserId)
-        whenever(notificationSettingsService.resetNotificationTimer(externalUserId, fixedNow)).thenReturn(notificationDto)
-        doThrow(RuntimeException("statistic error")).whenever(waterStatisticService)
+        whenever(
+            notificationSettingsService.resetNotificationTimer(externalUserId, fixedNow),
+        ).thenReturn(notificationDto)
+        doThrow(RuntimeException("statistic error"))
+            .whenever(waterStatisticService)
             .recordEvent(any(), any(), any<Int>())
 
         val captor = argumentCaptor<SendMessage>()

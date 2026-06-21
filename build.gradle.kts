@@ -1,3 +1,5 @@
+import org.jmailen.gradle.kotlinter.tasks.FormatTask
+import org.jmailen.gradle.kotlinter.tasks.LintTask
 import java.io.FileInputStream
 import java.util.*
 
@@ -12,6 +14,8 @@ plugins {
     alias(libs.plugins.kotlin.jpa)
     alias(libs.plugins.kotlin.kapt)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.kotlinter)
+    alias(libs.plugins.detekt)
 }
 
 group = "ru.illine"
@@ -89,6 +93,13 @@ ksp {
     arg("konvert.invalid-mapping-strategy", "fail")
     arg("konvert.non-constructor-properties-mapping", "all")
     arg("konvert.enforce-not-null", "true")
+}
+
+detekt {
+    // ktlint owns formatting; detekt runs code-smell/complexity rules only (no formatting ruleset).
+    buildUponDefaultConfig = true
+    config.setFrom("$projectDir/config/detekt/detekt.yml")
+    baseline = file("$projectDir/config/detekt/baseline.xml")
 }
 
 liquibase {
@@ -185,4 +196,8 @@ tasks {
             })
         )
     }
+
+    // ktlint (kotlinter) must not lint generated KSP/Konvert sources - KSP adds build/generated to the source set.
+    withType<LintTask>().configureEach { exclude { it.file.path.contains("/build/generated/") } }
+    withType<FormatTask>().configureEach { exclude { it.file.path.contains("/build/generated/") } }
 }

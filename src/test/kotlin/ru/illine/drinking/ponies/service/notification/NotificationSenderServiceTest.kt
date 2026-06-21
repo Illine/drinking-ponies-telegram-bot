@@ -1,6 +1,8 @@
 package ru.illine.drinking.ponies.service.notification
 
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
@@ -33,19 +35,19 @@ import java.time.ZoneOffset
 @UnitTest
 @DisplayName("NotificationSenderService Unit Test")
 class NotificationSenderServiceTest {
-
     private val externalUserId = 1L
     private val chatId = 2L
 
     private val retryIntervalMinutes = 1L
-    private val botProperties = TelegramBotProperties(
-        token = "token",
-        username = "username",
-        miniAppUrl = "https://t.me/Test/app",
-        autoUpdateTelegramConfig = true,
-        http = TelegramBotProperties.Http(connectionTimeToLiveInSec = 30, maxConnectionTotal = 10),
-        notification = TelegramBotProperties.Notification(retryIntervalMinutes = retryIntervalMinutes)
-    )
+    private val botProperties =
+        TelegramBotProperties(
+            token = "token",
+            username = "username",
+            miniAppUrl = "https://t.me/Test/app",
+            autoUpdateTelegramConfig = true,
+            http = TelegramBotProperties.Http(connectionTimeToLiveInSec = 30, maxConnectionTotal = 10),
+            notification = TelegramBotProperties.Notification(retryIntervalMinutes = retryIntervalMinutes),
+        )
 
     private lateinit var sender: TelegramClient
     private lateinit var messageEditorService: MessageEditorService
@@ -61,14 +63,15 @@ class NotificationSenderServiceTest {
         notificationAccessService = mock<NotificationAccessService>()
         waterStatisticService = mock<WaterStatisticService>()
         clock = Clock.fixed(Instant.now(), ZoneOffset.UTC)
-        service = NotificationSenderServiceImpl(
-            sender,
-            messageEditorService,
-            notificationAccessService,
-            botProperties,
-            waterStatisticService,
-            clock
-        )
+        service =
+            NotificationSenderServiceImpl(
+                sender,
+                messageEditorService,
+                notificationAccessService,
+                botProperties,
+                waterStatisticService,
+                clock,
+            )
     }
 
     @Test
@@ -84,21 +87,24 @@ class NotificationSenderServiceTest {
     @Test
     @DisplayName("sendNotifications(): sends notification messages, increments attempts, updates settings")
     fun `sendNotifications sends and updates`() {
-        val dto = DtoGenerator.generateNotificationDto(
-            externalUserId = externalUserId,
-            externalChatId = chatId,
-            notificationAttempts = 0,
-            previousNotificationMessageId = 10
-        )
+        val dto =
+            DtoGenerator.generateNotificationDto(
+                externalUserId = externalUserId,
+                externalChatId = chatId,
+                notificationAttempts = 0,
+                previousNotificationMessageId = 10,
+            )
         val returnedMessage = mock<Message>()
         whenever(returnedMessage.messageId).thenReturn(2)
         doReturn(returnedMessage).whenever(sender).execute(any<SendMessage>())
 
         service.sendNotifications(listOf(dto))
 
-        val expectedTimeOfLastNotification = LocalDateTime.now(clock)
-            .minusMinutes(IntervalNotificationType.HOUR.minutes)
-            .plusMinutes(retryIntervalMinutes)
+        val expectedTimeOfLastNotification =
+            LocalDateTime
+                .now(clock)
+                .minusMinutes(IntervalNotificationType.HOUR.minutes)
+                .plusMinutes(retryIntervalMinutes)
 
         verify(messageEditorService).deleteMessages(any())
         verify(sender).execute(any<SendMessage>())
@@ -135,12 +141,13 @@ class NotificationSenderServiceTest {
     @Test
     @DisplayName("suspendNotifications(): sends suspend message, resets attempts and time, updates settings")
     fun `suspendNotifications sends and updates`() {
-        val dto = DtoGenerator.generateNotificationDto(
-            externalUserId = externalUserId,
-            externalChatId = chatId,
-            notificationAttempts = 3,
-            previousNotificationMessageId = 10
-        )
+        val dto =
+            DtoGenerator.generateNotificationDto(
+                externalUserId = externalUserId,
+                externalChatId = chatId,
+                notificationAttempts = 3,
+                previousNotificationMessageId = 10,
+            )
 
         service.suspendNotifications(listOf(dto))
 

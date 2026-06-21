@@ -9,7 +9,6 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 
 interface NotificationSettingsService {
-
     fun getAllSettings(externalUserId: Long): SettingDto
 
     fun getNextNotificationAt(externalUserId: Long): Instant
@@ -20,26 +19,47 @@ interface NotificationSettingsService {
 
     fun getQuietMode(externalUserId: Long): Pair<LocalTime, LocalTime>
 
-    fun resetNotificationTimer(externalUserId: Long, time: LocalDateTime): NotificationSettingDto
+    fun resetNotificationTimer(
+        externalUserId: Long,
+        time: LocalDateTime,
+    ): NotificationSettingDto
 
-    fun changeInterval(externalUserId: Long, notificationInterval: IntervalNotificationType): NotificationSettingDto
+    fun changeInterval(
+        externalUserId: Long,
+        notificationInterval: IntervalNotificationType,
+    ): NotificationSettingDto
 
-    fun changeQuietMode(externalUserId: Long, start: LocalTime, end: LocalTime)
+    fun changeQuietMode(
+        externalUserId: Long,
+        start: LocalTime,
+        end: LocalTime,
+    )
 
     fun disableQuietMode(externalUserId: Long)
 
     fun isEnabledNotifications(externalUserId: Long): Boolean
 
-    fun changeNotificationStatus(externalUserId: Long, active: Boolean)
+    fun changeNotificationStatus(
+        externalUserId: Long,
+        active: Boolean,
+    )
 
-    fun changeTimezone(externalUserId: Long, timezone: String)
+    fun changeTimezone(
+        externalUserId: Long,
+        timezone: String,
+    )
 
-    fun pauseNotifications(externalUserId: Long, minutes: Long)
+    fun pauseNotifications(
+        externalUserId: Long,
+        minutes: Long,
+    )
 
     fun cancelPause(externalUserId: Long)
 
     fun getPauseState(externalUserId: Long): PauseStateResponse
 
-    fun changeDailyGoal(externalUserId: Long, goalMl: Int)
-
+    fun changeDailyGoal(
+        externalUserId: Long,
+        goalMl: Int,
+    )
 }

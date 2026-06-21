@@ -9,12 +9,12 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
 import org.mockito.kotlin.mock
 import org.telegram.telegrambots.meta.generics.TelegramClient
-import ru.illine.drinking.ponies.service.notification.NotificationSettingsService
 import ru.illine.drinking.ponies.model.base.SnoozeNotificationType
 import ru.illine.drinking.ponies.model.base.WaterAmountType
 import ru.illine.drinking.ponies.service.button.impl.ReplyButtonFactoryImpl
 import ru.illine.drinking.ponies.service.button.strategy.snooze.SnoozeApplyReplyButtonStrategy
 import ru.illine.drinking.ponies.service.button.strategy.wateramount.WaterAmountApplyReplyButtonStrategy
+import ru.illine.drinking.ponies.service.notification.NotificationSettingsService
 import ru.illine.drinking.ponies.service.statistic.WaterStatisticService
 import ru.illine.drinking.ponies.service.telegram.MessageEditorService
 import ru.illine.drinking.ponies.test.tag.UnitTest
@@ -23,25 +23,26 @@ import java.time.Clock
 @UnitTest
 @DisplayName("ReplyButtonFactory Unit Test")
 class ReplyButtonFactoryTest {
-
     private lateinit var factory: ReplyButtonFactory
 
     @BeforeEach
     fun setUp() {
-        val snoozeStrategy = SnoozeApplyReplyButtonStrategy(
-            mock<TelegramClient>(),
-            mock<NotificationSettingsService>(),
-            mock<WaterStatisticService>(),
-            mock<MessageEditorService>(),
-            Clock.systemUTC()
-        )
-        val waterAmountStrategy = WaterAmountApplyReplyButtonStrategy(
-            mock<TelegramClient>(),
-            mock<NotificationSettingsService>(),
-            mock<WaterStatisticService>(),
-            mock<MessageEditorService>(),
-            Clock.systemUTC()
-        )
+        val snoozeStrategy =
+            SnoozeApplyReplyButtonStrategy(
+                mock<TelegramClient>(),
+                mock<NotificationSettingsService>(),
+                mock<WaterStatisticService>(),
+                mock<MessageEditorService>(),
+                Clock.systemUTC(),
+            )
+        val waterAmountStrategy =
+            WaterAmountApplyReplyButtonStrategy(
+                mock<TelegramClient>(),
+                mock<NotificationSettingsService>(),
+                mock<WaterStatisticService>(),
+                mock<MessageEditorService>(),
+                Clock.systemUTC(),
+            )
         factory = ReplyButtonFactoryImpl(listOf(snoozeStrategy, waterAmountStrategy))
     }
 

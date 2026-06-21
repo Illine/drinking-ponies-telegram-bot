@@ -1,6 +1,8 @@
 package ru.illine.drinking.ponies.service.button.strategy.notification
 
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
@@ -27,7 +29,6 @@ import ru.illine.drinking.ponies.util.telegram.TelegramMessageConstants
 @UnitTest
 @DisplayName("YesAnswerNotificationReplyButtonStrategy Unit Test")
 class YesAnswerNotificationReplyButtonStrategyTest {
-
     private val chatId = 1L
     private val messageId = 2
 
@@ -47,8 +48,9 @@ class YesAnswerNotificationReplyButtonStrategyTest {
     fun `reply edits original message`() {
         strategy.reply(buildCallbackQuery())
 
-        val expectedText = TelegramMessageConstants.NOTIFICATION_QUESTION_EDITED_MESSAGE_PATTERN
-            .format(AnswerNotificationType.YES.displayName)
+        val expectedText =
+            TelegramMessageConstants.NOTIFICATION_QUESTION_EDITED_MESSAGE_PATTERN
+                .format(AnswerNotificationType.YES.displayName)
         verify(messageEditorService).editReplyMarkup(expectedText, chatId, messageId, true)
     }
 
@@ -72,7 +74,9 @@ class YesAnswerNotificationReplyButtonStrategyTest {
     fun `reply has no side effects beyond menu display`() {
         strategy.reply(buildCallbackQuery())
 
-        verify(messageEditorService).editReplyMarkup(any<String>(), any<Long>(), any<Int>(), any<Boolean>(), anyOrNull())
+        verify(
+            messageEditorService,
+        ).editReplyMarkup(any<String>(), any<Long>(), any<Int>(), any<Boolean>(), anyOrNull())
         verify(sender).execute(any<SendMessage>())
         verifyNoMoreInteractions(messageEditorService)
         verifyNoMoreInteractions(sender)

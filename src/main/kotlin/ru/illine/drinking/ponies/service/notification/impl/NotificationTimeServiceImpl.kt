@@ -5,18 +5,25 @@ import org.springframework.stereotype.Service
 import ru.illine.drinking.ponies.model.dto.internal.NotificationSettingDto
 import ru.illine.drinking.ponies.service.notification.NotificationTimeService
 import ru.illine.drinking.ponies.util.statistics.toUtcInstant
-import java.time.*
+import java.time.Clock
+import java.time.DateTimeException
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.ZoneId
+import java.time.ZonedDateTime
 
 @Suppress("IDENTITY_SENSITIVE_OPERATIONS_WITH_VALUE_TYPE")
 @Service
-class NotificationTimeServiceImpl(private val clock: Clock) : NotificationTimeService {
-
+class NotificationTimeServiceImpl(
+    private val clock: Clock,
+) : NotificationTimeService {
     companion object {
         private const val NEXT_DAY_OFFSET = 1L
     }
-    
+
     private val logger = LoggerFactory.getLogger("SERVICE")
-    
+
     override fun isOutsideQuietTime(dto: NotificationSettingDto): Boolean {
         logger.debug("Checking quiet mode for user id: [{}]", dto.id)
 
@@ -51,7 +58,7 @@ class NotificationTimeServiceImpl(private val clock: Clock) : NotificationTimeSe
         val nextNotificationTime = dto.timeOfLastNotification.plusMinutes(dto.notificationInterval.minutes)
         logger.debug("Next scheduled notification (UTC): [{}]", nextNotificationTime)
 
-        val isDue =  nextNotificationTime <= now
+        val isDue = nextNotificationTime <= now
         logger.debug("Notification due: [{}]", isDue)
 
         return isDue
@@ -79,11 +86,12 @@ class NotificationTimeServiceImpl(private val clock: Clock) : NotificationTimeSe
         val isAtOrAfterStart = !rawNextUserTime.isBefore(quietStart)
         val isAtOrBeforeEnd = !rawNextUserTime.isAfter(quietEnd)
 
-        val isInQuietMode = if (quietStart.isBefore(quietEnd)) {
-            isAtOrAfterStart && isAtOrBeforeEnd
-        } else {
-            isAtOrAfterStart || isAtOrBeforeEnd
-        }
+        val isInQuietMode =
+            if (quietStart.isBefore(quietEnd)) {
+                isAtOrAfterStart && isAtOrBeforeEnd
+            } else {
+                isAtOrAfterStart || isAtOrBeforeEnd
+            }
         logger.debug("Quiet mode [{} - {}], in quiet mode: [{}]", quietStart, quietEnd, isInQuietMode)
 
         if (!isInQuietMode) {
@@ -109,16 +117,17 @@ class NotificationTimeServiceImpl(private val clock: Clock) : NotificationTimeSe
 
         return userTime
     }
-    
-    private fun resolveZoneId(dto: NotificationSettingDto): ZoneId {
-        return try {
+
+    private fun resolveZoneId(dto: NotificationSettingDto): ZoneId =
+        try {
             ZoneId.of(dto.telegramUser.userTimeZone)
         } catch (e: DateTimeException) {
             logger.error(
                 "Invalid timezone for user [{}]: [{}], error: {}. Fallback to UTC.",
-                dto.id, dto.telegramUser.userTimeZone, e.message
+                dto.id,
+                dto.telegramUser.userTimeZone,
+                e.message,
             )
             ZoneId.of("UTC")
         }
-    }
 }

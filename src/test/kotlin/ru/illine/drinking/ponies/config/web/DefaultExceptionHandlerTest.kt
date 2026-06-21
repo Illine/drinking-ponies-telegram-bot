@@ -20,7 +20,6 @@ import ru.illine.drinking.ponies.test.tag.UnitTest
 @UnitTest
 @DisplayName("DefaultExceptionHandler Unit Test")
 class DefaultExceptionHandlerTest {
-
     private lateinit var handler: DefaultExceptionHandler
 
     @BeforeEach
@@ -78,7 +77,9 @@ class DefaultExceptionHandlerTest {
     }
 
     @Test
-    @DisplayName("handleValidationException(): MethodArgumentTypeMismatchException - returns 400 with 'validation failed'")
+    @DisplayName(
+        "handleValidationException(): MethodArgumentTypeMismatchException - returns 400 with 'validation failed'",
+    )
     fun `handleValidationException with MethodArgumentTypeMismatchException returns 400`() {
         val exception = mock<MethodArgumentTypeMismatchException>()
 

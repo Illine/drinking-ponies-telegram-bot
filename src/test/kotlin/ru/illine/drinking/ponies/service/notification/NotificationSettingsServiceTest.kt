@@ -18,12 +18,15 @@ import ru.illine.drinking.ponies.model.base.IntervalNotificationType
 import ru.illine.drinking.ponies.service.notification.impl.NotificationSettingsServiceImpl
 import ru.illine.drinking.ponies.test.generator.DtoGenerator
 import ru.illine.drinking.ponies.test.tag.UnitTest
-import java.time.*
+import java.time.Clock
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.ZoneOffset
 
 @UnitTest
 @DisplayName("NotificationSettingsService Unit Test")
 class NotificationSettingsServiceTest {
-
     private val externalUserId = 1L
 
     private lateinit var notificationAccessService: NotificationAccessService
@@ -145,11 +148,12 @@ class NotificationSettingsServiceTest {
     fun `getQuietMode returns start and end`() {
         val expectedStart = LocalTime.of(23, 0)
         val expectedEnd = LocalTime.of(8, 0)
-        val dto = DtoGenerator.generateNotificationDto(
-            externalUserId = externalUserId,
-            quietModeStart = expectedStart,
-            quietModeEnd = expectedEnd
-        )
+        val dto =
+            DtoGenerator.generateNotificationDto(
+                externalUserId = externalUserId,
+                quietModeStart = expectedStart,
+                quietModeEnd = expectedEnd,
+            )
         whenever(notificationAccessService.findNotificationSettingByExternalUserId(externalUserId)).thenReturn(dto)
 
         val result = service.getQuietMode(externalUserId)
@@ -161,11 +165,12 @@ class NotificationSettingsServiceTest {
     @Test
     @DisplayName("getQuietMode(): throws IllegalStateException when start is null")
     fun `getQuietMode throws when start is null`() {
-        val dto = DtoGenerator.generateNotificationDto(
-            externalUserId = externalUserId,
-            quietModeStart = null,
-            quietModeEnd = LocalTime.of(8, 0)
-        )
+        val dto =
+            DtoGenerator.generateNotificationDto(
+                externalUserId = externalUserId,
+                quietModeStart = null,
+                quietModeEnd = LocalTime.of(8, 0),
+            )
         whenever(notificationAccessService.findNotificationSettingByExternalUserId(externalUserId)).thenReturn(dto)
 
         assertThrows(IllegalStateException::class.java) {
@@ -176,11 +181,12 @@ class NotificationSettingsServiceTest {
     @Test
     @DisplayName("getQuietMode(): throws IllegalStateException when end is null")
     fun `getQuietMode throws when end is null`() {
-        val dto = DtoGenerator.generateNotificationDto(
-            externalUserId = externalUserId,
-            quietModeStart = LocalTime.of(23, 0),
-            quietModeEnd = null
-        )
+        val dto =
+            DtoGenerator.generateNotificationDto(
+                externalUserId = externalUserId,
+                quietModeStart = LocalTime.of(23, 0),
+                quietModeEnd = null,
+            )
         whenever(notificationAccessService.findNotificationSettingByExternalUserId(externalUserId)).thenReturn(dto)
 
         assertThrows(IllegalStateException::class.java) {
@@ -246,14 +252,17 @@ class NotificationSettingsServiceTest {
     @DisplayName("getAllSettings(): returns SettingDto with all fields when notifications are enabled")
     fun `getAllSettings returns full dto when enabled`() {
         whenever(notificationAccessService.findIsEnabledNotificationsByExternalUserId(externalUserId)).thenReturn(true)
-        val notificationDto = DtoGenerator.generateNotificationDto(
-            externalUserId = externalUserId,
-            notificationInterval = IntervalNotificationType.HOUR,
-            userTimeZone = "Europe/Moscow",
-            quietModeStart = LocalTime.of(23, 0),
-            quietModeEnd = LocalTime.of(8, 0),
-        )
-        whenever(notificationAccessService.findNotificationSettingByExternalUserId(externalUserId)).thenReturn(notificationDto)
+        val notificationDto =
+            DtoGenerator.generateNotificationDto(
+                externalUserId = externalUserId,
+                notificationInterval = IntervalNotificationType.HOUR,
+                userTimeZone = "Europe/Moscow",
+                quietModeStart = LocalTime.of(23, 0),
+                quietModeEnd = LocalTime.of(8, 0),
+            )
+        whenever(
+            notificationAccessService.findNotificationSettingByExternalUserId(externalUserId),
+        ).thenReturn(notificationDto)
 
         val result = service.getAllSettings(externalUserId)
 
@@ -270,7 +279,9 @@ class NotificationSettingsServiceTest {
     }
 
     @Test
-    @DisplayName("getAllSettings(): returns SettingDto with only notificationActive=false when notifications are disabled")
+    @DisplayName(
+        "getAllSettings(): returns SettingDto with only notificationActive=false when notifications are disabled",
+    )
     fun `getAllSettings returns minimal dto when disabled`() {
         whenever(notificationAccessService.findIsEnabledNotificationsByExternalUserId(externalUserId)).thenReturn(false)
 
@@ -394,7 +405,9 @@ class NotificationSettingsServiceTest {
 
     @ParameterizedTest
     @ValueSource(ints = [2000, 2250, 2500, 2750, 3000])
-    @DisplayName("changeDailyGoal(): delegates to access service for any allowed value (incl. 2000 and 3000 boundaries)")
+    @DisplayName(
+        "changeDailyGoal(): delegates to access service for any allowed value (incl. 2000 and 3000 boundaries)",
+    )
     fun `changeDailyGoal delegates for allowed value`(goalMl: Int) {
         service.changeDailyGoal(externalUserId, goalMl)
 
@@ -416,11 +429,12 @@ class NotificationSettingsServiceTest {
     @DisplayName("getPauseState(): returns paused=true even when notificationAttempts > 0 (state independent)")
     fun `getPauseState returns paused true regardless of notificationAttempts`() {
         val pauseUntil = LocalDateTime.of(2025, 1, 1, 13, 0)
-        val dto = DtoGenerator.generateNotificationDto(
-            externalUserId = externalUserId,
-            pauseUntil = pauseUntil,
-            notificationAttempts = 3
-        )
+        val dto =
+            DtoGenerator.generateNotificationDto(
+                externalUserId = externalUserId,
+                pauseUntil = pauseUntil,
+                notificationAttempts = 3,
+            )
         whenever(notificationAccessService.findNotificationSettingByExternalUserId(externalUserId)).thenReturn(dto)
 
         val result = service.getPauseState(externalUserId)

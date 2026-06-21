@@ -11,19 +11,17 @@ import ru.illine.drinking.ponies.config.property.AppProperties
 
 @Configuration
 class OpenApiConfig(
-    private val appProperties: AppProperties
+    private val appProperties: AppProperties,
 ) {
-
     @Bean
-    fun openAPI(): OpenAPI {
-        return OpenAPI()
+    fun openAPI(): OpenAPI =
+        OpenAPI()
             .info(
                 Info()
                     .title("Drinking Ponies API")
                     .description("REST API for Drinking Ponies MiniApp")
-                    .version(appProperties.version)
-            )
-            .addSecurityItem(SecurityRequirement().addList("telegram-auth"))
+                    .version(appProperties.version),
+            ).addSecurityItem(SecurityRequirement().addList("telegram-auth"))
             .components(
                 Components()
                     .addSecuritySchemes(
@@ -31,8 +29,7 @@ class OpenApiConfig(
                         SecurityScheme()
                             .type(SecurityScheme.Type.APIKEY)
                             .`in`(SecurityScheme.In.HEADER)
-                            .name("X-Authorization-Telegram-Data")
-                    )
+                            .name("X-Authorization-Telegram-Data"),
+                    ),
             )
-    }
 }

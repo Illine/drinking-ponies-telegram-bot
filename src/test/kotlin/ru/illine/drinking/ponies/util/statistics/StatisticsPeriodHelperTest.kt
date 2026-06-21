@@ -16,7 +16,6 @@ import java.util.stream.Stream
 @UnitTest
 @DisplayName("StatisticsPeriodHelper Unit Test")
 class StatisticsPeriodHelperTest {
-
     @Test
     @DisplayName("toLocal(): converts UTC LocalDateTime to user zone LocalDateTime")
     fun `toLocal converts utc to user zone`() {
@@ -55,13 +54,18 @@ class StatisticsPeriodHelperTest {
     @MethodSource("provideLocalDayBoundsCases")
     @DisplayName("localDayBoundsToUtc(): zone-aware UTC bounds for local day")
     fun `localDayBoundsToUtc returns zone aware utc bounds`(
-        zone: String, localDay: LocalDate,
-        expectedStartUtc: LocalDateTime, expectedEndUtc: LocalDateTime,
+        zone: String,
+        localDay: LocalDate,
+        expectedStartUtc: LocalDateTime,
+        expectedEndUtc: LocalDateTime,
         @Suppress("UNUSED_PARAMETER") description: String,
     ) {
-        val (startUtc, endUtc) = StatisticsPeriodHelper.localDayBoundsToUtc(
-            localDay, localDay.plusDays(1), ZoneId.of(zone)
-        )
+        val (startUtc, endUtc) =
+            StatisticsPeriodHelper.localDayBoundsToUtc(
+                localDay,
+                localDay.plusDays(1),
+                ZoneId.of(zone),
+            )
 
         assertEquals(expectedStartUtc, startUtc)
         assertEquals(expectedEndUtc, endUtc)
@@ -88,65 +92,65 @@ class StatisticsPeriodHelperTest {
     }
 
     companion object {
-
         @JvmStatic
-        fun provideLocalDayBoundsCases(): Stream<Arguments> = Stream.of(
-            // UTC
-            Arguments.of(
-                "UTC",
-                LocalDate.of(2026, 5, 12),
-                LocalDateTime.of(2026, 5, 12, 0, 0),
-                LocalDateTime.of(2026, 5, 13, 0, 0),
-                "UTC",
-            ),
-            // Asia/Yekaterinburg (+5)
-            Arguments.of(
-                "Asia/Yekaterinburg",
-                LocalDate.of(2026, 5, 12),
-                LocalDateTime.of(2026, 5, 11, 19, 0),
-                LocalDateTime.of(2026, 5, 12, 19, 0),
-                "UTC+5",
-            ),
-            // Pacific/Kiritimati (+14)
-            Arguments.of(
-                "Pacific/Kiritimati",
-                LocalDate.of(2026, 5, 12),
-                LocalDateTime.of(2026, 5, 11, 10, 0),
-                LocalDateTime.of(2026, 5, 12, 10, 0),
-                "UTC+14 extreme",
-            ),
-            // Etc/GMT+12 is UTC-12 (POSIX sign-flip).
-            Arguments.of(
-                "Etc/GMT+12",
-                LocalDate.of(2026, 5, 12),
-                LocalDateTime.of(2026, 5, 12, 12, 0),
-                LocalDateTime.of(2026, 5, 13, 12, 0),
-                "UTC-12 extreme",
-            ),
-            // Asia/Kolkata (+5:30) fractional
-            Arguments.of(
-                "Asia/Kolkata",
-                LocalDate.of(2026, 5, 12),
-                LocalDateTime.of(2026, 5, 11, 18, 30),
-                LocalDateTime.of(2026, 5, 12, 18, 30),
-                "UTC+5:30 fractional",
-            ),
-            // DST spring-forward NY: 2026-03-08 is a 23-hour day in NY.
-            Arguments.of(
-                "America/New_York",
-                LocalDate.of(2026, 3, 8),
-                LocalDateTime.of(2026, 3, 8, 5, 0),
-                LocalDateTime.of(2026, 3, 9, 4, 0),
-                "DST spring-forward (23-hour day)",
-            ),
-            // DST fall-back NY: 2026-11-01 is a 25-hour day in NY.
-            Arguments.of(
-                "America/New_York",
-                LocalDate.of(2026, 11, 1),
-                LocalDateTime.of(2026, 11, 1, 4, 0),
-                LocalDateTime.of(2026, 11, 2, 5, 0),
-                "DST fall-back (25-hour day)",
-            ),
-        )
+        fun provideLocalDayBoundsCases(): Stream<Arguments> =
+            Stream.of(
+                // UTC
+                Arguments.of(
+                    "UTC",
+                    LocalDate.of(2026, 5, 12),
+                    LocalDateTime.of(2026, 5, 12, 0, 0),
+                    LocalDateTime.of(2026, 5, 13, 0, 0),
+                    "UTC",
+                ),
+                // Asia/Yekaterinburg (+5)
+                Arguments.of(
+                    "Asia/Yekaterinburg",
+                    LocalDate.of(2026, 5, 12),
+                    LocalDateTime.of(2026, 5, 11, 19, 0),
+                    LocalDateTime.of(2026, 5, 12, 19, 0),
+                    "UTC+5",
+                ),
+                // Pacific/Kiritimati (+14)
+                Arguments.of(
+                    "Pacific/Kiritimati",
+                    LocalDate.of(2026, 5, 12),
+                    LocalDateTime.of(2026, 5, 11, 10, 0),
+                    LocalDateTime.of(2026, 5, 12, 10, 0),
+                    "UTC+14 extreme",
+                ),
+                // Etc/GMT+12 is UTC-12 (POSIX sign-flip).
+                Arguments.of(
+                    "Etc/GMT+12",
+                    LocalDate.of(2026, 5, 12),
+                    LocalDateTime.of(2026, 5, 12, 12, 0),
+                    LocalDateTime.of(2026, 5, 13, 12, 0),
+                    "UTC-12 extreme",
+                ),
+                // Asia/Kolkata (+5:30) fractional
+                Arguments.of(
+                    "Asia/Kolkata",
+                    LocalDate.of(2026, 5, 12),
+                    LocalDateTime.of(2026, 5, 11, 18, 30),
+                    LocalDateTime.of(2026, 5, 12, 18, 30),
+                    "UTC+5:30 fractional",
+                ),
+                // DST spring-forward NY: 2026-03-08 is a 23-hour day in NY.
+                Arguments.of(
+                    "America/New_York",
+                    LocalDate.of(2026, 3, 8),
+                    LocalDateTime.of(2026, 3, 8, 5, 0),
+                    LocalDateTime.of(2026, 3, 9, 4, 0),
+                    "DST spring-forward (23-hour day)",
+                ),
+                // DST fall-back NY: 2026-11-01 is a 25-hour day in NY.
+                Arguments.of(
+                    "America/New_York",
+                    LocalDate.of(2026, 11, 1),
+                    LocalDateTime.of(2026, 11, 1, 4, 0),
+                    LocalDateTime.of(2026, 11, 2, 5, 0),
+                    "DST fall-back (25-hour day)",
+                ),
+            )
     }
 }

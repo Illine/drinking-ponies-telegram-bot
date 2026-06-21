@@ -19,17 +19,16 @@ class WaterStatisticAccessServiceImpl(
     private val waterStatisticRepository: WaterStatisticRepository,
     private val userRepository: TelegramUserRepository,
 ) : WaterStatisticAccessService {
-
     private val logger = LoggerFactory.getLogger("ACCESS-SERVICE")
 
     @Transactional(readOnly = true)
     override fun findByUserAndEventTimeBetween(
         externalUserId: Long,
         startInclusive: LocalDateTime,
-        endExclusive: LocalDateTime
+        endExclusive: LocalDateTime,
     ): List<WaterStatisticDto> {
         logger.debug(
-            "Finding water statistics for externalUserId [$externalUserId] between [$startInclusive] and [$endExclusive]"
+            "Finding water statistics for externalUserId [$externalUserId] between [$startInclusive] and [$endExclusive]",
         )
         return waterStatisticRepository
             .findByUserAndEventTimeBetween(externalUserId, startInclusive, endExclusive)
@@ -48,12 +47,14 @@ class WaterStatisticAccessServiceImpl(
     override fun save(dto: WaterStatisticDto): WaterStatisticDto {
         logger.debug("Saving a water statistic record for a telegram user: [${dto.telegramUser.externalUserId}]")
 
-        val userEntity = requireNotNull(
-            userRepository.findByExternalUserId(dto.telegramUser.externalUserId),
-            { "Not found a Telegram User by externalUserId [${dto.telegramUser.externalUserId}]" }
-        )
+        val userEntity =
+            requireNotNull(
+                userRepository.findByExternalUserId(dto.telegramUser.externalUserId),
+                { "Not found a Telegram User by externalUserId [${dto.telegramUser.externalUserId}]" },
+            )
 
-        return waterStatisticRepository.save(WaterStatisticMapper.toEntity(dto, userEntity))
+        return waterStatisticRepository
+            .save(WaterStatisticMapper.toEntity(dto, userEntity))
             .let { WaterStatisticMapper.toDto(it, TelegramUserMapper.toDto(it.telegramUser)) }
     }
 
@@ -72,8 +73,7 @@ class WaterStatisticAccessServiceImpl(
                     logger.warn("Not found user by external id: [{}], skipping", statistic.telegramUser.externalUserId)
                 }
                 userEntity?.let { WaterStatisticMapper.toEntity(statistic, userEntity) }
-            }
-            .let { waterStatisticRepository.saveAll(it) }
+            }.let { waterStatisticRepository.saveAll(it) }
             .map { WaterStatisticMapper.toDto(it, TelegramUserMapper.toDto(it.telegramUser)) }
     }
 }

@@ -27,20 +27,19 @@ class NotificationAccessServiceImpl(
     private val chatRepository: TelegramChatRepository,
     private val clock: Clock,
 ) : NotificationAccessService {
-
     private val logger = LoggerFactory.getLogger("ACCESS-SERVICE")
 
     @Transactional(readOnly = true)
     override fun findAllNotificationSettings(): Set<NotificationSettingDto> {
         logger.debug("Finding all notification setting records")
 
-        return settingRepository.findAll()
+        return settingRepository
+            .findAll()
             .map {
                 val user = TelegramUserMapper.toDto(it.telegramUser)
                 val chat = TelegramChatMapper.toDto(it.telegramChat, user)
                 NotificationSettingMapper.toDto(it, user, chat)
-            }
-            .toSet()
+            }.toSet()
     }
 
     @Transactional(readOnly = true)
@@ -64,7 +63,7 @@ class NotificationAccessServiceImpl(
     override fun save(
         user: TelegramUserDto,
         chat: TelegramChatDto,
-        setting: NotificationSettingDto
+        setting: NotificationSettingDto,
     ): TelegramUserDto {
         logger.debug("Saving a new user, chat and setting for a telegram user: [${user.externalUserId}]")
 
@@ -73,7 +72,7 @@ class NotificationAccessServiceImpl(
 
         val userEntity =
             userRepository.findByExternalUserId(
-                externalUserId
+                externalUserId,
             ) ?: TelegramUserMapper.toEntity(user)
 
         val chatEntity =
@@ -81,7 +80,7 @@ class NotificationAccessServiceImpl(
 
         val settingEntity =
             settingRepository.findByTelegramUser_ExternalUserId(
-                externalUserId
+                externalUserId,
             ) ?: NotificationSettingMapper.toEntity(setting, userEntity, chatEntity)
 
         userEntity.addTelegramChat(chatEntity)
@@ -92,21 +91,23 @@ class NotificationAccessServiceImpl(
 
     @Transactional
     override fun updateNotificationSettings(
-        externalUserId: Long, notificationInterval: IntervalNotificationType
+        externalUserId: Long,
+        notificationInterval: IntervalNotificationType,
     ): NotificationSettingDto {
-        logger.debug("The Notification Settings will be updated for an existed entity by id: [${externalUserId}]")
+        logger.debug("The Notification Settings will be updated for an existed entity by id: [$externalUserId]")
 
         val settings = requireSettings(externalUserId)
 
         if (settings.notificationInterval != notificationInterval) {
             // Reset timer so the new interval counts from now, not from the last notification time.
             // Also clear active pause - changing interval implicitly cancels the pause.
-            settings.apply {
-                this.notificationInterval = notificationInterval
-                this.timeOfLastNotification = LocalDateTime.now(clock)
-                this.notificationAttempts = 0
-                this.pauseUntil = null
-            }.let { settingRepository.save(it) }
+            settings
+                .apply {
+                    this.notificationInterval = notificationInterval
+                    this.timeOfLastNotification = LocalDateTime.now(clock)
+                    this.notificationAttempts = 0
+                    this.pauseUntil = null
+                }.let { settingRepository.save(it) }
         }
 
         return settings.let {
@@ -141,18 +142,19 @@ class NotificationAccessServiceImpl(
                     user.notificationSettings = setting
                     user.telegramChats += chat
                 }
-            }
-            .apply { settingRepository.saveAll(this) }
+            }.apply { settingRepository.saveAll(this) }
             .map {
                 val user = TelegramUserMapper.toDto(it.telegramUser)
                 val chat = TelegramChatMapper.toDto(it.telegramChat, user)
                 NotificationSettingMapper.toDto(it, user, chat)
-            }
-            .toSet()
+            }.toSet()
     }
 
     @Transactional
-    override fun updateTimeOfLastNotification(externalUserId: Long, time: LocalDateTime): NotificationSettingDto {
+    override fun updateTimeOfLastNotification(
+        externalUserId: Long,
+        time: LocalDateTime,
+    ): NotificationSettingDto {
         logger.debug("Updating a time of last notification by externalUserId [$externalUserId]")
 
         val setting = requireSettings(externalUserId)
@@ -177,8 +179,17 @@ class NotificationAccessServiceImpl(
     }
 
     @Transactional
-    override fun updateQuietMode(externalUserId: Long, start: LocalTime, end: LocalTime) {
-        logger.debug("The quiet mod will be updated for a user [{}], start time: [{}], end time: [{}]", externalUserId, start, end)
+    override fun updateQuietMode(
+        externalUserId: Long,
+        start: LocalTime,
+        end: LocalTime,
+    ) {
+        logger.debug(
+            "The quiet mod will be updated for a user [{}], start time: [{}], end time: [{}]",
+            externalUserId,
+            start,
+            end,
+        )
         settingRepository.clearPause(externalUserId)
         settingRepository.updateQuietMode(externalUserId, start, end)
     }
@@ -191,18 +202,25 @@ class NotificationAccessServiceImpl(
     }
 
     @Transactional
-    override fun updateTimezone(externalUserId: Long, timezone: String) {
+    override fun updateTimezone(
+        externalUserId: Long,
+        timezone: String,
+    ) {
         logger.debug("Changing timezone for user [$externalUserId] to [$timezone]")
-        val user = requireNotNull(
-            userRepository.findByExternalUserId(externalUserId),
-            { "Not found a Telegram User by externalUserId [$externalUserId]" }
-        )
+        val user =
+            requireNotNull(
+                userRepository.findByExternalUserId(externalUserId),
+                { "Not found a Telegram User by externalUserId [$externalUserId]" },
+            )
         user.userTimeZone = timezone
         userRepository.save(user)
     }
 
     @Transactional
-    override fun updatePause(externalUserId: Long, pauseUntil: LocalDateTime?): NotificationSettingDto {
+    override fun updatePause(
+        externalUserId: Long,
+        pauseUntil: LocalDateTime?,
+    ): NotificationSettingDto {
         logger.debug("Setting pause for externalUserId [$externalUserId] to [$pauseUntil]")
 
         val setting = requireSettings(externalUserId)
@@ -232,7 +250,10 @@ class NotificationAccessServiceImpl(
     }
 
     @Transactional
-    override fun updateDailyGoal(externalUserId: Long, goalMl: Int) {
+    override fun updateDailyGoal(
+        externalUserId: Long,
+        goalMl: Int,
+    ) {
         logger.debug("Updating daily goal for externalUserId [$externalUserId] to [$goalMl] ml")
         settingRepository.updateDailyGoal(externalUserId, goalMl)
     }
@@ -240,6 +261,6 @@ class NotificationAccessServiceImpl(
     private fun requireSettings(externalUserId: Long): NotificationSettingEntity =
         settingRepository.findByTelegramUser_ExternalUserId(externalUserId)
             ?: throw NotificationSettingsNotFoundException(
-                "Not found a Notification Setting by externalUserId [$externalUserId]"
+                "Not found a Notification Setting by externalUserId [$externalUserId]",
             )
 }

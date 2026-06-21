@@ -1,0 +1,87 @@
+<?xml version="1.0" ?>
+<SmellBaseline>
+  <ManuallySuppressedIssues/>
+  <CurrentIssues>
+    <ID>FunctionNaming:NotificationSettingRepository.kt:NotificationSettingRepository$@Suppress("ktlint:standard:function-naming") fun findByTelegramUser_ExternalUserId: NotificationSettingEntity?</ID>
+    <ID>FunctionOnlyReturningConstant:AdminAuthInterceptorIntegrationTest.kt:AdminAuthInterceptorIntegrationTest.AdminTestConfig.AdminTestController$@AdminOnly @GetMapping("/admin-test") fun adminTest: String</ID>
+    <ID>FunctionOnlyReturningConstant:WebConfigAuthInterceptorIntegrationTest.kt:WebConfigAuthInterceptorIntegrationTest.DefaultSecureTestConfig.DefaultSecureTestController$@GetMapping fun defaultSecure: String</ID>
+    <ID>InvalidPackageDeclaration:ClockHelperTest.kt:package ru.illine.drinking.ponies.test.util</ID>
+    <ID>LongMethod:NotificationTimeServiceTest.kt:NotificationTimeServiceTest.Companion$@JvmStatic fun nextNotificationAtScenarios: Stream&lt;Arguments&gt;</ID>
+    <ID>LongMethod:NotificationTimeServiceTest.kt:NotificationTimeServiceTest.Companion$@JvmStatic fun quietTimeScenarios: Stream&lt;Arguments&gt;</ID>
+    <ID>LongMethod:StatisticsAggregatorTest.kt:StatisticsAggregatorTest.Companion$@JvmStatic fun provideCalculateStreakCases: Stream&lt;Arguments&gt;</ID>
+    <ID>MagicNumber:CacheProperties.kt:CacheProperties.CacheEntry$1000</ID>
+    <ID>MagicNumber:CacheProperties.kt:CacheProperties.CacheEntry$5</ID>
+    <ID>MagicNumber:CacheProperties.kt:CacheProperties.CacheEntryOverride$1000</ID>
+    <ID>MagicNumber:IntervalNotificationType.kt:IntervalNotificationType.HALF_HOUR$30</ID>
+    <ID>MagicNumber:IntervalNotificationType.kt:IntervalNotificationType.HOUR$60</ID>
+    <ID>MagicNumber:IntervalNotificationType.kt:IntervalNotificationType.HOUR_AND_HALF$90</ID>
+    <ID>MagicNumber:IntervalNotificationType.kt:IntervalNotificationType.THREE_HOURS$180</ID>
+    <ID>MagicNumber:IntervalNotificationType.kt:IntervalNotificationType.TWO_HOURS$120</ID>
+    <ID>MagicNumber:NotificationController.kt:NotificationController$300</ID>
+    <ID>MagicNumber:NotificationSenderServiceImpl.kt:NotificationSenderServiceImpl$403</ID>
+    <ID>MagicNumber:NotificationSettingDto.kt:NotificationSettingDto.Companion$11</ID>
+    <ID>MagicNumber:NotificationSettingDto.kt:NotificationSettingDto.Companion$23</ID>
+    <ID>MagicNumber:PluralizationHelper.kt:PluralizationHelper$10</ID>
+    <ID>MagicNumber:PluralizationHelper.kt:PluralizationHelper$11</ID>
+    <ID>MagicNumber:PluralizationHelper.kt:PluralizationHelper$14</ID>
+    <ID>MagicNumber:PluralizationHelper.kt:PluralizationHelper$3</ID>
+    <ID>MagicNumber:PluralizationHelper.kt:PluralizationHelper$4</ID>
+    <ID>MagicNumber:SnoozeNotificationType.kt:SnoozeNotificationType.FIFTEEN_MINS$15</ID>
+    <ID>MagicNumber:SnoozeNotificationType.kt:SnoozeNotificationType.FIVE_MINS$5</ID>
+    <ID>MagicNumber:SnoozeNotificationType.kt:SnoozeNotificationType.TEN_MINS$10</ID>
+    <ID>MagicNumber:SnoozeNotificationType.kt:SnoozeNotificationType.TWENTY_MINS$20</ID>
+    <ID>MagicNumber:TelegramBotProperties.kt:TelegramBotProperties$10</ID>
+    <ID>MagicNumber:TelegramBotProperties.kt:TelegramBotProperties.Http$10</ID>
+    <ID>MagicNumber:TelegramBotProperties.kt:TelegramBotProperties.Http$120</ID>
+    <ID>MagicNumber:TelegramBotProperties.kt:TelegramBotProperties.Http$200</ID>
+    <ID>MagicNumber:TelegramBotProperties.kt:TelegramBotProperties.Http$30</ID>
+    <ID>MagicNumber:WaterAmountType.kt:WaterAmountType.ML_100$100</ID>
+    <ID>MagicNumber:WaterAmountType.kt:WaterAmountType.ML_150$150</ID>
+    <ID>MagicNumber:WaterAmountType.kt:WaterAmountType.ML_250$250</ID>
+    <ID>MagicNumber:WaterAmountType.kt:WaterAmountType.ML_450$450</ID>
+    <ID>MagicNumber:WaterAmountType.kt:WaterAmountType.ML_50$50</ID>
+    <ID>MaxLineLength:MeResponse.kt:MeResponse$// The JSON key is intentionally kept as "telegramUserId" - it is the public /users/me contract consumed by the MiniApp.</ID>
+    <ID>MaxLineLength:MessageEditorServiceImpl.kt:MessageEditorServiceImpl$"A previous message can't be deleted! A chatId: [${this.chatId}], messageId: [${this.messageId}]"</ID>
+    <ID>MaxLineLength:NotificationAccessServiceTest.kt:NotificationAccessServiceTest$"findNotificationSettingByExternalUserId(): throws NotificationSettingsNotFoundException when record not found by externalUserId"</ID>
+    <ID>MaxLineLength:NotificationAccessServiceTest.kt:NotificationAccessServiceTest$"updateNotificationSettings(): does not reset timeOfLastNotification and notificationAttempts when interval is the same"</ID>
+    <ID>MaxLineLength:NotificationAccessServiceTest.kt:NotificationAccessServiceTest$"updateNotificationSettings(): resets timeOfLastNotification and notificationAttempts when interval changes"</ID>
+    <ID>MaxLineLength:NotificationAccessServiceTest.kt:NotificationAccessServiceTest$"updateNotificationSettings(): throws NotificationSettingsNotFoundException when record not found by externalUserId"</ID>
+    <ID>MaxLineLength:NotificationAccessServiceTest.kt:NotificationAccessServiceTest$"updatePause(): throws NotificationSettingsNotFoundException for disabled user (filtered by @SQLRestriction)"</ID>
+    <ID>MaxLineLength:NotificationAccessServiceTest.kt:NotificationAccessServiceTest$"updatePause(): throws NotificationSettingsNotFoundException when record not found by externalUserId on cancel"</ID>
+    <ID>MaxLineLength:NotificationAccessServiceTest.kt:NotificationAccessServiceTest$"updateTimeOfLastNotification(): throws NotificationSettingsNotFoundException when record not found by externalUserId"</ID>
+    <ID>MaxLineLength:NotificationTimeServiceTest.kt:NotificationTimeServiceTest.Companion$"Exact quiet start boundary (inclusive): rawNext 14:00 == start -&gt; In quiet, shift to quietModeEnd"</ID>
+    <ID>MaxLineLength:NotificationTimeServiceTest.kt:NotificationTimeServiceTest.Companion$"Tokyo (UTC+9): rawNext 13:30Z = 22:30 local, inside 22-08 -&gt; Shift to 08:00 local next day = 23:00Z"</ID>
+    <ID>MaxLineLength:WaterStatisticAccessServiceImpl.kt:WaterStatisticAccessServiceImpl$"Finding water statistics for externalUserId [$externalUserId] between [$startInclusive] and [$endExclusive]"</ID>
+    <ID>MaxLineLength:WaterStatisticServiceImpl.kt:WaterStatisticServiceImpl$"Water amount must be between ${WaterEntryConstants.MIN_ML} and ${WaterEntryConstants.MAX_ML} ml, got: $amountMl"</ID>
+    <ID>MaxLineLength:WaterStatisticServiceTest.kt:WaterStatisticServiceTest$"manualRecordEvent(): saves statistic with source=MANUAL, eventType=YES and converts consumedAt to UTC LocalDateTime"</ID>
+    <ID>MayBeConstant:ClockHelperTest.kt:ClockHelperTest$val DEFAULT_TIME = "2025-01-01T12:00:00Z"</ID>
+    <ID>MayBeConstant:TelegramMessageConstants.kt:TelegramMessageConstants$val NOTIFICATION_ANSWER_CANCEL_MESSAGE = "Милый зайчик, пожалуйста, напейся в следующий раз!"</ID>
+    <ID>MayBeConstant:TelegramMessageConstants.kt:TelegramMessageConstants$val NOTIFICATION_ANSWER_YES_MESSAGE = "Ты - солнышко! Так держать!"</ID>
+    <ID>MayBeConstant:TelegramMessageConstants.kt:TelegramMessageConstants$val NOTIFICATION_QUESTION_MESSAGE = "Водица выпита?"</ID>
+    <ID>MayBeConstant:TelegramMessageConstants.kt:TelegramMessageConstants$val NOTIFICATION_SNOOZE_MENU_MESSAGE = "Выбери, на сколько хочешь отложить уведомление"</ID>
+    <ID>MayBeConstant:TelegramMessageConstants.kt:TelegramMessageConstants$val NOTIFICATION_WATER_AMOUNT_MENU_MESSAGE = "Сколько водицы выпито?"</ID>
+    <ID>MayBeConstant:TelegramWebAppDataHelper.kt:TelegramWebAppDataHelper$private val ALGORITHM_HASH_KEY = "WebAppData"</ID>
+    <ID>MayBeConstant:TelegramWebAppDataHelper.kt:TelegramWebAppDataHelper$private val ALGORITHM_NAME = "HmacSHA256"</ID>
+    <ID>MayBeConstant:TelegramWebAppDataHelper.kt:TelegramWebAppDataHelper$val AUTH_DATE_FIELD_NAME = "auth_date"</ID>
+    <ID>MayBeConstant:TelegramWebAppDataHelper.kt:TelegramWebAppDataHelper$val HASH_FIELD_NAME = "hash"</ID>
+    <ID>MayBeConstant:TelegramWebAppDataHelper.kt:TelegramWebAppDataHelper$val QUERY_ID_FIELD_NAME = "query_id"</ID>
+    <ID>MayBeConstant:TelegramWebAppDataHelper.kt:TelegramWebAppDataHelper$val USER_FIELD_NAME = "user"</ID>
+    <ID>ReturnCount:AdminAuthInterceptor.kt:AdminAuthInterceptor$override fun preHandle: Boolean</ID>
+    <ID>ReturnCount:NotificationTimeServiceImpl.kt:NotificationTimeServiceImpl$override fun calculateNextNotificationAt: Instant</ID>
+    <ID>ReturnCount:NotificationTimeServiceImpl.kt:NotificationTimeServiceImpl$override fun isOutsideQuietTime: Boolean</ID>
+    <ID>ReturnCount:StatisticsAggregator.kt:StatisticsAggregator$fun bestDay: BestDayDto?</ID>
+    <ID>ReturnCount:TelegramAuthInterceptor.kt:TelegramAuthInterceptor$override fun preHandle: Boolean</ID>
+    <ID>ReturnCount:TelegramWebAppDataHelper.kt:TelegramWebAppDataHelper$fun validateAuthDate: Boolean</ID>
+    <ID>ReturnCount:TelegramWebAppDataHelper.kt:TelegramWebAppDataHelper$fun validateHash: Boolean</ID>
+    <ID>TooGenericExceptionCaught:FunctionHelper.kt:FunctionHelper$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:NotificationScheduler.kt:NotificationScheduler$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:NotificationSettingsServiceImpl.kt:NotificationSettingsServiceImpl$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:TelegramAuthInterceptor.kt:TelegramAuthInterceptor$e: Exception</ID>
+    <ID>TooGenericExceptionThrown:FunctionHelperTest.kt:FunctionHelperTest$throw RuntimeException()</ID>
+    <ID>TooManyFunctions:NotificationAccessService.kt:NotificationAccessService</ID>
+    <ID>TooManyFunctions:NotificationAccessServiceImpl.kt:NotificationAccessServiceImpl : NotificationAccessService</ID>
+    <ID>TooManyFunctions:NotificationSettingsService.kt:NotificationSettingsService</ID>
+    <ID>TooManyFunctions:NotificationSettingsServiceImpl.kt:NotificationSettingsServiceImpl : NotificationSettingsService</ID>
+    <ID>UtilityClassWithPublicConstructor:DtoGenerator.kt:DtoGenerator</ID>
+  </CurrentIssues>
+</SmellBaseline>

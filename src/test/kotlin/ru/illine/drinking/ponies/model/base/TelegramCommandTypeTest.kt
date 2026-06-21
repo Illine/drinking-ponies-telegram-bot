@@ -10,7 +10,6 @@ import ru.illine.drinking.ponies.test.tag.UnitTest
 @UnitTest
 @DisplayName("TelegramCommandType Unit Test")
 class TelegramCommandTypeTest {
-
     @Test
     @DisplayName("toString(): returns command value for each entry")
     fun `toString returns command`() {

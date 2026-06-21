@@ -15,14 +15,14 @@ import ru.illine.drinking.ponies.util.telegram.TelegramGeneralConstants
 @RequestMapping("/users")
 @Tag(name = "User", description = "Current user identity and profile")
 class UserController {
-
     @GetMapping("/me")
     @Operation(summary = "Get current user identity")
     fun getMe(
         @Parameter(hidden = true)
         @RequestAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) telegramUser: TelegramUserDto,
-    ): MeResponse = MeResponse(
-        externalUserId = telegramUser.externalUserId,
-        isAdmin = telegramUser.isAdmin,
-    )
+    ): MeResponse =
+        MeResponse(
+            externalUserId = telegramUser.externalUserId,
+            isAdmin = telegramUser.isAdmin,
+        )
 }

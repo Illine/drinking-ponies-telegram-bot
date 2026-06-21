@@ -17,9 +17,8 @@ import java.time.Duration
 
 @Service
 class TelegramValidatorServiceImpl(
-    private val telegramBotProperties: TelegramBotProperties
+    private val telegramBotProperties: TelegramBotProperties,
 ) : TelegramValidatorService {
-
     private val logger = LoggerFactory.getLogger("SERVICE")
 
     private val objectMapper = jacksonObjectMapper()

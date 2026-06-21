@@ -7,11 +7,9 @@ import kotlin.random.Random
 
 @Configuration
 class TimeConfig {
-
     @Bean
     fun clock(): Clock = Clock.systemUTC()
 
     @Bean
     fun random(): Random = Random.Default
-
 }

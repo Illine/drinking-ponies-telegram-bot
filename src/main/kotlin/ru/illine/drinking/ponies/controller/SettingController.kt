@@ -6,7 +6,13 @@ import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.format.annotation.DateTimeFormat
 import org.springframework.http.HttpStatus
-import org.springframework.web.bind.annotation.*
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PutMapping
+import org.springframework.web.bind.annotation.RequestAttribute
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.ResponseStatus
+import org.springframework.web.bind.annotation.RestController
 import ru.illine.drinking.ponies.mapper.SettingResponseMapper
 import ru.illine.drinking.ponies.model.base.IntervalNotificationType
 import ru.illine.drinking.ponies.model.dto.TelegramUserDto
@@ -19,9 +25,8 @@ import java.time.LocalTime
 @RequestMapping("/settings")
 @Tag(name = "Settings", description = "Notification settings management")
 class SettingController(
-    private val notificationSettingsService: NotificationSettingsService
+    private val notificationSettingsService: NotificationSettingsService,
 ) {
-
     @GetMapping
     @Operation(summary = "Get all notification settings")
     fun getSettings(
@@ -38,10 +43,20 @@ class SettingController(
     fun changeQuietMode(
         @Parameter(hidden = true)
         @RequestAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) telegramUser: TelegramUserDto,
-        @Parameter(description = "Start time in HH:mm format", example = "23:00", schema = Schema(type = "string", pattern = "HH:mm"))
-        @RequestParam(name = "start", required = true) @DateTimeFormat(pattern = "HH:mm") start: LocalTime,
-        @Parameter(description = "End time in HH:mm format", example = "08:00", schema = Schema(type = "string", pattern = "HH:mm"))
-        @RequestParam(name = "end", required = true) @DateTimeFormat(pattern = "HH:mm") end: LocalTime
+        @Parameter(
+            description = "Start time in HH:mm format",
+            example = "23:00",
+            schema = Schema(type = "string", pattern = "HH:mm"),
+        )
+        @RequestParam(name = "start", required = true)
+        @DateTimeFormat(pattern = "HH:mm") start: LocalTime,
+        @Parameter(
+            description = "End time in HH:mm format",
+            example = "08:00",
+            schema = Schema(type = "string", pattern = "HH:mm"),
+        )
+        @RequestParam(name = "end", required = true)
+        @DateTimeFormat(pattern = "HH:mm") end: LocalTime,
     ) {
         notificationSettingsService.changeQuietMode(telegramUser.externalUserId, start, end)
     }
@@ -53,7 +68,7 @@ class SettingController(
         @Parameter(hidden = true)
         @RequestAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) telegramUser: TelegramUserDto,
         @Parameter(description = "IANA timezone identifier", example = "Europe/Moscow")
-        @RequestParam(name = "timezone", required = true) timezone: String
+        @RequestParam(name = "timezone", required = true) timezone: String,
     ) {
         notificationSettingsService.changeTimezone(telegramUser.externalUserId, timezone)
     }
@@ -65,7 +80,7 @@ class SettingController(
         @Parameter(hidden = true)
         @RequestAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) telegramUser: TelegramUserDto,
         @Parameter(description = "Notification interval enum value", example = "HOUR")
-        @RequestParam(name = "interval", required = true) interval: IntervalNotificationType
+        @RequestParam(name = "interval", required = true) interval: IntervalNotificationType,
     ) {
         notificationSettingsService.changeInterval(telegramUser.externalUserId, interval)
     }
@@ -77,7 +92,7 @@ class SettingController(
         @Parameter(hidden = true)
         @RequestAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) telegramUser: TelegramUserDto,
         @Parameter(description = "Enable or disable notifications", example = "true")
-        @RequestParam(name = "active", required = true) active: Boolean
+        @RequestParam(name = "active", required = true) active: Boolean,
     ) {
         notificationSettingsService.changeNotificationStatus(telegramUser.externalUserId, active)
     }
@@ -92,7 +107,7 @@ class SettingController(
             description = "Daily goal in milliliters. Allowed values: 2000, 2250, 2500, 2750, 3000",
             example = "2000",
         )
-        @RequestParam(name = "goalMl", required = true) goalMl: Int
+        @RequestParam(name = "goalMl", required = true) goalMl: Int,
     ) {
         notificationSettingsService.changeDailyGoal(telegramUser.externalUserId, goalMl)
     }

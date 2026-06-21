@@ -11,5 +11,5 @@ enum class IntervalNotificationType(
     HOUR(TelegramTimeConstants.HOUR, 60),
     HOUR_AND_HALF(TelegramTimeConstants.HOUR_AND_HALF, 90),
     TWO_HOURS(TelegramTimeConstants.TWO_HOURS, 120),
-    THREE_HOURS(TelegramTimeConstants.THREE_HOURS, 180);
+    THREE_HOURS(TelegramTimeConstants.THREE_HOURS, 180),
 }

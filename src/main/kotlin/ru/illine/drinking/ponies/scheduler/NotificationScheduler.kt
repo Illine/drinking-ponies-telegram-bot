@@ -12,11 +12,8 @@ import ru.illine.drinking.ponies.service.notification.NotificationTimeService
 class NotificationScheduler(
     private val notificationSettingsService: NotificationSettingsService,
     private val notificationSenderService: NotificationSenderService,
-    private val notificationTimeService: NotificationTimeService
+    private val notificationTimeService: NotificationTimeService,
 ) {
-
-    private val MAX_REMINDED_NOTIFICATION_ATTEMPTS = 3
-
     private val logger = LoggerFactory.getLogger("SCHEDULER")
 
     @Scheduled(cron = "\${telegram-bot.schedule.notification.cron}")
@@ -24,11 +21,13 @@ class NotificationScheduler(
         logger.info("Starting drinking notification scheduler")
 
         try {
-            val (exhaustedNotifications, activeNotifications) = notificationSettingsService.getAllNotificationSettings()
-                .filter { it.enabled }
-                .filter(notificationTimeService::isOutsideQuietTime)
-                .filter { notificationTimeService.isNotificationDue(it) }
-                .partition { it.notificationAttempts == MAX_REMINDED_NOTIFICATION_ATTEMPTS }
+            val (exhaustedNotifications, activeNotifications) =
+                notificationSettingsService
+                    .getAllNotificationSettings()
+                    .filter { it.enabled }
+                    .filter(notificationTimeService::isOutsideQuietTime)
+                    .filter { notificationTimeService.isNotificationDue(it) }
+                    .partition { it.notificationAttempts == MAX_REMINDED_NOTIFICATION_ATTEMPTS }
 
             cancelAll(exhaustedNotifications)
             notifyAll(activeNotifications)
@@ -55,5 +54,9 @@ class NotificationScheduler(
 
         logger.info("Suspending notifications for [{}] users (max attempts reached)", notifications.size)
         notificationSenderService.suspendNotifications(notifications)
+    }
+
+    companion object {
+        private const val MAX_REMINDED_NOTIFICATION_ATTEMPTS = 3
     }
 }

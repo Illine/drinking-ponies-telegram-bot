@@ -4,11 +4,9 @@ import ru.illine.drinking.ponies.model.dto.internal.NotificationSettingDto
 import java.time.Instant
 
 interface NotificationTimeService {
-
     fun isOutsideQuietTime(dto: NotificationSettingDto): Boolean
 
     fun isNotificationDue(dto: NotificationSettingDto): Boolean
 
     fun calculateNextNotificationAt(dto: NotificationSettingDto): Instant
-
 }

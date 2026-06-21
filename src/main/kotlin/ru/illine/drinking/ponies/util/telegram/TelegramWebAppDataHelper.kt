@@ -10,7 +10,6 @@ import java.time.ZoneId
 import java.time.ZonedDateTime
 
 object TelegramWebAppDataHelper {
-
     private val logger = LoggerFactory.getLogger("HELPER")
 
     private val ALGORITHM_NAME = "HmacSHA256"
@@ -21,7 +20,10 @@ object TelegramWebAppDataHelper {
     val QUERY_ID_FIELD_NAME = "query_id"
     val USER_FIELD_NAME = "user"
 
-    fun validateAuthDate(decodedData: Map<String, String>, expirationTime: Duration): Boolean {
+    fun validateAuthDate(
+        decodedData: Map<String, String>,
+        expirationTime: Duration,
+    ): Boolean {
         val hashTimestamp = decodedData[AUTH_DATE_FIELD_NAME]?.toLongOrNull()
 
         if (hashTimestamp == null) {
@@ -41,7 +43,10 @@ object TelegramWebAppDataHelper {
         return true
     }
 
-    fun validateHash(decodedData: Map<String, String>, token: String): Boolean {
+    fun validateHash(
+        decodedData: Map<String, String>,
+        token: String,
+    ): Boolean {
         val receivedHash = decodedData[HASH_FIELD_NAME]
         if (receivedHash == null) {
             logger.warn("Field 'hash' hasn't been received!")
@@ -49,11 +54,12 @@ object TelegramWebAppDataHelper {
         }
         logger.debug("Received hash: {}", receivedHash)
 
-        val dataCheckString = decodedData
-            .filter { it.key != HASH_FIELD_NAME }
-            .toSortedMap()
-            .map { "${it.key}=${it.value}" }
-            .joinToString("\n")
+        val dataCheckString =
+            decodedData
+                .filter { it.key != HASH_FIELD_NAME }
+                .toSortedMap()
+                .map { "${it.key}=${it.value}" }
+                .joinToString("\n")
         logger.debug("Data string for HMAC: \n{}", dataCheckString)
 
         val secretKey = HmacUtils(ALGORITHM_NAME, ALGORITHM_HASH_KEY).hmac(token)

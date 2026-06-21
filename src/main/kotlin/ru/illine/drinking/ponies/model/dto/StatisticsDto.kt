@@ -9,5 +9,5 @@ data class StatisticsDto(
     val bestDay: BestDayDto?,
     val currentStreakDays: Int,
     val insightText: String,
-    val firstEntryAt: Instant?
+    val firstEntryAt: Instant?,
 )

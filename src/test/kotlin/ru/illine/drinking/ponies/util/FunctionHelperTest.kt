@@ -1,6 +1,9 @@
 package ru.illine.drinking.ponies.util
 
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import ru.illine.drinking.ponies.test.tag.UnitTest
@@ -11,15 +14,15 @@ import ru.illine.drinking.ponies.util.FunctionHelper.check
 @UnitTest
 @DisplayName("FunctionHelper Unit Test")
 class FunctionHelperTest {
-
     @Test
     @DisplayName("check(): returns necessary value when true")
     fun `successful check true`() {
         val expected = "true"
-        val actual = true.check(
-            ifTrue = { "true" },
-            ifFalse = { "false" }
-        )
+        val actual =
+            true.check(
+                ifTrue = { "true" },
+                ifFalse = { "false" },
+            )
 
         assertEquals(expected, actual)
     }
@@ -28,10 +31,11 @@ class FunctionHelperTest {
     @DisplayName("check(): returns necessary value when false")
     fun `successful check false`() {
         val expected = "false"
-        val actual = false.check(
-            ifTrue = { "true" },
-            ifFalse = { "false" }
-        )
+        val actual =
+            false.check(
+                ifTrue = { "true" },
+                ifFalse = { "false" },
+            )
 
         assertEquals(expected, actual)
     }
@@ -42,9 +46,9 @@ class FunctionHelperTest {
         var expected = false
 
         catchAny(
-            action = {  },
+            action = { },
             ifException = { expected = true },
-            errorLogging = { /* No-op for test */ }
+            errorLogging = { /* No-op for test */ },
         )
 
         assertFalse(expected)
@@ -58,7 +62,7 @@ class FunctionHelperTest {
         catchAny(
             action = { throw RuntimeException() },
             ifException = { expected = true },
-            errorLogging = { /* No-op for test */ }
+            errorLogging = { /* No-op for test */ },
         )
 
         assertTrue(expected)
@@ -72,7 +76,7 @@ class FunctionHelperTest {
         catchAny(
             action = { throw RuntimeException() },
             ifException = { /* No-op for test */ },
-            errorLogging = { expected = true }
+            errorLogging = { expected = true },
         )
 
         assertTrue(expected)
@@ -81,14 +85,14 @@ class FunctionHelperTest {
     @Test
     @DisplayName("catchAnyWithReturn(): doesn't executes ifException when there isn't any exception")
     fun `successful catchAnyWithReturn action`() {
-
         val expected = true
 
-        val actual: Boolean? = catchAnyWithReturn(
-            action = { true },
-            ifException = { false },
-            errorLogging = { /* No-op for test */ }
-        )
+        val actual: Boolean? =
+            catchAnyWithReturn(
+                action = { true },
+                ifException = { false },
+                errorLogging = { /* No-op for test */ },
+            )
 
         assertEquals(expected, actual)
     }
@@ -96,14 +100,14 @@ class FunctionHelperTest {
     @Test
     @DisplayName("catchAnyWithReturn(): executes ifException when any exception")
     fun `successful catchAnyWithReturn ifException`() {
-
         val expected = false
 
-        val actual: Boolean? = catchAnyWithReturn(
-            action = { throw RuntimeException() },
-            ifException = { false },
-            errorLogging = { /* No-op for test */ }
-        )
+        val actual: Boolean? =
+            catchAnyWithReturn(
+                action = { throw RuntimeException() },
+                ifException = { false },
+                errorLogging = { /* No-op for test */ },
+            )
 
         assertEquals(expected, actual)
     }
@@ -116,7 +120,7 @@ class FunctionHelperTest {
         catchAnyWithReturn(
             action = { throw RuntimeException() },
             ifException = { true },
-            errorLogging = { expected = true }
+            errorLogging = { expected = true },
         )
 
         assertTrue(expected)

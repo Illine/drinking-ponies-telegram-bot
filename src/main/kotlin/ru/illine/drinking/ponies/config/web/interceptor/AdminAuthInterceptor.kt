@@ -13,14 +13,18 @@ import ru.illine.drinking.ponies.util.telegram.TelegramGeneralConstants
 
 @Component
 class AdminAuthInterceptor : HandlerInterceptor {
-
     private val logger = LoggerFactory.getLogger("INTERCEPTOR")
 
-    override fun preHandle(request: HttpServletRequest, response: HttpServletResponse, handler: Any): Boolean {
+    override fun preHandle(
+        request: HttpServletRequest,
+        response: HttpServletResponse,
+        handler: Any,
+    ): Boolean {
         if (handler !is HandlerMethod) return true
         handler.getMethodAnnotation(AdminOnly::class.java) ?: return true
 
-        val telegramUser = request.getAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) 
+        val telegramUser =
+            request.getAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE)
                 as? TelegramUserDto ?: error("@AdminOnly used on endpoint without TelegramAuthInterceptor")
 
         if (telegramUser.isAdmin) {

@@ -16,38 +16,38 @@ import ru.illine.drinking.ponies.util.telegram.TelegramMessageConstants
 @Service
 class NotificationServiceImpl(
     private val sender: TelegramClient,
-    private val notificationAccessService: NotificationAccessService
+    private val notificationAccessService: NotificationAccessService,
 ) : NotificationService {
-
     private val logger = LoggerFactory.getLogger("SERVICE")
 
     override fun start(messageContext: MessageContext) {
         SendMessage(
             messageContext.chatId().toString(),
-            TelegramMessageConstants.START_GREETING_MESSAGE.format(messageContext.user().userName)
+            TelegramMessageConstants.START_GREETING_MESSAGE.format(messageContext.user().userName),
         ).apply { sender.execute(this) }
 
         val externalUserId = messageContext.user().id
         val chatId = messageContext.chatId()
 
-        val setting = notificationAccessService.existsByExternalUserId(externalUserId).check(
-            ifTrue = {
-                notificationAccessService.findNotificationSettingByExternalUserId(externalUserId)
-            },
-            ifFalse = {
-                createNewUser(externalUserId, chatId)
-            }
-        )
+        val setting =
+            notificationAccessService.existsByExternalUserId(externalUserId).check(
+                ifTrue = {
+                    notificationAccessService.findNotificationSettingByExternalUserId(externalUserId)
+                },
+                ifFalse = {
+                    createNewUser(externalUserId, chatId)
+                },
+            )
 
         SendMessage(
             messageContext.chatId().toString(),
-            TelegramMessageConstants.START_DEFAULT_SETTINGS_MESSAGE.format(setting.notificationInterval.displayName)
+            TelegramMessageConstants.START_DEFAULT_SETTINGS_MESSAGE.format(setting.notificationInterval.displayName),
         ).apply { sender.execute(this) }
     }
 
     private fun createNewUser(
         externalUserId: Long,
-        chatId: Long
+        chatId: Long,
     ): NotificationSettingDto {
         val user = TelegramUserDto.create(externalUserId)
         val chat = TelegramChatDto.create(chatId, user)

@@ -18,17 +18,20 @@ import java.time.temporal.ChronoUnit
 @Service
 class WaterStatisticServiceImpl(
     private val waterStatisticAccessService: WaterStatisticAccessService,
-    private val clock: Clock
+    private val clock: Clock,
 ) : WaterStatisticService {
-
     private val logger = LoggerFactory.getLogger("SERVICE")
 
-    override fun recordEvent(telegramUser: TelegramUserDto, eventType: AnswerNotificationType, waterAmountMl: Int) {
+    override fun recordEvent(
+        telegramUser: TelegramUserDto,
+        eventType: AnswerNotificationType,
+        waterAmountMl: Int,
+    ) {
         logger.info(
             "Recording water statistic event [{}] for user [{}], amount [{}] ml",
             eventType,
             telegramUser.externalUserId,
-            waterAmountMl
+            waterAmountMl,
         )
 
         waterStatisticAccessService.save(
@@ -36,12 +39,15 @@ class WaterStatisticServiceImpl(
                 telegramUser = telegramUser,
                 eventTime = LocalDateTime.now(clock),
                 eventType = eventType,
-                waterAmountMl = waterAmountMl
-            )
+                waterAmountMl = waterAmountMl,
+            ),
         )
     }
 
-    override fun recordEvents(telegramUsers: Collection<TelegramUserDto>, eventType: AnswerNotificationType) {
+    override fun recordEvents(
+        telegramUsers: Collection<TelegramUserDto>,
+        eventType: AnswerNotificationType,
+    ) {
         logger.info("Recording [{}] water statistic events with type [{}]", telegramUsers.size, eventType)
 
         waterStatisticAccessService.saveAll(
@@ -49,36 +55,41 @@ class WaterStatisticServiceImpl(
                 WaterStatisticDto(
                     telegramUser = it,
                     eventTime = LocalDateTime.now(clock),
-                    eventType = eventType
+                    eventType = eventType,
                 )
-            }
+            },
         )
     }
 
-    override fun manualRecordEvent(externalUserId: Long, consumedAt: Instant?, amountMl: Int) {
+    override fun manualRecordEvent(
+        externalUserId: Long,
+        consumedAt: Instant?,
+        amountMl: Int,
+    ) {
         require(amountMl.toLong() in WaterEntryConstants.MIN_ML..WaterEntryConstants.MAX_ML) {
             "Water amount must be between ${WaterEntryConstants.MIN_ML} and ${WaterEntryConstants.MAX_ML} ml, got: $amountMl"
         }
 
         val now = Instant.now(clock)
-        val eventInstant = consumedAt?.also {
-            require(!it.isAfter(now)) {
-                "consumedAt must not be in the future, got: $it (now: $now)"
-            }
-            require(
-                !it.isBefore(
-                    now.minus(WaterEntryConstants.MAX_DAYS_AGO, ChronoUnit.DAYS)
-                )
-            ) {
-                "consumedAt must not be older than ${WaterEntryConstants.MAX_DAYS_AGO} days, got: $it"
-            }
-        } ?: now.also { logger.debug("consumedAt not passed, now will be used") }
+        val eventInstant =
+            consumedAt?.also {
+                require(!it.isAfter(now)) {
+                    "consumedAt must not be in the future, got: $it (now: $now)"
+                }
+                require(
+                    !it.isBefore(
+                        now.minus(WaterEntryConstants.MAX_DAYS_AGO, ChronoUnit.DAYS),
+                    ),
+                ) {
+                    "consumedAt must not be older than ${WaterEntryConstants.MAX_DAYS_AGO} days, got: $it"
+                }
+            } ?: now.also { logger.debug("consumedAt not passed, now will be used") }
 
         logger.info(
             "Recording manual water entry for user [{}], amount [{}] ml at [{}]",
             externalUserId,
             amountMl,
-            eventInstant
+            eventInstant,
         )
 
         waterStatisticAccessService.save(
@@ -87,9 +98,8 @@ class WaterStatisticServiceImpl(
                 eventTime = LocalDateTime.ofInstant(eventInstant, ZoneOffset.UTC),
                 eventType = AnswerNotificationType.YES,
                 waterAmountMl = amountMl,
-                source = WaterEntrySourceType.MANUAL
-            )
+                source = WaterEntrySourceType.MANUAL,
+            ),
         )
     }
-
 }

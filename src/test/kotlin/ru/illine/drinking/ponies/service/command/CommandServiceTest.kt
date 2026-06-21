@@ -19,7 +19,6 @@ import ru.illine.drinking.ponies.util.telegram.TelegramMenuConstants
 @UnitTest
 @DisplayName("CommandService Unit Test")
 class CommandServiceTest {
-
     private lateinit var sender: TelegramClient
 
     @BeforeEach
@@ -53,13 +52,14 @@ class CommandServiceTest {
     }
 
     private fun buildService(autoUpdateTelegramConfig: Boolean): CommandServiceImpl {
-        val properties = TelegramBotProperties(
-            token = "token",
-            username = "username",
-            miniAppUrl = MINI_APP_URL,
-            autoUpdateTelegramConfig = autoUpdateTelegramConfig,
-            http = TelegramBotProperties.Http(connectionTimeToLiveInSec = 30, maxConnectionTotal = 10)
-        )
+        val properties =
+            TelegramBotProperties(
+                token = "token",
+                username = "username",
+                miniAppUrl = MINI_APP_URL,
+                autoUpdateTelegramConfig = autoUpdateTelegramConfig,
+                http = TelegramBotProperties.Http(connectionTimeToLiveInSec = 30, maxConnectionTotal = 10),
+            )
         return CommandServiceImpl(properties, sender)
     }
 

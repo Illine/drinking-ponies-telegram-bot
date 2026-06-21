@@ -21,15 +21,14 @@ class WaterAmountApplyReplyButtonStrategy(
     private val notificationSettingsService: NotificationSettingsService,
     private val waterStatisticService: WaterStatisticService,
     private val messageEditorService: MessageEditorService,
-    private val clock: Clock
+    private val clock: Clock,
 ) : ReplyButtonStrategy {
-
     private val logger = LoggerFactory.getLogger("STRATEGY")
 
     override fun reply(callbackQuery: CallbackQuery) {
         messageEditorService.deleteReplyMarkup(
             callbackQuery.message.chatId,
-            callbackQuery.message.messageId
+            callbackQuery.message.messageId,
         )
 
         val externalUserId = callbackQuery.from.id
@@ -46,32 +45,32 @@ class WaterAmountApplyReplyButtonStrategy(
             "A telegram user [{}] for telegram chat [{}] drank [{}] ml of water",
             externalUserId,
             chatId,
-            waterAmountType.amountMl
+            waterAmountType.amountMl,
         )
 
-        notificationSettingsService.resetNotificationTimer(externalUserId, LocalDateTime.now(clock))
+        notificationSettingsService
+            .resetNotificationTimer(externalUserId, LocalDateTime.now(clock))
             .also { setting ->
                 runCatching {
                     waterStatisticService.recordEvent(
                         setting.telegramUser,
                         AnswerNotificationType.YES,
-                        waterAmountType.amountMl
+                        waterAmountType.amountMl,
                     )
                 }.onFailure { e ->
                     logger.error(
                         "Failed to record water statistic for user [{}]",
                         setting.telegramUser.externalUserId,
-                        e
+                        e,
                     )
                 }
             }
 
         SendMessage(
             chatId.toString(),
-            TelegramMessageConstants.NOTIFICATION_ANSWER_YES_MESSAGE
+            TelegramMessageConstants.NOTIFICATION_ANSWER_YES_MESSAGE,
         ).apply { sender.execute(this) }
     }
 
     override fun isQueryData(queryData: String): Boolean = WaterAmountType.typeOf(queryData) != null
-
 }

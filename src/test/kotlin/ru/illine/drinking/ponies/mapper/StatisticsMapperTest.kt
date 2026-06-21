@@ -1,6 +1,9 @@
 package ru.illine.drinking.ponies.mapper
 
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import ru.illine.drinking.ponies.model.dto.BestDayDto
@@ -16,22 +19,23 @@ import kotlin.reflect.full.memberProperties
 @UnitTest
 @DisplayName("StatisticsMapper Unit Test")
 class StatisticsMapperTest {
-
     @Test
     @DisplayName("toResponse(): maps every field from StatisticsDto to StatisticsResponse")
     fun `toResponse maps every field`() {
-        val dto = StatisticsDto(
-            points = listOf(
-                StatisticsPointDto("2026-05-04", 1800),
-                StatisticsPointDto("2026-05-05", 2100),
-            ),
-            dailyGoalMl = 2000,
-            averageMlPerDay = 1950,
-            bestDay = BestDayDto(LocalDate.of(2026, 5, 5), 2100, DayOfWeek.TUESDAY),
-            currentStreakDays = 3,
-            insightText = "Котик, ты пьёшь водицу 3 дней подряд - так держать!",
-            firstEntryAt = Instant.parse("2026-04-15T10:30:00Z"),
-        )
+        val dto =
+            StatisticsDto(
+                points =
+                    listOf(
+                        StatisticsPointDto("2026-05-04", 1800),
+                        StatisticsPointDto("2026-05-05", 2100),
+                    ),
+                dailyGoalMl = 2000,
+                averageMlPerDay = 1950,
+                bestDay = BestDayDto(LocalDate.of(2026, 5, 5), 2100, DayOfWeek.TUESDAY),
+                currentStreakDays = 3,
+                insightText = "Котик, ты пьёшь водицу 3 дней подряд - так держать!",
+                firstEntryAt = Instant.parse("2026-04-15T10:30:00Z"),
+            )
 
         val response = StatisticsMapper.toResponse(dto)
 
@@ -55,15 +59,16 @@ class StatisticsMapperTest {
     @Test
     @DisplayName("toResponse(): null firstEntryAt maps through as null")
     fun `toResponse preserves null firstEntryAt`() {
-        val dto = StatisticsDto(
-            points = emptyList(),
-            dailyGoalMl = 2000,
-            averageMlPerDay = 0,
-            bestDay = null,
-            currentStreakDays = 0,
-            insightText = "Здесь пока пусто, котик. Сделай первый глоток.",
-            firstEntryAt = null,
-        )
+        val dto =
+            StatisticsDto(
+                points = emptyList(),
+                dailyGoalMl = 2000,
+                averageMlPerDay = 0,
+                bestDay = null,
+                currentStreakDays = 0,
+                insightText = "Здесь пока пусто, котик. Сделай первый глоток.",
+                firstEntryAt = null,
+            )
 
         val response = StatisticsMapper.toResponse(dto)
 
@@ -88,15 +93,16 @@ class StatisticsMapperTest {
     @Test
     @DisplayName("toResponse(): null bestDay maps through as null")
     fun `toResponse preserves null bestDay`() {
-        val dto = StatisticsDto(
-            points = emptyList(),
-            dailyGoalMl = 2000,
-            averageMlPerDay = 0,
-            bestDay = null,
-            currentStreakDays = 0,
-            insightText = "Здесь пока пусто, котик. Сделай первый глоток.",
-            firstEntryAt = null,
-        )
+        val dto =
+            StatisticsDto(
+                points = emptyList(),
+                dailyGoalMl = 2000,
+                averageMlPerDay = 0,
+                bestDay = null,
+                currentStreakDays = 0,
+                insightText = "Здесь пока пусто, котик. Сделай первый глоток.",
+                firstEntryAt = null,
+            )
 
         val response = StatisticsMapper.toResponse(dto)
 

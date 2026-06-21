@@ -20,25 +20,26 @@ class CancelAnswerNotificationReplyButtonStrategy(
     messageEditorService: MessageEditorService,
     private val notificationSettingsService: NotificationSettingsService,
     private val waterStatisticService: WaterStatisticService,
-    private val clock: Clock
+    private val clock: Clock,
 ) : AbstractAnswerNotificationReplyButtonStrategy<NotificationSettingDto>(sender, messageEditorService) {
-
     private val logger = LoggerFactory.getLogger("STRATEGY")
 
-    override fun updateLastNotificationTime(callbackQuery: CallbackQuery): () -> NotificationSettingDto = {
-        notificationSettingsService.resetNotificationTimer(callbackQuery.from.id, LocalDateTime.now(clock))
-            .also { setting ->
-                runCatching {
-                    waterStatisticService.recordEvent(setting.telegramUser, getAnswerType())
-                }.onFailure { e ->
-                    logger.error(
-                        "Failed to record water statistic for user [{}]",
-                        setting.telegramUser.externalUserId,
-                        e
-                    )
+    override fun updateLastNotificationTime(callbackQuery: CallbackQuery): () -> NotificationSettingDto =
+        {
+            notificationSettingsService
+                .resetNotificationTimer(callbackQuery.from.id, LocalDateTime.now(clock))
+                .also { setting ->
+                    runCatching {
+                        waterStatisticService.recordEvent(setting.telegramUser, getAnswerType())
+                    }.onFailure { e ->
+                        logger.error(
+                            "Failed to record water statistic for user [{}]",
+                            setting.telegramUser.externalUserId,
+                            e,
+                        )
+                    }
                 }
-            }
-    }
+        }
 
     override fun getMessageText(): String = TelegramMessageConstants.NOTIFICATION_ANSWER_CANCEL_MESSAGE
 

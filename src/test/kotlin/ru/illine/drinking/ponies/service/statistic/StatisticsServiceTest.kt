@@ -1,6 +1,11 @@
 package ru.illine.drinking.ponies.service.statistic
 
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertSame
+import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
@@ -24,13 +29,17 @@ import ru.illine.drinking.ponies.service.statistic.impl.StatisticsServiceImpl
 import ru.illine.drinking.ponies.test.generator.DtoGenerator
 import ru.illine.drinking.ponies.test.tag.UnitTest
 import ru.illine.drinking.ponies.util.message.MessageSpec
-import java.time.*
+import java.time.Clock
+import java.time.DayOfWeek
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.ZoneOffset
 import java.util.stream.Stream
 
 @UnitTest
 @DisplayName("StatisticsService Unit Test")
 class StatisticsServiceTest {
-
     private val externalUserId = 1L
 
     private lateinit var notificationAccessService: NotificationAccessService
@@ -50,11 +59,18 @@ class StatisticsServiceTest {
             .thenReturn(MessageDto(text))
     }
 
-    private fun stubSettings(zone: String = "UTC", dailyGoalMl: Int = 2000) {
+    private fun stubSettings(
+        zone: String = "UTC",
+        dailyGoalMl: Int = 2000,
+    ) {
         whenever(notificationAccessService.findNotificationSettingByExternalUserId(externalUserId))
-            .thenReturn(DtoGenerator.generateNotificationDto(
-                externalUserId = externalUserId, userTimeZone = zone, dailyGoalMl = dailyGoalMl
-            ))
+            .thenReturn(
+                DtoGenerator.generateNotificationDto(
+                    externalUserId = externalUserId,
+                    userTimeZone = zone,
+                    dailyGoalMl = dailyGoalMl,
+                ),
+            )
     }
 
     private fun stubEvents(events: List<WaterStatisticDto>) {
@@ -67,9 +83,13 @@ class StatisticsServiceTest {
     }
 
     private fun buildService(clock: Clock) {
-        service = StatisticsServiceImpl(
-            notificationAccessService, waterStatisticAccessService, messageProvider, clock
-        )
+        service =
+            StatisticsServiceImpl(
+                notificationAccessService,
+                waterStatisticAccessService,
+                messageProvider,
+                clock,
+            )
     }
 
     private fun clockAt(iso: String): Clock = Clock.fixed(Instant.parse(iso), ZoneOffset.UTC)
@@ -94,7 +114,9 @@ class StatisticsServiceTest {
         val startCaptor = argumentCaptor<LocalDateTime>()
         val endCaptor = argumentCaptor<LocalDateTime>()
         verify(waterStatisticAccessService).findByUserAndEventTimeBetween(
-            eq(externalUserId), startCaptor.capture(), endCaptor.capture()
+            eq(externalUserId),
+            startCaptor.capture(),
+            endCaptor.capture(),
         )
         assertEquals(expectedStart, startCaptor.firstValue)
         assertEquals(expectedEnd, endCaptor.firstValue)
@@ -107,13 +129,14 @@ class StatisticsServiceTest {
     fun `getToday returns list as-is`() {
         buildService(clockAt("2026-05-07T22:30:00Z"))
         stubSettings(zone = "Europe/Moscow")
-        val expected = listOf(
-            DtoGenerator.generateWaterStatisticDto(
-                externalUserId = externalUserId,
-                eventTime = LocalDateTime.of(2026, 5, 8, 8, 15),
-                waterAmountMl = 250,
-            ),
-        )
+        val expected =
+            listOf(
+                DtoGenerator.generateWaterStatisticDto(
+                    externalUserId = externalUserId,
+                    eventTime = LocalDateTime.of(2026, 5, 8, 8, 15),
+                    waterAmountMl = 250,
+                ),
+            )
         stubEvents(expected)
 
         val result = service.getToday(externalUserId)
@@ -133,8 +156,8 @@ class StatisticsServiceTest {
                     externalUserId = externalUserId,
                     eventTime = LocalDateTime.of(2026, 5, 12, 8, 15),
                     waterAmountMl = 250,
-                )
-            )
+                ),
+            ),
         )
         stubFirstEntry(LocalDateTime.of(2026, 5, 1, 9, 0))
         stubInsight("insight day")
@@ -146,7 +169,7 @@ class StatisticsServiceTest {
         assertEquals(250, result.points[8].valueMl)
         assertEquals(2000, result.dailyGoalMl)
         assertEquals(250, result.averageMlPerDay) // days=1 -> total
-        assertNull(result.bestDay)                 // days=1 -> null
+        assertNull(result.bestDay) // days=1 -> null
         assertEquals("insight day", result.insightText)
         assertEquals(Instant.parse("2026-05-01T09:00:00Z"), result.firstEntryAt)
     }
@@ -169,7 +192,7 @@ class StatisticsServiceTest {
                     eventTime = LocalDateTime.of(2026, 5, 6, 10, 0),
                     waterAmountMl = 2400,
                 ),
-            )
+            ),
         )
         stubFirstEntry(null)
         stubInsight("insight week")
@@ -203,8 +226,8 @@ class StatisticsServiceTest {
                     externalUserId = externalUserId,
                     eventTime = LocalDateTime.of(2026, 5, 1, 9, 30),
                     waterAmountMl = 400,
-                )
-            )
+                ),
+            ),
         )
         stubFirstEntry(null)
         stubInsight()
@@ -244,7 +267,7 @@ class StatisticsServiceTest {
                     eventType = AnswerNotificationType.CANCEL,
                     waterAmountMl = 200,
                 ),
-            )
+            ),
         )
         stubFirstEntry(null)
         stubInsight()
@@ -266,13 +289,14 @@ class StatisticsServiceTest {
         val today = LocalDate.of(2026, 5, 20)
         buildService(clockAt("2026-05-20T12:00:00Z"))
         stubSettings()
-        val recentMet = (0L..6L).map { offset ->
-            DtoGenerator.generateWaterStatisticDto(
-                externalUserId = externalUserId,
-                eventTime = today.minusDays(offset).atTime(10, 0),
-                waterAmountMl = 2200,
-            )
-        }
+        val recentMet =
+            (0L..6L).map { offset ->
+                DtoGenerator.generateWaterStatisticDto(
+                    externalUserId = externalUserId,
+                    eventTime = today.minusDays(offset).atTime(10, 0),
+                    waterAmountMl = 2200,
+                )
+            }
         stubEvents(recentMet)
         stubFirstEntry(null)
         stubInsight()
@@ -290,20 +314,24 @@ class StatisticsServiceTest {
         val today = LocalDate.of(2026, 5, 20)
         buildService(clockAt("2026-05-20T12:00:00Z"))
         stubSettings()
-        val events = (0L..500L).map { offset ->
-            DtoGenerator.generateWaterStatisticDto(
-                externalUserId = externalUserId,
-                eventTime = today.minusDays(offset).atTime(10, 0),
-                waterAmountMl = 2200,
-            )
-        }
+        val events =
+            (0L..500L).map { offset ->
+                DtoGenerator.generateWaterStatisticDto(
+                    externalUserId = externalUserId,
+                    eventTime = today.minusDays(offset).atTime(10, 0),
+                    waterAmountMl = 2200,
+                )
+            }
         stubEvents(events)
         stubFirstEntry(null)
         stubInsight()
 
-        val result = service.getStatistics(
-            externalUserId, today.minusDays(500), today
-        )
+        val result =
+            service.getStatistics(
+                externalUserId,
+                today.minusDays(500),
+                today,
+            )
 
         assertEquals(367, result.currentStreakDays)
     }
@@ -330,14 +358,17 @@ class StatisticsServiceTest {
                     eventTime = LocalDateTime.of(2026, 5, 17, 10, 0),
                     waterAmountMl = 2500,
                 ),
-            )
+            ),
         )
         stubFirstEntry(null)
         stubInsight()
 
-        val result = service.getStatistics(
-            externalUserId, LocalDate.of(2026, 5, 15), today
-        )
+        val result =
+            service.getStatistics(
+                externalUserId,
+                LocalDate.of(2026, 5, 15),
+                today,
+            )
 
         assertNotNull(result.bestDay)
         val bestDay = result.bestDay!!
@@ -352,9 +383,10 @@ class StatisticsServiceTest {
         // settings stub not needed: validation runs before user context fetch
         stubSettings()
 
-        val ex = assertThrows(IllegalArgumentException::class.java) {
-            service.getStatistics(externalUserId, LocalDate.of(2026, 5, 10), LocalDate.of(2026, 5, 9))
-        }
+        val ex =
+            assertThrows(IllegalArgumentException::class.java) {
+                service.getStatistics(externalUserId, LocalDate.of(2026, 5, 10), LocalDate.of(2026, 5, 9))
+            }
         assertTrue(ex.message!!.contains("'from' must be before or equal to 'to'"))
     }
 
@@ -365,9 +397,10 @@ class StatisticsServiceTest {
         buildService(clockAt("2026-05-20T12:00:00Z"))
         stubSettings()
 
-        val ex = assertThrows(IllegalArgumentException::class.java) {
-            service.getStatistics(externalUserId, today.plusDays(1), today.plusDays(2))
-        }
+        val ex =
+            assertThrows(IllegalArgumentException::class.java) {
+                service.getStatistics(externalUserId, today.plusDays(1), today.plusDays(2))
+            }
         assertTrue(ex.message!!.contains("'from' must not be in the future"))
     }
 
@@ -414,8 +447,8 @@ class StatisticsServiceTest {
                     externalUserId = externalUserId,
                     eventTime = LocalDateTime.of(2026, 5, 12, 10, 0),
                     waterAmountMl = 2200,
-                )
-            )
+                ),
+            ),
         )
         stubFirstEntry(null)
         stubInsight("text")
@@ -433,52 +466,52 @@ class StatisticsServiceTest {
     }
 
     companion object {
-
         @JvmStatic
-        fun provideZoneCases(): Stream<Arguments> = Stream.of(
-            Arguments.of(
-                "Europe/Moscow",
-                "2026-05-07T22:30:00Z",
-                LocalDateTime.of(2026, 5, 7, 21, 0),
-                LocalDateTime.of(2026, 5, 8, 21, 0),
-                "UTC+3, no DST",
-            ),
-            Arguments.of(
-                "UTC",
-                "2026-05-07T22:30:00Z",
-                LocalDateTime.of(2026, 5, 7, 0, 0),
-                LocalDateTime.of(2026, 5, 8, 0, 0),
-                "UTC, no offset",
-            ),
-            Arguments.of(
-                "America/Los_Angeles",
-                "2026-05-07T22:30:00Z",
-                LocalDateTime.of(2026, 5, 7, 7, 0),
-                LocalDateTime.of(2026, 5, 8, 7, 0),
-                "UTC-7, DST in May",
-            ),
-            Arguments.of(
-                "Pacific/Kiritimati",
-                "2026-05-07T22:30:00Z",
-                LocalDateTime.of(2026, 5, 7, 10, 0),
-                LocalDateTime.of(2026, 5, 8, 10, 0),
-                "UTC+14, extreme east",
-            ),
-            Arguments.of(
-                "Asia/Kolkata",
-                "2026-05-07T22:30:00Z",
-                LocalDateTime.of(2026, 5, 7, 18, 30),
-                LocalDateTime.of(2026, 5, 8, 18, 30),
-                "UTC+5:30, fractional offset",
-            ),
-            // DST spring-forward (23h day)
-            Arguments.of(
-                "America/New_York",
-                "2026-03-08T07:30:00Z",
-                LocalDateTime.of(2026, 3, 8, 5, 0),
-                LocalDateTime.of(2026, 3, 9, 4, 0),
-                "DST spring-forward (23-hour day)",
-            ),
-        )
+        fun provideZoneCases(): Stream<Arguments> =
+            Stream.of(
+                Arguments.of(
+                    "Europe/Moscow",
+                    "2026-05-07T22:30:00Z",
+                    LocalDateTime.of(2026, 5, 7, 21, 0),
+                    LocalDateTime.of(2026, 5, 8, 21, 0),
+                    "UTC+3, no DST",
+                ),
+                Arguments.of(
+                    "UTC",
+                    "2026-05-07T22:30:00Z",
+                    LocalDateTime.of(2026, 5, 7, 0, 0),
+                    LocalDateTime.of(2026, 5, 8, 0, 0),
+                    "UTC, no offset",
+                ),
+                Arguments.of(
+                    "America/Los_Angeles",
+                    "2026-05-07T22:30:00Z",
+                    LocalDateTime.of(2026, 5, 7, 7, 0),
+                    LocalDateTime.of(2026, 5, 8, 7, 0),
+                    "UTC-7, DST in May",
+                ),
+                Arguments.of(
+                    "Pacific/Kiritimati",
+                    "2026-05-07T22:30:00Z",
+                    LocalDateTime.of(2026, 5, 7, 10, 0),
+                    LocalDateTime.of(2026, 5, 8, 10, 0),
+                    "UTC+14, extreme east",
+                ),
+                Arguments.of(
+                    "Asia/Kolkata",
+                    "2026-05-07T22:30:00Z",
+                    LocalDateTime.of(2026, 5, 7, 18, 30),
+                    LocalDateTime.of(2026, 5, 8, 18, 30),
+                    "UTC+5:30, fractional offset",
+                ),
+                // DST spring-forward (23h day)
+                Arguments.of(
+                    "America/New_York",
+                    "2026-03-08T07:30:00Z",
+                    LocalDateTime.of(2026, 3, 8, 5, 0),
+                    LocalDateTime.of(2026, 3, 9, 4, 0),
+                    "DST spring-forward (23-hour day)",
+                ),
+            )
     }
 }

@@ -11,43 +11,32 @@ import javax.validation.constraints.NotNull
 @Validated
 @ConfigurationProperties("telegram-bot")
 data class TelegramBotProperties(
-
     @NotEmpty
     val token: String,
-
     @NotEmpty
     val username: String,
-
     @NotEmpty
     val miniAppUrl: String,
-
     @NonNull
     val autoUpdateTelegramConfig: Boolean,
-
     @Min(10)
     val authDateExpirationSeconds: Long = 600,
-
     @NotNull
     var http: Http,
-
     @NotNull
-    val notification: Notification = Notification()
-
+    val notification: Notification = Notification(),
 ) {
     data class Http(
-
         @Min(30)
         @Max(120)
         val connectionTimeToLiveInSec: Long,
-
         @Min(10)
         @Max(200)
-        val maxConnectionTotal: Int
+        val maxConnectionTotal: Int,
     )
 
     data class Notification(
-
         @Min(1)
-        val retryIntervalMinutes: Long = 1L
+        val retryIntervalMinutes: Long = 1L,
     )
 }

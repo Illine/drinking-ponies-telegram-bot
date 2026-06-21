@@ -6,11 +6,9 @@ import ru.illine.drinking.ponies.service.button.ReplyButtonStrategy
 
 @Service
 class ReplyButtonFactoryImpl(
-    private val strategies: List<ReplyButtonStrategy>
+    private val strategies: List<ReplyButtonStrategy>,
 ) : ReplyButtonFactory {
-
-    override fun getStrategy(queryData: String): ReplyButtonStrategy {
-        return strategies.find { it.isQueryData(queryData) }
+    override fun getStrategy(queryData: String): ReplyButtonStrategy =
+        strategies.find { it.isQueryData(queryData) }
             ?: throw IllegalArgumentException("Unknown query data: $queryData")
-    }
 }
