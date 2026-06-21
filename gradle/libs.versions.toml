@@ -2,9 +2,11 @@
 spring-boot-plugin = "3.5.9"
 spring-dependency-management-plugin = "1.1.7"
 liquibase-plugin = "2.2.1"
-kotlin-plugin = "2.3.10"
+kotlin-plugin = "2.3.21"
 ksp-plugin = "2.3.5"
 konvert = "4.5.0"
+kotlinter-plugin = "5.5.0"
+detekt-plugin = "2.0.0-alpha.3"
 
 validation-api = "2.0.1.Final"
 logbook = "3.9.0"
@@ -81,3 +83,5 @@ kotlin-spring = { id = "org.jetbrains.kotlin.plugin.spring", version.ref = "kotl
 kotlin-jpa = { id = "org.jetbrains.kotlin.plugin.jpa", version.ref = "kotlin-plugin" }
 kotlin-kapt = { id = "org.jetbrains.kotlin.kapt", version.ref = "kotlin-plugin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp-plugin" }
+kotlinter = { id = "org.jmailen.kotlinter", version.ref = "kotlinter-plugin" }
+detekt = { id = "dev.detekt", version.ref = "detekt-plugin" }

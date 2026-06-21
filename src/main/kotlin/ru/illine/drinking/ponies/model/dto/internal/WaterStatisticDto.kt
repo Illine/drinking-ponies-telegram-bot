@@ -6,14 +6,9 @@ import java.time.LocalDateTime
 
 data class WaterStatisticDto(
     var id: Long? = null,
-
     val telegramUser: TelegramUserDto,
-
     val eventTime: LocalDateTime,
-
     val eventType: AnswerNotificationType,
-
     val waterAmountMl: Int = 0,
-
-    val source: WaterEntrySourceType = WaterEntrySourceType.NOTIFICATION
+    val source: WaterEntrySourceType = WaterEntrySourceType.NOTIFICATION,
 )

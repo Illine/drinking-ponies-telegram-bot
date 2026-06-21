@@ -17,13 +17,15 @@ class TelegramAuthInterceptor(
     private val telegramValidatorService: TelegramValidatorService,
     private val telegramUserAccessService: TelegramUserAccessService,
 ) : HandlerInterceptor {
-
     private val logger = LoggerFactory.getLogger("INTERCEPTOR")
 
     private val defaultHeaderName = "X-Authorization-Telegram-Data"
 
-
-    override fun preHandle(request: HttpServletRequest, response: HttpServletResponse, handler: Any): Boolean {
+    override fun preHandle(
+        request: HttpServletRequest,
+        response: HttpServletResponse,
+        handler: Any,
+    ): Boolean {
         if (request.method == HttpMethod.OPTIONS.name()) {
             return true
         }
@@ -35,17 +37,18 @@ class TelegramAuthInterceptor(
             return false
         }
 
-        val validSignature = try {
-            telegramValidatorService.verifySignature(initData)
-        } catch (e: InvalidAuthSignatureException) {
-            logger.warn("Invalid signature: ${e.message}")
-            rejectResponse(response, HttpServletResponse.SC_UNAUTHORIZED, AuthErrorType.INVALID_AUTH_SIGNATURE)
-            return false
-        } catch (e: Exception) {
-            logger.error("Unexpected error", e)
-            rejectResponse(response, HttpServletResponse.SC_UNAUTHORIZED)
-            return false
-        }
+        val validSignature =
+            try {
+                telegramValidatorService.verifySignature(initData)
+            } catch (e: InvalidAuthSignatureException) {
+                logger.warn("Invalid signature: ${e.message}")
+                rejectResponse(response, HttpServletResponse.SC_UNAUTHORIZED, AuthErrorType.INVALID_AUTH_SIGNATURE)
+                return false
+            } catch (e: Exception) {
+                logger.error("Unexpected error", e)
+                rejectResponse(response, HttpServletResponse.SC_UNAUTHORIZED)
+                return false
+            }
 
         if (validSignature) {
             val telegramUser = telegramValidatorService.map(initData)
@@ -60,7 +63,9 @@ class TelegramAuthInterceptor(
     }
 
     private fun rejectResponse(
-        response: HttpServletResponse, status: Int, errorCode: AuthErrorType = AuthErrorType.UNKNOWN
+        response: HttpServletResponse,
+        status: Int,
+        errorCode: AuthErrorType = AuthErrorType.UNKNOWN,
     ) {
         response.status = status
         response.setHeader(AuthErrorType.HEADER_NAME, errorCode.value)

@@ -7,7 +7,6 @@ import ru.illine.drinking.ponies.model.entity.WaterStatisticEntity
 import java.time.LocalDateTime
 
 interface WaterStatisticRepository : JpaRepository<WaterStatisticEntity, Long> {
-
     @Query(
         value = """
             select ws from WaterStatisticEntity ws
@@ -16,12 +15,12 @@ interface WaterStatisticRepository : JpaRepository<WaterStatisticEntity, Long> {
               and ws.eventTime >= :startInclusive
               and ws.eventTime < :endExclusive
             order by ws.eventTime asc
-        """
+        """,
     )
     fun findByUserAndEventTimeBetween(
         @Param("externalUserId") externalUserId: Long,
         @Param("startInclusive") startInclusive: LocalDateTime,
-        @Param("endExclusive") endExclusive: LocalDateTime
+        @Param("endExclusive") endExclusive: LocalDateTime,
     ): List<WaterStatisticEntity>
 
     @Query(
@@ -32,7 +31,9 @@ interface WaterStatisticRepository : JpaRepository<WaterStatisticEntity, Long> {
                 where external_user_id = :externalUserId and deleted = false
             )
         """,
-        nativeQuery = true
+        nativeQuery = true,
     )
-    fun findEarliestEventTimeByUser(@Param("externalUserId") externalUserId: Long): LocalDateTime?
+    fun findEarliestEventTimeByUser(
+        @Param("externalUserId") externalUserId: Long,
+    ): LocalDateTime?
 }

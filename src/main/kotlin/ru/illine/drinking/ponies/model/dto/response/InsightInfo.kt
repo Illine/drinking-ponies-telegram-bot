@@ -6,7 +6,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 data class InsightInfo(
     @Schema(
         description = "Localized text with placeholders already substituted",
-        example = "Котик, ты пьёшь водицу 3 дней подряд - так держать!"
+        example = "Котик, ты пьёшь водицу 3 дней подряд - так держать!",
     )
     val text: String,
 )

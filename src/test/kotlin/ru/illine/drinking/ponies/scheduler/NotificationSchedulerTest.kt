@@ -18,7 +18,6 @@ import ru.illine.drinking.ponies.test.tag.UnitTest
 @UnitTest
 @DisplayName("NotificationScheduler Unit Test")
 class NotificationSchedulerTest {
-
     private lateinit var notificationSettingsService: NotificationSettingsService
     private lateinit var notificationSenderService: NotificationSenderService
     private lateinit var notificationTimeService: NotificationTimeService
@@ -29,7 +28,8 @@ class NotificationSchedulerTest {
         notificationSettingsService = mock<NotificationSettingsService>()
         notificationSenderService = mock<NotificationSenderService>()
         notificationTimeService = mock<NotificationTimeService>()
-        scheduler = NotificationScheduler(notificationSettingsService, notificationSenderService, notificationTimeService)
+        scheduler =
+            NotificationScheduler(notificationSettingsService, notificationSenderService, notificationTimeService)
     }
 
     @Test
@@ -130,7 +130,9 @@ class NotificationSchedulerTest {
     @Test
     @DisplayName("sendDrinkingReminders(): throws an error")
     fun `scheduler failed`() {
-        whenever(notificationSettingsService.getAllNotificationSettings()).thenThrow(RuntimeException("Scheduler Failed"))
+        whenever(
+            notificationSettingsService.getAllNotificationSettings(),
+        ).thenThrow(RuntimeException("Scheduler Failed"))
 
         scheduler.sendDrinkingReminders()
 

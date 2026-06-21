@@ -18,36 +18,39 @@ class WebConfig(
     private val telegramAuthInterceptor: TelegramAuthInterceptor,
     private val adminAuthInterceptor: AdminAuthInterceptor,
 ) : WebMvcConfigurer {
-
     override fun addInterceptors(registry: InterceptorRegistry) {
-        registry.addInterceptor(telegramAuthInterceptor)
+        registry
+            .addInterceptor(telegramAuthInterceptor)
             .addPathPatterns("/**")
             .excludePathPatterns(
                 "/docs/**",
                 "/swagger-ui/**",
                 "/v3/api-docs/**",
-                "/actuator/**"
+                "/actuator/**",
             )
 
-        registry.addInterceptor(adminAuthInterceptor)
+        registry
+            .addInterceptor(adminAuthInterceptor)
             .addPathPatterns("/**")
     }
 
     @Bean
     fun corsFilter(): CorsFilter {
-        val config = CorsConfiguration().apply {
-            allowedOrigins = corsProperties.allowedOrigins
-            allowedMethods = listOf(
-                HttpMethod.GET.name(),
-                HttpMethod.OPTIONS.name(),
-                HttpMethod.POST.name(),
-                HttpMethod.PUT.name(),
-                HttpMethod.PATCH.name(),
-                HttpMethod.DELETE.name()
-            )
-            allowedHeaders = listOf("*")
-            allowCredentials = true
-        }
+        val config =
+            CorsConfiguration().apply {
+                allowedOrigins = corsProperties.allowedOrigins
+                allowedMethods =
+                    listOf(
+                        HttpMethod.GET.name(),
+                        HttpMethod.OPTIONS.name(),
+                        HttpMethod.POST.name(),
+                        HttpMethod.PUT.name(),
+                        HttpMethod.PATCH.name(),
+                        HttpMethod.DELETE.name(),
+                    )
+                allowedHeaders = listOf("*")
+                allowCredentials = true
+            }
         val source = UrlBasedCorsConfigurationSource()
         source.registerCorsConfiguration("/**", config)
         return CorsFilter(source)

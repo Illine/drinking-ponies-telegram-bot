@@ -7,6 +7,9 @@ import java.time.Instant
 data class PauseStateResponse(
     @Schema(description = "Whether notifications are currently paused", example = "true")
     val paused: Boolean,
-    @Schema(description = "Pause expiration time in ISO 8601 UTC format, null if not paused", example = "2025-01-01T18:30:00Z")
+    @Schema(
+        description = "Pause expiration time in ISO 8601 UTC format, null if not paused",
+        example = "2025-01-01T18:30:00Z",
+    )
     val pauseUntil: Instant? = null,
 )

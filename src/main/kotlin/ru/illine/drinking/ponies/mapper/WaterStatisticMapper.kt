@@ -25,7 +25,7 @@ interface WaterStatisticMapper {
         mappings = [
             Mapping(source = "waterAmountMl", target = "amountMl"),
             Mapping(target = "eventTime", expression = "it.eventTime.toInstant(java.time.ZoneOffset.UTC)"),
-        ]
+        ],
     )
     fun toWaterEntry(dto: WaterStatisticDto): WaterEntry
 

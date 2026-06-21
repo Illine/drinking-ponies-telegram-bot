@@ -6,26 +6,16 @@ import java.time.LocalTime
 
 data class NotificationSettingDto(
     var id: Long? = null,
-
     val telegramUser: TelegramUserDto,
-
     val telegramChat: TelegramChatDto,
-
     val notificationInterval: IntervalNotificationType,
-
     var timeOfLastNotification: LocalDateTime = LocalDateTime.now(),
-
     var notificationAttempts: Int = 0,
-
     var quietModeStart: LocalTime? = null,
-
     var quietModeEnd: LocalTime? = null,
-
     var pauseUntil: LocalDateTime? = null,
-
     var dailyGoalMl: Int = 2000,
-
-    var enabled: Boolean = true
+    var enabled: Boolean = true,
 ) {
     companion object {
         fun create(
@@ -34,14 +24,15 @@ data class NotificationSettingDto(
             notificationInterval: IntervalNotificationType = IntervalNotificationType.TWO_HOURS,
             quietModeStart: LocalTime = LocalTime.of(23, 0),
             quietModeEnd: LocalTime = LocalTime.of(11, 0),
-            dailyGoalMl: Int = 2000
-        ): NotificationSettingDto = NotificationSettingDto(
-            telegramUser = telegramUser,
-            telegramChat = telegramChat,
-            notificationInterval = notificationInterval,
-            quietModeStart = quietModeStart,
-            quietModeEnd = quietModeEnd,
-            dailyGoalMl = dailyGoalMl,
-        )
+            dailyGoalMl: Int = 2000,
+        ): NotificationSettingDto =
+            NotificationSettingDto(
+                telegramUser = telegramUser,
+                telegramChat = telegramChat,
+                notificationInterval = notificationInterval,
+                quietModeStart = quietModeStart,
+                quietModeEnd = quietModeEnd,
+                dailyGoalMl = dailyGoalMl,
+            )
     }
 }

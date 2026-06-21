@@ -21,7 +21,6 @@ import ru.illine.drinking.ponies.test.tag.UnitTest
 @UnitTest
 @DisplayName("MessageEditorService Unit Test")
 class MessageEditorServiceTest {
-
     private val chatId = 1L
     private val messageId = 2
 
@@ -81,10 +80,11 @@ class MessageEditorServiceTest {
     @Test
     @DisplayName("deleteMessages(): executes DeleteMessage for each element")
     fun `deleteMessages with elements`() {
-        val messages = listOf(
-            Pair(chatId, 1),
-            Pair(chatId, 2)
-        )
+        val messages =
+            listOf(
+                Pair(chatId, 1),
+                Pair(chatId, 2),
+            )
 
         service.deleteMessages(messages)
 

@@ -1,7 +1,6 @@
 package ru.illine.drinking.ponies.util
 
 object PluralizationHelper {
-
     fun pluralizeDays(n: Int): String {
         val abs = if (n < 0) -n else n
         val mod100 = abs % 100

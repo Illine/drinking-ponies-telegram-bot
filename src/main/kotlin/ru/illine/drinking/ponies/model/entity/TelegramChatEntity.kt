@@ -1,33 +1,42 @@
 package ru.illine.drinking.ponies.model.entity
 
-import jakarta.persistence.*
+import jakarta.persistence.CascadeType
+import jakarta.persistence.Column
+import jakarta.persistence.Entity
+import jakarta.persistence.FetchType
+import jakarta.persistence.GeneratedValue
+import jakarta.persistence.GenerationType
+import jakarta.persistence.Id
+import jakarta.persistence.Index
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.ManyToOne
+import jakarta.persistence.SequenceGenerator
+import jakarta.persistence.Table
 
 @Entity
 @Table(
     name = "telegram_chats",
-    indexes = [Index(
-        name = "telegram_chats_external_chat_id_unique_index",
-        columnList = "external_chat_id",
-        unique = true
-    )]
+    indexes = [
+        Index(
+            name = "telegram_chats_external_chat_id_unique_index",
+            columnList = "external_chat_id",
+            unique = true,
+        ),
+    ],
 )
 class TelegramChatEntity(
-
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "telegramChatSeqGenerator")
     @SequenceGenerator(
         name = "telegramChatSeqGenerator",
         sequenceName = "telegram_chat_seq",
-        allocationSize = 1
+        allocationSize = 1,
     )
     var id: Long? = null,
-
     @Column(name = "external_chat_id", nullable = false)
     var externalChatId: Long,
-
     @Column(name = "previous_notification_external_message_id")
     var previousNotificationMessageId: Int? = null,
-
     @ManyToOne(
         fetch = FetchType.LAZY,
         cascade = [CascadeType.MERGE, CascadeType.REFRESH],

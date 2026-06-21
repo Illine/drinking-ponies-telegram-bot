@@ -9,15 +9,13 @@ import kotlin.random.Random
 
 @TestConfiguration
 class TestTimeConfig {
-
     @Bean
-    fun clock(): Clock {
-        return ClockHelperTest.MutableClock(
-            Instant.parse(ClockHelperTest.DEFAULT_TIME), ClockHelperTest.DEFAULT_ZONE
+    fun clock(): Clock =
+        ClockHelperTest.MutableClock(
+            Instant.parse(ClockHelperTest.DEFAULT_TIME),
+            ClockHelperTest.DEFAULT_ZONE,
         )
-    }
 
     @Bean
     fun random(): Random = Random(42)
-
 }

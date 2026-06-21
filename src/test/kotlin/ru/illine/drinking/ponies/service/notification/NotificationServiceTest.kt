@@ -22,7 +22,6 @@ import ru.illine.drinking.ponies.test.tag.UnitTest
 @UnitTest
 @DisplayName("NotificationService Unit Test")
 class NotificationServiceTest {
-
     private val externalUserId = 1L
     private val chatId = 2L
 
@@ -34,10 +33,11 @@ class NotificationServiceTest {
     fun setUp() {
         sender = mock<TelegramClient>()
         notificationAccessService = mock<NotificationAccessService>()
-        service = NotificationServiceImpl(
-            sender,
-            notificationAccessService
-        )
+        service =
+            NotificationServiceImpl(
+                sender,
+                notificationAccessService,
+            )
     }
 
     @Test

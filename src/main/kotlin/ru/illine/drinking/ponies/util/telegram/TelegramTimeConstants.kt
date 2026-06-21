@@ -1,7 +1,6 @@
 package ru.illine.drinking.ponies.util.telegram
 
 object TelegramTimeConstants {
-
     const val FIVE_MINS = "5 минут"
     const val TEN_MINS = "10 минут"
     const val FIFTEEN_MINS = "15 минут"
@@ -13,5 +12,4 @@ object TelegramTimeConstants {
     const val THREE_HOURS = "3 часа"
     const val FOUR_HOURS = "4 часа"
     const val FIVE_HOURS = "5 часов"
-
 }

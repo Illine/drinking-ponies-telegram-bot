@@ -23,74 +23,85 @@ import ru.illine.drinking.ponies.test.tag.SpringIntegrationTest
 
 @SpringIntegrationTest
 @DisplayName("SystemController Spring Integration Test")
-class SystemControllerTest @Autowired constructor(
-    private val restTemplate: TestRestTemplate
-) {
+class SystemControllerTest
+    @Autowired
+    constructor(
+        private val restTemplate: TestRestTemplate,
+    ) {
+        @MockitoBean
+        private lateinit var telegramValidatorService: TelegramValidatorService
 
-    @MockitoBean
-    private lateinit var telegramValidatorService: TelegramValidatorService
+        private val telegramUser = DtoGenerator.generateTelegramUserDto()
 
-    private val telegramUser = DtoGenerator.generateTelegramUserDto()
+        @BeforeEach
+        fun setUp() {
+            whenever(telegramValidatorService.verifySignature(any())).thenReturn(true)
+            whenever(telegramValidatorService.map(any())).thenReturn(telegramUser)
+        }
 
-    @BeforeEach
-    fun setUp() {
-        whenever(telegramValidatorService.verifySignature(any())).thenReturn(true)
-        whenever(telegramValidatorService.map(any())).thenReturn(telegramUser)
-    }
+        private fun buildHeaders(): HttpHeaders =
+            HttpHeaders().apply {
+                set("X-Authorization-Telegram-Data", "test-init-data")
+            }
 
-    private fun buildHeaders(): HttpHeaders {
-        return HttpHeaders().apply {
-            set("X-Authorization-Telegram-Data", "test-init-data")
+        @Nested
+        @DisplayName("GET /systems/version")
+        inner class GetVersion {
+            @Test
+            @DisplayName("valid request - returns 200 with version from configuration")
+            fun `returns 200 with version`() {
+                val headers = buildHeaders()
+
+                val response =
+                    restTemplate.exchange(
+                        "/systems/version",
+                        HttpMethod.GET,
+                        HttpEntity<Void>(headers),
+                        VersionResponse::class.java,
+                    )
+
+                assertEquals(HttpStatus.OK, response.statusCode)
+                assertNotNull(response.body)
+                assertEquals("X.Y.Z-test", response.body!!.version)
+            }
+
+            @Test
+            @DisplayName("missing auth header - returns 401 with X-Auth-Error-Code invalid_auth_signature")
+            fun `returns 401 with invalid_auth_signature header`() {
+                val response =
+                    restTemplate.exchange(
+                        "/systems/version",
+                        HttpMethod.GET,
+                        HttpEntity<Void>(HttpHeaders()),
+                        Void::class.java,
+                    )
+
+                assertEquals(HttpStatus.UNAUTHORIZED, response.statusCode)
+                assertEquals(
+                    AuthErrorType.INVALID_AUTH_SIGNATURE.value,
+                    response.headers.getFirst(AuthErrorType.HEADER_NAME),
+                )
+            }
+
+            @Test
+            @DisplayName("expired auth_date - returns 403 with X-Auth-Error-Code session_expired")
+            fun `returns 403 with session_expired header`() {
+                whenever(telegramValidatorService.verifySignature(any())).thenReturn(false)
+                val headers = buildHeaders()
+
+                val response =
+                    restTemplate.exchange(
+                        "/systems/version",
+                        HttpMethod.GET,
+                        HttpEntity<Void>(headers),
+                        Void::class.java,
+                    )
+
+                assertEquals(HttpStatus.FORBIDDEN, response.statusCode)
+                assertEquals(
+                    AuthErrorType.SESSION_EXPIRED.value,
+                    response.headers.getFirst(AuthErrorType.HEADER_NAME),
+                )
+            }
         }
     }
-
-    @Nested
-    @DisplayName("GET /systems/version")
-    inner class GetVersion {
-
-        @Test
-        @DisplayName("valid request - returns 200 with version from configuration")
-        fun `returns 200 with version`() {
-            val headers = buildHeaders()
-
-            val response = restTemplate.exchange(
-                "/systems/version", HttpMethod.GET, HttpEntity<Void>(headers), VersionResponse::class.java
-            )
-
-            assertEquals(HttpStatus.OK, response.statusCode)
-            assertNotNull(response.body)
-            assertEquals("X.Y.Z-test", response.body!!.version)
-        }
-
-        @Test
-        @DisplayName("missing auth header - returns 401 with X-Auth-Error-Code invalid_auth_signature")
-        fun `returns 401 with invalid_auth_signature header`() {
-            val response = restTemplate.exchange(
-                "/systems/version", HttpMethod.GET, HttpEntity<Void>(HttpHeaders()), Void::class.java
-            )
-
-            assertEquals(HttpStatus.UNAUTHORIZED, response.statusCode)
-            assertEquals(
-                AuthErrorType.INVALID_AUTH_SIGNATURE.value,
-                response.headers.getFirst(AuthErrorType.HEADER_NAME)
-            )
-        }
-
-        @Test
-        @DisplayName("expired auth_date - returns 403 with X-Auth-Error-Code session_expired")
-        fun `returns 403 with session_expired header`() {
-            whenever(telegramValidatorService.verifySignature(any())).thenReturn(false)
-            val headers = buildHeaders()
-
-            val response = restTemplate.exchange(
-                "/systems/version", HttpMethod.GET, HttpEntity<Void>(headers), Void::class.java
-            )
-
-            assertEquals(HttpStatus.FORBIDDEN, response.statusCode)
-            assertEquals(
-                AuthErrorType.SESSION_EXPIRED.value,
-                response.headers.getFirst(AuthErrorType.HEADER_NAME)
-            )
-        }
-    }
-}

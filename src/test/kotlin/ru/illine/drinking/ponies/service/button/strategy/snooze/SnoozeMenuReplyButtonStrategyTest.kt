@@ -1,6 +1,8 @@
 package ru.illine.drinking.ponies.service.button.strategy.snooze
 
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
@@ -23,7 +25,6 @@ import ru.illine.drinking.ponies.util.telegram.TelegramMessageConstants
 @UnitTest
 @DisplayName("SnoozeMenuReplyButtonStrategy Unit Test")
 class SnoozeMenuReplyButtonStrategyTest {
-
     private val chatId = 1L
     private val messageId = 2
 
@@ -45,8 +46,9 @@ class SnoozeMenuReplyButtonStrategyTest {
 
         strategy.reply(callbackQuery)
 
-        val expectedText = TelegramMessageConstants.NOTIFICATION_QUESTION_EDITED_MESSAGE_PATTERN
-            .format(AnswerNotificationType.SNOOZE.displayName)
+        val expectedText =
+            TelegramMessageConstants.NOTIFICATION_QUESTION_EDITED_MESSAGE_PATTERN
+                .format(AnswerNotificationType.SNOOZE.displayName)
         verify(messageEditorService).editReplyMarkup(expectedText, chatId, messageId, true)
     }
 
@@ -62,7 +64,9 @@ class SnoozeMenuReplyButtonStrategyTest {
         val sent = captor.firstValue
         assertEquals(chatId.toString(), sent.chatId)
         assertEquals(TelegramMessageConstants.NOTIFICATION_SNOOZE_MENU_MESSAGE, sent.text)
-        val buttons = (sent.replyMarkup as org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup).keyboard
+        val buttons =
+            (sent.replyMarkup as org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup)
+                .keyboard
         assertEquals(SnoozeNotificationType.entries.size, buttons.size)
     }
 

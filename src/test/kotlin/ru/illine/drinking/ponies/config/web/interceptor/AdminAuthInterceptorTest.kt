@@ -22,27 +22,28 @@ import ru.illine.drinking.ponies.util.telegram.TelegramGeneralConstants
 @UnitTest
 @DisplayName("AdminAuthInterceptor Unit Test")
 class AdminAuthInterceptorTest {
-
     private lateinit var request: HttpServletRequest
     private lateinit var response: HttpServletResponse
     private lateinit var handlerMethod: HandlerMethod
     private lateinit var interceptor: AdminAuthInterceptor
 
-    private val adminUser = TelegramUserDto(
-        externalUserId = 1L,
-        firstName = "Admin",
-        lastName = null,
-        username = null,
-        isAdmin = true
-    )
+    private val adminUser =
+        TelegramUserDto(
+            externalUserId = 1L,
+            firstName = "Admin",
+            lastName = null,
+            username = null,
+            isAdmin = true,
+        )
 
-    private val nonAdminUser = TelegramUserDto(
-        externalUserId = 2L,
-        firstName = "User",
-        lastName = null,
-        username = null,
-        isAdmin = false
-    )
+    private val nonAdminUser =
+        TelegramUserDto(
+            externalUserId = 2L,
+            firstName = "User",
+            lastName = null,
+            username = null,
+            isAdmin = false,
+        )
 
     @BeforeEach
     fun setUp() {

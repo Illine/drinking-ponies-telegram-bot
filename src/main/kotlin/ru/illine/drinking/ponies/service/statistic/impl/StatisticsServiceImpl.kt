@@ -27,7 +27,6 @@ class StatisticsServiceImpl(
     private val messageProvider: MessageProvider,
     private val clock: Clock,
 ) : StatisticsService {
-
     private val logger = LoggerFactory.getLogger("SERVICE")
 
     // Returns RAW events (unfiltered by YES) for the home widget's per-event diary.
@@ -41,7 +40,11 @@ class StatisticsServiceImpl(
         return waterStatisticAccessService.findByUserAndEventTimeBetween(externalUserId, startInclusive, endExclusive)
     }
 
-    override fun getStatistics(externalUserId: Long, from: LocalDate, to: LocalDate): StatisticsDto {
+    override fun getStatistics(
+        externalUserId: Long,
+        from: LocalDate,
+        to: LocalDate,
+    ): StatisticsDto {
         logger.debug("Getting [{} - {}] statistics for telegram user [{}]", from, to, externalUserId)
 
         require(from <= to) { "Invalid parameter: 'from' must be before or equal to 'to'" }
@@ -64,29 +67,32 @@ class StatisticsServiceImpl(
         val byDate = StatisticsAggregator.sumByLocalDate(allEvents, ctx.zone)
 
         // Points are built from events in the requested [from..to] window only.
-        val rangeEvents = allEvents.filter {
-            val date = StatisticsPeriodHelper.toLocal(it.eventTime, ctx.zone).toLocalDate()
-            !date.isBefore(from) && !date.isAfter(to)
-        }
-        val points = if (from == to) {
-            StatisticsAggregator.aggregateByHour(rangeEvents, ctx.zone)
-        } else {
-            StatisticsAggregator.aggregateByDay(byDate, from, days)
-        }
+        val rangeEvents =
+            allEvents.filter {
+                val date = StatisticsPeriodHelper.toLocal(it.eventTime, ctx.zone).toLocalDate()
+                !date.isBefore(from) && !date.isAfter(to)
+            }
+        val points =
+            if (from == to) {
+                StatisticsAggregator.aggregateByHour(rangeEvents, ctx.zone)
+            } else {
+                StatisticsAggregator.aggregateByDay(byDate, from, days)
+            }
 
         val bestDay = StatisticsAggregator.bestDay(days, byDate.filterKeys { !it.isBefore(from) && !it.isAfter(to) })
         val averageMlPerDay = StatisticsAggregator.averageMlPerDay(days, points)
         val currentStreakDays = StatisticsAggregator.calculateStreak(byDate, ctx.today, ctx.settings.dailyGoalMl)
 
-        val insight = messageProvider.getMessage(
-            MessageSpec.InsightStats,
-            InsightStatsContext(
-                averageMlPerDay,
-                bestDay,
-                currentStreakDays,
-                ctx.settings.dailyGoalMl
+        val insight =
+            messageProvider.getMessage(
+                MessageSpec.InsightStats,
+                InsightStatsContext(
+                    averageMlPerDay,
+                    bestDay,
+                    currentStreakDays,
+                    ctx.settings.dailyGoalMl,
+                ),
             )
-        )
         val firstEntryAt = waterStatisticAccessService.findEarliestEventTimeByUser(externalUserId)?.toUtcInstant()
 
         return StatisticsDto(
@@ -96,7 +102,7 @@ class StatisticsServiceImpl(
             bestDay = bestDay,
             currentStreakDays = currentStreakDays,
             insightText = insight.text,
-            firstEntryAt = firstEntryAt
+            firstEntryAt = firstEntryAt,
         )
     }
 
@@ -104,10 +110,11 @@ class StatisticsServiceImpl(
         externalUserId: Long,
         startLocal: LocalDate,
         endLocalExclusive: LocalDate,
-        zone: ZoneId
+        zone: ZoneId,
     ): List<WaterStatisticDto> {
         val (startUtc, endUtc) = StatisticsPeriodHelper.localDayBoundsToUtc(startLocal, endLocalExclusive, zone)
-        return waterStatisticAccessService.findByUserAndEventTimeBetween(externalUserId, startUtc, endUtc)
+        return waterStatisticAccessService
+            .findByUserAndEventTimeBetween(externalUserId, startUtc, endUtc)
             .filter { it.eventType == AnswerNotificationType.YES }
     }
 
@@ -121,7 +128,6 @@ class StatisticsServiceImpl(
     private data class UserTimeContext(
         val settings: NotificationSettingDto,
         val zone: ZoneId,
-        val today: LocalDate
+        val today: LocalDate,
     )
-
 }

@@ -1,6 +1,8 @@
 package ru.illine.drinking.ponies.util
 
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertDoesNotThrow
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup
@@ -13,7 +15,6 @@ import ru.illine.drinking.ponies.util.telegram.TelegramBotKeyboardHelper
 @UnitTest
 @DisplayName("TelegramBotKeyboardHelper Unit Test")
 class TelegramBotKeyboardHelperTest {
-
     @Test
     @DisplayName("snoozeTimeButtons(): returns valid keyboard")
     fun `successful snoozeTimeButtons`() {

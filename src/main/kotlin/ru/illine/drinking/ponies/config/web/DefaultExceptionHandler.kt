@@ -17,7 +17,6 @@ import ru.illine.drinking.ponies.model.dto.response.ErrorResponse
 
 @RestControllerAdvice
 class DefaultExceptionHandler {
-
     private val logger = LoggerFactory.getLogger("EXCEPTION-HANDLER")
 
     @ExceptionHandler(value = [MissingServletRequestParameterException::class])
@@ -30,20 +29,23 @@ class DefaultExceptionHandler {
             .body(response)
     }
 
-    @ExceptionHandler(value = [
-        MethodArgumentNotValidException::class,
-        IllegalArgumentException::class,
-        HttpMessageNotReadableException::class,
-        MethodArgumentTypeMismatchException::class,
-        ConstraintViolationException::class
-    ])
+    @ExceptionHandler(
+        value = [
+            MethodArgumentNotValidException::class,
+            IllegalArgumentException::class,
+            HttpMessageNotReadableException::class,
+            MethodArgumentTypeMismatchException::class,
+            ConstraintViolationException::class,
+        ],
+    )
     fun handleValidationException(e: Exception): ResponseEntity<ErrorResponse> {
         if (e is MethodArgumentNotValidException) {
-            val errorMessages = e.bindingResult.fieldErrors.joinToString(", ") {
-                "${it.field}: ${it.defaultMessage}"
-            }
+            val errorMessages =
+                e.bindingResult.fieldErrors.joinToString(", ") {
+                    "${it.field}: ${it.defaultMessage}"
+                }
             logger.warn("Validation failed: $errorMessages", e)
-        } else  {
+        } else {
             logger.warn("Illegal argument", e)
         }
         val response = ErrorResponse("validation failed")

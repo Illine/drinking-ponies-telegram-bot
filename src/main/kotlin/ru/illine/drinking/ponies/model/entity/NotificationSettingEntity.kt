@@ -1,7 +1,20 @@
 package ru.illine.drinking.ponies.model.entity
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import jakarta.persistence.*
+import jakarta.persistence.CascadeType
+import jakarta.persistence.Column
+import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
+import jakarta.persistence.FetchType
+import jakarta.persistence.GeneratedValue
+import jakarta.persistence.GenerationType
+import jakarta.persistence.Id
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.ManyToOne
+import jakarta.persistence.OneToOne
+import jakarta.persistence.SequenceGenerator
+import jakarta.persistence.Table
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
 import ru.illine.drinking.ponies.model.base.IntervalNotificationType
@@ -13,58 +26,46 @@ import java.time.LocalTime
 @SQLDelete(sql = "update notification_settings set enabled = false where id = ?")
 @SQLRestriction(value = "enabled = true")
 class NotificationSettingEntity(
-
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "notificationSettingSeqGenerator")
     @SequenceGenerator(
         name = "notificationSettingSeqGenerator",
         sequenceName = "notification_setting_seq",
-        allocationSize = 1
+        allocationSize = 1,
     )
     var id: Long? = null,
-
     @OneToOne(
         fetch = FetchType.LAZY,
         cascade = [CascadeType.MERGE, CascadeType.REFRESH],
     )
     @JoinColumn(name = "telegram_user_id", nullable = false, unique = true)
     var telegramUser: TelegramUserEntity,
-
     @ManyToOne(
         fetch = FetchType.LAZY,
         cascade = [CascadeType.MERGE, CascadeType.REFRESH],
     )
     @JoinColumn(name = "telegram_chat_id", nullable = false)
     var telegramChat: TelegramChatEntity,
-
     @Enumerated(EnumType.STRING)
     @Column(name = "notification_interval", nullable = false)
     var notificationInterval: IntervalNotificationType,
-
     @Column(name = "time_of_last_notification", nullable = false)
     var timeOfLastNotification: LocalDateTime,
-
     @Column(name = "notification_attempts", nullable = false)
     var notificationAttempts: Int = 0,
-
     @Column(name = "quiet_mode_start")
     @JsonIgnore
     var quietModeStart: LocalTime? = null,
-
     @Column(name = "quiet_mode_end")
     @JsonIgnore
     var quietModeEnd: LocalTime? = null,
-
     @Column(name = "pause_until")
     var pauseUntil: LocalDateTime? = null,
-
     @Column(name = "daily_goal_ml", nullable = false)
     var dailyGoalMl: Int = 2000,
-
     @Column(name = "enabled", nullable = false)
-    var enabled: Boolean = true
+    var enabled: Boolean = true,
 ) {
-
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false

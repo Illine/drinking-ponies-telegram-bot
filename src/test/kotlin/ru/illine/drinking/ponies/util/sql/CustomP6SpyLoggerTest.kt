@@ -12,7 +12,6 @@ import ru.illine.drinking.ponies.test.tag.UnitTest
 @UnitTest
 @DisplayName("CustomP6SpyLogger Unit Test")
 class CustomP6SpyLoggerTest {
-
     @Test
     @DisplayName("init(): initializes without exception when field is found")
     fun `init succeeds when field found`() {

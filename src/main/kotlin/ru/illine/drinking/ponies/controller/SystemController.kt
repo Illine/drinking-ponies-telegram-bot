@@ -14,7 +14,6 @@ import ru.illine.drinking.ponies.model.dto.response.VersionResponse
 class SystemController(
     private val appProperties: AppProperties,
 ) {
-
     @GetMapping("/version")
     @Operation(summary = "Get backend version")
     fun getVersion(): VersionResponse = VersionResponse(version = appProperties.version)

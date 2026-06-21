@@ -19,17 +19,15 @@ import java.util.concurrent.TimeUnit
 
 @Configuration
 class TelegramBotConfig {
-
     @Bean(destroyMethod = "stop")
     fun telegramBotsApplication(
         abilityBot: BaseAbilityBot,
         telegramBotProperties: TelegramBotProperties,
-    ): TelegramBotsLongPollingApplication {
-        return TelegramBotsLongPollingApplication()
+    ): TelegramBotsLongPollingApplication =
+        TelegramBotsLongPollingApplication()
             .apply {
                 this.registerBot(telegramBotProperties.token, abilityBot)
             }
-    }
 
     @Bean(initMethod = "onRegister")
     fun abilityBot(
@@ -37,42 +35,38 @@ class TelegramBotConfig {
         telegramBotProperties: TelegramBotProperties,
         notificationService: NotificationService,
         replyButtonFactory: ReplyButtonFactory,
-        commandService: CommandService
-    ): BaseAbilityBot {
-        return DrinkingPoniesTelegramBot(
+        commandService: CommandService,
+    ): BaseAbilityBot =
+        DrinkingPoniesTelegramBot(
             telegramClient,
             telegramBotProperties,
             notificationService,
             replyButtonFactory,
-            commandService
+            commandService,
         )
-    }
 
     @Bean
     fun telegramClient(
         telegramBotProperties: TelegramBotProperties,
-        okHttpClient: OkHttpClient
-    ): TelegramClient {
-        return OkHttpTelegramClient(okHttpClient, telegramBotProperties.token)
-    }
+        okHttpClient: OkHttpClient,
+    ): TelegramClient = OkHttpTelegramClient(okHttpClient, telegramBotProperties.token)
 
     @Bean
     fun okHttpClient(
         connectionPool: ConnectionPool,
-        logbook: Logbook
-    ): OkHttpClient {
-        return OkHttpClient.Builder()
+        logbook: Logbook,
+    ): OkHttpClient =
+        OkHttpClient
+            .Builder()
             .addNetworkInterceptor(LogbookInterceptor(logbook))
             .connectionPool(connectionPool)
             .build()
-    }
 
     @Bean
-    fun connectionPool(
-        telegramBotProperties: TelegramBotProperties
-    ) = ConnectionPool(
-        telegramBotProperties.http.maxConnectionTotal,
-        telegramBotProperties.http.connectionTimeToLiveInSec,
-        TimeUnit.SECONDS
-    )
+    fun connectionPool(telegramBotProperties: TelegramBotProperties) =
+        ConnectionPool(
+            telegramBotProperties.http.maxConnectionTotal,
+            telegramBotProperties.http.connectionTimeToLiveInSec,
+            TimeUnit.SECONDS,
+        )
 }

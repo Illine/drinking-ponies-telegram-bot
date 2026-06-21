@@ -1,6 +1,19 @@
 package ru.illine.drinking.ponies.model.entity
 
-import jakarta.persistence.*
+import jakarta.persistence.CascadeType
+import jakarta.persistence.Column
+import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
+import jakarta.persistence.FetchType
+import jakarta.persistence.GeneratedValue
+import jakarta.persistence.GenerationType
+import jakarta.persistence.Id
+import jakarta.persistence.Index
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.ManyToOne
+import jakarta.persistence.SequenceGenerator
+import jakarta.persistence.Table
 import ru.illine.drinking.ponies.model.base.AnswerNotificationType
 import ru.illine.drinking.ponies.model.base.WaterEntrySourceType
 import java.time.LocalDateTime
@@ -8,42 +21,34 @@ import java.time.LocalDateTime
 @Entity
 @Table(
     name = "water_statistics",
-    indexes = [Index(name = "water_statistics_user_id_event_time_index", columnList = "user_id, event_time")]
+    indexes = [Index(name = "water_statistics_user_id_event_time_index", columnList = "user_id, event_time")],
 )
 class WaterStatisticEntity(
-
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "waterStatisticsSeqGenerator")
     @SequenceGenerator(
         name = "waterStatisticsSeqGenerator",
         sequenceName = "water_statistics_seq",
-        allocationSize = 1
+        allocationSize = 1,
     )
     var id: Long? = null,
-
     @ManyToOne(
         fetch = FetchType.LAZY,
         cascade = [CascadeType.MERGE, CascadeType.REFRESH],
     )
     @JoinColumn(name = "user_id", nullable = false)
     var telegramUser: TelegramUserEntity,
-
     @Column(name = "event_time", nullable = false)
     var eventTime: LocalDateTime,
-
     @Enumerated(EnumType.STRING)
     @Column(name = "event_type", nullable = false)
     var eventType: AnswerNotificationType,
-
     @Column(name = "water_amount_ml", nullable = false)
     var waterAmountMl: Int = 0,
-
     @Enumerated(EnumType.STRING)
     @Column(name = "source", nullable = false)
-    var source: WaterEntrySourceType = WaterEntrySourceType.NOTIFICATION
-
+    var source: WaterEntrySourceType = WaterEntrySourceType.NOTIFICATION,
 ) {
-
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
@@ -67,5 +72,4 @@ class WaterStatisticEntity(
         result = 31 * result + source.hashCode()
         return result
     }
-
 }

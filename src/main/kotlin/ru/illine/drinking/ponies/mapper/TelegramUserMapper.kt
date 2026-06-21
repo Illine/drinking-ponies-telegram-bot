@@ -7,6 +7,7 @@ import ru.illine.drinking.ponies.model.entity.TelegramUserEntity
 @Konverter
 interface TelegramUserMapper {
     fun toDto(entity: TelegramUserEntity): TelegramUserDto
+
     fun toEntity(dto: TelegramUserDto): TelegramUserEntity
 
     companion object : TelegramUserMapper by Konverter.get<TelegramUserMapper>()

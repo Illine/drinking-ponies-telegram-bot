@@ -12,7 +12,6 @@ import ru.illine.drinking.ponies.dao.repository.TelegramUserRepository
 class TelegramUserAccessServiceImpl(
     private val telegramUserRepository: TelegramUserRepository,
 ) : TelegramUserAccessService {
-
     private val logger = LoggerFactory.getLogger("ACCESS-SERVICE")
 
     // When admin promote/demote endpoints are added,

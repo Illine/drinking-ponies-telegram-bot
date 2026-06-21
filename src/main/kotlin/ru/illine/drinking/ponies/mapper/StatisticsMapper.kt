@@ -18,7 +18,7 @@ interface StatisticsMapper {
                 target = "insight",
                 expression = "ru.illine.drinking.ponies.model.dto.response.InsightInfo(it.insightText)",
             ),
-        ]
+        ],
     )
     fun toResponse(dto: StatisticsDto): StatisticsResponse
 

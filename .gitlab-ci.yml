@@ -34,9 +34,24 @@ variables:
 default:
   interruptible: true
 
+lint:
+  extends: .default-tags
+  stage: test
+  image: gradle:8.4-jdk17
+  variables:
+    GRADLE_USER_HOME: ".gradle"
+  cache:
+    - key: gradle-cache-${CI_PROJECT_ID}
+      paths:
+        - .gradle
+  script:
+    - gradle lintKotlin detekt
+
 test:
   extends: .default-tags
   stage: test
+  needs:
+    - lint
   image: gradle:8.4-jdk17
   variables:
     GRADLE_USER_HOME: ".gradle"

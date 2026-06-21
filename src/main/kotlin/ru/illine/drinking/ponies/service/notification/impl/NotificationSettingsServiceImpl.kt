@@ -12,7 +12,11 @@ import ru.illine.drinking.ponies.service.notification.NotificationSettingsServic
 import ru.illine.drinking.ponies.service.notification.NotificationTimeService
 import ru.illine.drinking.ponies.util.statistics.toUtcInstant
 import ru.illine.drinking.ponies.util.telegram.TelegramDailyGoalConstants
-import java.time.*
+import java.time.Clock
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.ZoneId
 
 @Service
 class NotificationSettingsServiceImpl(
@@ -20,7 +24,6 @@ class NotificationSettingsServiceImpl(
     private val notificationTimeService: NotificationTimeService,
     private val clock: Clock,
 ) : NotificationSettingsService {
-
     private val logger = LoggerFactory.getLogger("SERVICE")
 
     override fun getNextNotificationAt(externalUserId: Long): Instant {
@@ -66,20 +69,27 @@ class NotificationSettingsServiceImpl(
         return start to end
     }
 
-    override fun resetNotificationTimer(externalUserId: Long, time: LocalDateTime): NotificationSettingDto {
+    override fun resetNotificationTimer(
+        externalUserId: Long,
+        time: LocalDateTime,
+    ): NotificationSettingDto {
         logger.info("Resetting notification timer for telegram user [$externalUserId] to [$time]")
         return notificationAccessService.updateTimeOfLastNotification(externalUserId, time)
     }
 
     override fun changeInterval(
         externalUserId: Long,
-        notificationInterval: IntervalNotificationType
+        notificationInterval: IntervalNotificationType,
     ): NotificationSettingDto {
         logger.info("Changing notification interval for telegram user [$externalUserId] to [$notificationInterval]")
         return notificationAccessService.updateNotificationSettings(externalUserId, notificationInterval)
     }
 
-    override fun changeQuietMode(externalUserId: Long, start: LocalTime, end: LocalTime) {
+    override fun changeQuietMode(
+        externalUserId: Long,
+        start: LocalTime,
+        end: LocalTime,
+    ) {
         logger.info("Change time of quiet mode for telegram user [$externalUserId], start: [$start], end: [$end]")
         require(start != end) { "Start must be before end" }
         notificationAccessService.updateQuietMode(externalUserId, start, end)
@@ -95,7 +105,10 @@ class NotificationSettingsServiceImpl(
         return notificationAccessService.findIsEnabledNotificationsByExternalUserId(externalUserId)
     }
 
-    override fun changeNotificationStatus(externalUserId: Long, active: Boolean) {
+    override fun changeNotificationStatus(
+        externalUserId: Long,
+        active: Boolean,
+    ) {
         logger.info("Changing notification status for telegram user [$externalUserId] to [$active]")
         if (active) {
             notificationAccessService.updateNotificationsEnabled(externalUserId)
@@ -104,7 +117,10 @@ class NotificationSettingsServiceImpl(
         }
     }
 
-    override fun changeTimezone(externalUserId: Long, timezone: String) {
+    override fun changeTimezone(
+        externalUserId: Long,
+        timezone: String,
+    ) {
         logger.info("Changing timezone for telegram user [$externalUserId] to [$timezone]")
         try {
             ZoneId.of(timezone)
@@ -114,7 +130,10 @@ class NotificationSettingsServiceImpl(
         notificationAccessService.updateTimezone(externalUserId, timezone)
     }
 
-    override fun pauseNotifications(externalUserId: Long, minutes: Long) {
+    override fun pauseNotifications(
+        externalUserId: Long,
+        minutes: Long,
+    ) {
         logger.info("Pausing notifications for telegram user [$externalUserId] for [$minutes] minutes")
         require(minutes > 0) { "Pause duration must be positive: $minutes" }
         val pauseUntil = LocalDateTime.now(clock).plusMinutes(minutes)
@@ -126,7 +145,10 @@ class NotificationSettingsServiceImpl(
         notificationAccessService.updatePause(externalUserId, null)
     }
 
-    override fun changeDailyGoal(externalUserId: Long, goalMl: Int) {
+    override fun changeDailyGoal(
+        externalUserId: Long,
+        goalMl: Int,
+    ) {
         logger.info("Changing daily goal for telegram user [$externalUserId] to [$goalMl] ml")
         require(goalMl in TelegramDailyGoalConstants.ALLOWED_VALUES_ML) {
             "Daily goal must be one of ${TelegramDailyGoalConstants.ALLOWED_VALUES_ML} ml, got: $goalMl"
@@ -138,12 +160,13 @@ class NotificationSettingsServiceImpl(
         logger.info("Getting pause state for telegram user [$externalUserId]")
         val settings = notificationAccessService.findNotificationSettingByExternalUserId(externalUserId)
         val now = LocalDateTime.now(clock)
-        val activePauseUntil = settings.pauseUntil
-            ?.takeIf { it.isAfter(now) }
-            ?.toUtcInstant()
+        val activePauseUntil =
+            settings.pauseUntil
+                ?.takeIf { it.isAfter(now) }
+                ?.toUtcInstant()
         return PauseStateResponse(
             paused = activePauseUntil != null,
-            pauseUntil = activePauseUntil
+            pauseUntil = activePauseUntil,
         )
     }
 }

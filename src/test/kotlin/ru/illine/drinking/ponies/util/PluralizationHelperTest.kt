@@ -9,7 +9,6 @@ import ru.illine.drinking.ponies.test.tag.UnitTest
 @UnitTest
 @DisplayName("PluralizationHelper Unit Test")
 class PluralizationHelperTest {
-
     @ParameterizedTest(name = "[{index}] n={0} -> {1}")
     @CsvSource(
         // singular form (1, 21, 31, 101, ..., excluding 11)
@@ -50,7 +49,10 @@ class PluralizationHelperTest {
         "-11,       дней",
         "-21,       день",
     )
-    fun `pluralizeDays returns russian form by mod100 and mod10 rules`(n: Int, expected: String) {
+    fun `pluralizeDays returns russian form by mod100 and mod10 rules`(
+        n: Int,
+        expected: String,
+    ) {
         val result = PluralizationHelper.pluralizeDays(n)
 
         assertEquals(expected, result)

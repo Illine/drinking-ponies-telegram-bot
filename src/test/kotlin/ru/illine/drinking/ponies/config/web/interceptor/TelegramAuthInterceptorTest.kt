@@ -16,7 +16,6 @@ import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.verifyNoMoreInteractions
 import org.mockito.kotlin.whenever
-import java.util.stream.Stream
 import ru.illine.drinking.ponies.config.web.security.AuthErrorType
 import ru.illine.drinking.ponies.dao.access.TelegramUserAccessService
 import ru.illine.drinking.ponies.exception.InvalidAuthSignatureException
@@ -24,11 +23,11 @@ import ru.illine.drinking.ponies.model.dto.TelegramUserDto
 import ru.illine.drinking.ponies.service.telegram.TelegramValidatorService
 import ru.illine.drinking.ponies.test.tag.UnitTest
 import ru.illine.drinking.ponies.util.telegram.TelegramGeneralConstants
+import java.util.stream.Stream
 
 @UnitTest
 @DisplayName("TelegramAuthInterceptor Unit Test")
 class TelegramAuthInterceptorTest {
-
     private val headerName = "X-Authorization-Telegram-Data"
 
     private lateinit var validatorService: TelegramValidatorService
@@ -60,7 +59,9 @@ class TelegramAuthInterceptorTest {
 
     @ParameterizedTest(name = "[{index}] header={0} - returns false, 401, X-Auth-Error-Code invalid_auth_signature")
     @MethodSource("provideMissingOrBlankHeaders")
-    @DisplayName("preHandle(): missing/empty/blank header - returns false, 401, X-Auth-Error-Code invalid_auth_signature")
+    @DisplayName(
+        "preHandle(): missing/empty/blank header - returns false, 401, X-Auth-Error-Code invalid_auth_signature",
+    )
     fun `preHandle missing or blank header returns false with 401 and invalid_auth_signature header`(
         headerValue: String?,
     ) {
@@ -77,7 +78,9 @@ class TelegramAuthInterceptorTest {
     }
 
     @Test
-    @DisplayName("preHandle(): malformed initData (verifySignature throws) - 401, X-Auth-Error-Code invalid_auth_signature")
+    @DisplayName(
+        "preHandle(): malformed initData (verifySignature throws) - 401, X-Auth-Error-Code invalid_auth_signature",
+    )
     fun `preHandle malformed initData returns false with 401 and invalid_auth_signature header`() {
         whenever(request.method).thenReturn("POST")
         whenever(request.getHeader(headerName)).thenReturn("malformed")
@@ -124,7 +127,7 @@ class TelegramAuthInterceptorTest {
         assertTrue(result)
         verify(request).setAttribute(
             TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE,
-            telegramUser.copy(isAdmin = true)
+            telegramUser.copy(isAdmin = true),
         )
         verifyNoMoreInteractions(response)
     }
@@ -145,13 +148,15 @@ class TelegramAuthInterceptorTest {
         assertTrue(result)
         verify(request).setAttribute(
             TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE,
-            telegramUser.copy(isAdmin = false)
+            telegramUser.copy(isAdmin = false),
         )
         verifyNoMoreInteractions(response)
     }
 
     @Test
-    @DisplayName("preHandle(): expired auth_date (verifySignature returns false) - 403, X-Auth-Error-Code session_expired")
+    @DisplayName(
+        "preHandle(): expired auth_date (verifySignature returns false) - 403, X-Auth-Error-Code session_expired",
+    )
     fun `preHandle expired auth_date returns false with 403 and session_expired header`() {
         whenever(request.method).thenReturn("POST")
         whenever(request.getHeader(headerName)).thenReturn("expired-data")
@@ -166,12 +171,12 @@ class TelegramAuthInterceptorTest {
     }
 
     companion object {
-
         @JvmStatic
-        fun provideMissingOrBlankHeaders(): Stream<Arguments> = Stream.of(
-            Arguments.of(null as String?), // header absent
-            Arguments.of(""),              // empty
-            Arguments.of("   "),           // whitespace only
-        )
+        fun provideMissingOrBlankHeaders(): Stream<Arguments> =
+            Stream.of(
+                Arguments.of(null as String?), // header absent
+                Arguments.of(""), // empty
+                Arguments.of("   "), // whitespace only
+            )
     }
 }

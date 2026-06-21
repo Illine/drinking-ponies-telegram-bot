@@ -8,7 +8,6 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 
 interface NotificationAccessService {
-
     fun findAllNotificationSettings(): Set<NotificationSettingDto>
 
     fun findNotificationSettingByExternalUserId(externalUserId: Long): NotificationSettingDto
@@ -18,14 +17,18 @@ interface NotificationAccessService {
     fun save(
         user: TelegramUserDto,
         chat: TelegramChatDto,
-        setting: NotificationSettingDto
+        setting: NotificationSettingDto,
     ): TelegramUserDto
 
     fun updateNotificationSettings(
-        externalUserId: Long, notificationInterval: IntervalNotificationType
+        externalUserId: Long,
+        notificationInterval: IntervalNotificationType,
     ): NotificationSettingDto
 
-    fun updateTimeOfLastNotification(externalUserId: Long, time: LocalDateTime): NotificationSettingDto
+    fun updateTimeOfLastNotification(
+        externalUserId: Long,
+        time: LocalDateTime,
+    ): NotificationSettingDto
 
     fun updateNotificationSettings(settings: Collection<NotificationSettingDto>): Set<NotificationSettingDto>
 
@@ -35,14 +38,26 @@ interface NotificationAccessService {
 
     fun updateNotificationsDisabled(externalUserId: Long)
 
-    fun updateQuietMode(externalUserId: Long, start: LocalTime, end: LocalTime)
+    fun updateQuietMode(
+        externalUserId: Long,
+        start: LocalTime,
+        end: LocalTime,
+    )
 
     fun updateQuietModeDisabled(externalUserId: Long)
 
-    fun updateTimezone(externalUserId: Long, timezone: String)
+    fun updateTimezone(
+        externalUserId: Long,
+        timezone: String,
+    )
 
-    fun updatePause(externalUserId: Long, pauseUntil: LocalDateTime?): NotificationSettingDto
+    fun updatePause(
+        externalUserId: Long,
+        pauseUntil: LocalDateTime?,
+    ): NotificationSettingDto
 
-    fun updateDailyGoal(externalUserId: Long, goalMl: Int)
-
+    fun updateDailyGoal(
+        externalUserId: Long,
+        goalMl: Int,
+    )
 }

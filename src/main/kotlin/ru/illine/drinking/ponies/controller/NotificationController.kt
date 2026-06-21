@@ -7,7 +7,13 @@ import jakarta.validation.constraints.Max
 import jakarta.validation.constraints.Min
 import org.springframework.http.HttpStatus
 import org.springframework.validation.annotation.Validated
-import org.springframework.web.bind.annotation.*
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PutMapping
+import org.springframework.web.bind.annotation.RequestAttribute
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
+import org.springframework.web.bind.annotation.ResponseStatus
+import org.springframework.web.bind.annotation.RestController
 import ru.illine.drinking.ponies.model.dto.TelegramUserDto
 import ru.illine.drinking.ponies.model.dto.response.NotificationNextResponse
 import ru.illine.drinking.ponies.model.dto.response.PauseStateResponse
@@ -19,9 +25,8 @@ import ru.illine.drinking.ponies.util.telegram.TelegramGeneralConstants
 @Tag(name = "Notifications", description = "Notification timing")
 @Validated
 class NotificationController(
-    private val notificationSettingsService: NotificationSettingsService
+    private val notificationSettingsService: NotificationSettingsService,
 ) {
-
     @GetMapping("/next")
     @Operation(summary = "Get next notification time")
     fun getNextNotification(
@@ -46,7 +51,9 @@ class NotificationController(
         @Parameter(hidden = true)
         @RequestAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) telegramUser: TelegramUserDto,
         @Parameter(description = "Pause duration in minutes (0 = cancel pause, max 300 = 5 hours)", example = "60")
-        @RequestParam(name = "minutes", required = true) @Min(0) @Max(300) minutes: Long
+        @RequestParam(name = "minutes", required = true)
+        @Min(0)
+        @Max(300) minutes: Long,
     ) {
         if (minutes == 0L) {
             notificationSettingsService.cancelPause(telegramUser.externalUserId)

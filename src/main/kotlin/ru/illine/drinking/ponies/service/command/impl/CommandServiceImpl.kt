@@ -13,9 +13,8 @@ import ru.illine.drinking.ponies.util.telegram.TelegramMenuConstants
 @Service
 class CommandServiceImpl(
     private val telegramBotProperties: TelegramBotProperties,
-    private val sender: TelegramClient
+    private val sender: TelegramClient,
 ) : CommandService {
-
     private val logger = LoggerFactory.getLogger("SERVICE")
 
     override fun register() {
@@ -31,11 +30,14 @@ class CommandServiceImpl(
     }
 
     private fun registerMenu() {
-        val menuButton = MenuButtonWebApp.builder()
-            .text(TelegramMenuConstants.MENU_BUTTON_TEXT)
-            .webAppInfo(WebAppInfo.builder().url(telegramBotProperties.miniAppUrl).build())
-            .build()
-        SetChatMenuButton.builder()
+        val menuButton =
+            MenuButtonWebApp
+                .builder()
+                .text(TelegramMenuConstants.MENU_BUTTON_TEXT)
+                .webAppInfo(WebAppInfo.builder().url(telegramBotProperties.miniAppUrl).build())
+                .build()
+        SetChatMenuButton
+            .builder()
             .menuButton(menuButton)
             .build()
             .apply { sender.execute(this) }
