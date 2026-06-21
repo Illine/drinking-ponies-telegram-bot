@@ -71,11 +71,11 @@ object StatisticsAggregator {
         today: LocalDate,
         dailyGoalMl: Int,
     ): Int {
-        // Active streak: if today's goal isn't met, the chain is broken right now, regardless of past days.
-        if ((byDate[today] ?: 0) < dailyGoalMl) return 0
-        var streak = 1
-        var cursor = today.minusDays(1)
+        // Hanging streak: an unfinished today does NOT break the chain - we start counting from
+        // yesterday in that case. The streak only resets to 0 on a real gap (yesterday below goal too).
+        var cursor = if ((byDate[today] ?: 0) >= dailyGoalMl) today else today.minusDays(1)
         val earliest = today.minusDays(STREAK_LIMIT_DAYS)
+        var streak = 0
         while (!cursor.isBefore(earliest)) {
             if ((byDate[cursor] ?: 0) < dailyGoalMl) break
             streak++

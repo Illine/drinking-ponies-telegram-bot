@@ -342,14 +342,25 @@ class StatisticsAggregatorTest {
                     ),
                     today,
                     2000,
-                    "today below goal -> streak=0 (chain broken now, prior days ignored)",
-                    0,
+                    "today below goal but yesterday met -> hanging streak ignores unfinished today -> 2",
+                    2,
                 ),
                 Arguments.of(
                     mapOf(today.minusDays(1) to 2000),
                     today,
                     2000,
-                    "today missing entirely -> streak=0",
+                    "today missing but yesterday met -> hanging streak -> 1",
+                    1,
+                ),
+                Arguments.of(
+                    mapOf(
+                        today to 500,
+                        today.minusDays(1) to 500,
+                        today.minusDays(2) to 2000,
+                    ),
+                    today,
+                    2000,
+                    "today below goal and yesterday below goal -> real gap -> 0",
                     0,
                 ),
                 Arguments.of(
