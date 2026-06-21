@@ -2,7 +2,6 @@ package ru.illine.drinking.ponies.bot
 
 import org.telegram.telegrambots.abilitybots.api.bot.AbilityBot
 import org.telegram.telegrambots.abilitybots.api.bot.BaseAbilityBot
-import org.telegram.telegrambots.abilitybots.api.db.MapDBContext.offlineInstance
 import org.telegram.telegrambots.abilitybots.api.objects.Ability
 import org.telegram.telegrambots.abilitybots.api.objects.Flag
 import org.telegram.telegrambots.abilitybots.api.objects.Locality
@@ -27,7 +26,7 @@ class DrinkingPoniesTelegramBot(
 ) : AbilityBot(
         telegramClient,
         telegramBotProperties.username,
-        offlineInstance(telegramBotProperties.username),
+        InMemoryDBContext(),
         BareboneToggle(),
     ) {
     // Sentinel: Privacy.CREATOR is no longer used, but creatorId() is abstract in AbilityBot
