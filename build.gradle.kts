@@ -34,9 +34,15 @@ repositories {
 dependencies {
     implementation(libs.spring.boot.starter.actuator)
     implementation(libs.spring.boot.starter.cache)
-    implementation(libs.spring.boot.starter.data.jpa)
+    implementation(libs.spring.boot.starter.data.jpa) {
+        // Unused: caching/@Transactional are proxy-based, no AspectJ weaving needed.
+        exclude(group = "org.springframework", module = "spring-aspects")
+    }
     implementation(libs.spring.boot.starter.validation)
-    implementation(libs.spring.boot.starter.web)
+    implementation(libs.spring.boot.starter.web) {
+        // Unused: REST + long polling only, no websocket.
+        exclude(group = "org.apache.tomcat.embed", module = "tomcat-embed-websocket")
+    }
     implementation(libs.caffeine)
 
     implementation(libs.kotlin.reflect)
@@ -46,7 +52,12 @@ dependencies {
     implementation(libs.logbook.okhttp)
     implementation(libs.telegrambots.client)
     implementation(libs.telegrambots.longpolling)
-    implementation(libs.telegrambots.abilities)
+    implementation(libs.telegrambots.abilities) {
+        // Unused: webhook server, long polling only.
+        exclude(group = "org.telegram", module = "telegrambots-webhook")
+        // MapDB replaced by InMemoryDBContext.
+        exclude(group = "org.mapdb", module = "mapdb")
+    }
     implementation(libs.datasource.decorator.spring.boot)
     implementation(libs.p6spy)
     implementation(libs.micrometer.registry.prometheus)
