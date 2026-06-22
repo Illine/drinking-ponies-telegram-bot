@@ -1,6 +1,6 @@
 include:
   - project: dptb/drinking-ponies-ci-templates
-    ref: develop
+    ref: v1.0.0
     file: dptb-ci.gitlab-ci.yml
   - local: .ansible.gitlab-ci.yml
 
@@ -25,8 +25,9 @@ workflow:
     - when: never
 
 variables:
-  GRADLE_JVM_OPTS: "-Xmx4096m"
-  GRADLE_OPTS: "-Dorg.gradle.workers.max=4"
+  GRADLE_OPTS: "-Dorg.gradle.workers.max=4 -Dorg.gradle.caching=true"
+  FF_USE_FASTZIP: "true"
+  CACHE_COMPRESSION_LEVEL: "fast"
   SERVICE_NAME: "dptb"
   SERVICE_DISPLAY_NAME: "Bot"
   YOUTRACK_PROJECT: "DPTB"
@@ -34,9 +35,24 @@ variables:
 default:
   interruptible: true
 
+lint:
+  extends: .default-tags
+  stage: test
+  image: gradle:8.4-jdk17
+  variables:
+    GRADLE_USER_HOME: ".gradle"
+  cache:
+    - key: gradle-cache-${CI_PROJECT_ID}
+      paths:
+        - .gradle
+  script:
+    - gradle lintKotlin detekt
+
 test:
   extends: .default-tags
   stage: test
+  needs:
+    - lint
   image: gradle:8.4-jdk17
   variables:
     GRADLE_USER_HOME: ".gradle"
@@ -45,9 +61,7 @@ test:
     - key: gradle-cache-${CI_PROJECT_ID}
       paths:
         - .gradle
-    - key: gradle-build-${CI_PROJECT_ID}-${CI_COMMIT_REF_NAME}
-      paths:
-        - build/
+      policy: pull
   before_script:
     - |
       curl -fsSL https://cli.codecov.io/latest/linux/codecov -o codecov
@@ -87,6 +101,7 @@ build-jar:
     - key: gradle-cache-${CI_PROJECT_ID}
       paths:
         - .gradle
+      policy: pull
   script:
     - gradle assemble
   artifacts:

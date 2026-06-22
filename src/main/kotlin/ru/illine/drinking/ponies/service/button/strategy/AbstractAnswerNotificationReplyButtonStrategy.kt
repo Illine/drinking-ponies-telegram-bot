@@ -7,33 +7,32 @@ import ru.illine.drinking.ponies.model.base.AnswerNotificationType
 import ru.illine.drinking.ponies.service.button.ReplyButtonStrategy
 import ru.illine.drinking.ponies.service.telegram.MessageEditorService
 import ru.illine.drinking.ponies.util.telegram.TelegramMessageConstants
-import java.util.*
+import java.util.Objects
 
 abstract class AbstractAnswerNotificationReplyButtonStrategy<T>(
     private val messageSender: TelegramClient,
-    private val messageEditorService: MessageEditorService
+    private val messageEditorService: MessageEditorService,
 ) : ReplyButtonStrategy {
-
     override fun reply(callbackQuery: CallbackQuery) {
         editNotification(callbackQuery)
 
         updateLastNotificationTime(callbackQuery).invoke()
 
         SendMessage(
-            callbackQuery.message.chatId.toString(), getMessageText()
+            callbackQuery.message.chatId.toString(),
+            getMessageText(),
         ).apply { messageSender.execute(this) }
     }
 
-    override fun isQueryData(queryData: String): Boolean {
-        return Objects.equals(getAnswerType().queryData.toString(), queryData)
-    }
+    override fun isQueryData(queryData: String): Boolean =
+        Objects.equals(getAnswerType().queryData.toString(), queryData)
 
     protected fun editNotification(callbackQuery: CallbackQuery) {
         messageEditorService.editReplyMarkup(
             TelegramMessageConstants.NOTIFICATION_QUESTION_EDITED_MESSAGE_PATTERN.format(getAnswerType().displayName),
             callbackQuery.message.chatId,
             callbackQuery.message.messageId,
-            true
+            true,
         )
     }
 
@@ -42,5 +41,4 @@ abstract class AbstractAnswerNotificationReplyButtonStrategy<T>(
     protected abstract fun getMessageText(): String
 
     protected abstract fun getAnswerType(): AnswerNotificationType
-
 }

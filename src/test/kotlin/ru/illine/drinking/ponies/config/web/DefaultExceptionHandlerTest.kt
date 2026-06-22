@@ -4,8 +4,8 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
-import org.mockito.Mockito.mock
-import org.mockito.Mockito.`when`
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.whenever
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.converter.HttpMessageNotReadableException
@@ -20,7 +20,6 @@ import ru.illine.drinking.ponies.test.tag.UnitTest
 @UnitTest
 @DisplayName("DefaultExceptionHandler Unit Test")
 class DefaultExceptionHandlerTest {
-
     private lateinit var handler: DefaultExceptionHandler
 
     @BeforeEach
@@ -43,11 +42,11 @@ class DefaultExceptionHandlerTest {
     @Test
     @DisplayName("handleValidationException(): MethodArgumentNotValidException - returns 400 with 'validation failed'")
     fun `handleValidationException with MethodArgumentNotValidException returns 400`() {
-        val bindingResult = mock(BindingResult::class.java)
+        val bindingResult = mock<BindingResult>()
         val fieldError = FieldError("obj", "field", "must not be null")
-        `when`(bindingResult.fieldErrors).thenReturn(listOf(fieldError))
-        val exception = mock(MethodArgumentNotValidException::class.java)
-        `when`(exception.bindingResult).thenReturn(bindingResult)
+        whenever(bindingResult.fieldErrors).thenReturn(listOf(fieldError))
+        val exception = mock<MethodArgumentNotValidException>()
+        whenever(exception.bindingResult).thenReturn(bindingResult)
 
         val response = handler.handleValidationException(exception)
 
@@ -69,7 +68,7 @@ class DefaultExceptionHandlerTest {
     @Test
     @DisplayName("handleValidationException(): HttpMessageNotReadableException - returns 400 with 'validation failed'")
     fun `handleValidationException with HttpMessageNotReadableException returns 400`() {
-        val exception = mock(HttpMessageNotReadableException::class.java)
+        val exception = mock<HttpMessageNotReadableException>()
 
         val response = handler.handleValidationException(exception)
 
@@ -78,9 +77,11 @@ class DefaultExceptionHandlerTest {
     }
 
     @Test
-    @DisplayName("handleValidationException(): MethodArgumentTypeMismatchException - returns 400 with 'validation failed'")
+    @DisplayName(
+        "handleValidationException(): MethodArgumentTypeMismatchException - returns 400 with 'validation failed'",
+    )
     fun `handleValidationException with MethodArgumentTypeMismatchException returns 400`() {
-        val exception = mock(MethodArgumentTypeMismatchException::class.java)
+        val exception = mock<MethodArgumentTypeMismatchException>()
 
         val response = handler.handleValidationException(exception)
 
@@ -91,8 +92,8 @@ class DefaultExceptionHandlerTest {
     @Test
     @DisplayName("handleNoResourceFound(): returns 404 with 'resource not found'")
     fun `handleNoResourceFound returns 404`() {
-        val exception = mock(NoResourceFoundException::class.java)
-        `when`(exception.resourcePath).thenReturn("/unknown/path")
+        val exception = mock<NoResourceFoundException>()
+        whenever(exception.resourcePath).thenReturn("/unknown/path")
 
         val response = handler.handleNoResourceFound(exception)
 

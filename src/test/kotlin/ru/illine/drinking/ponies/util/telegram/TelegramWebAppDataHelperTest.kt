@@ -1,7 +1,9 @@
 package ru.illine.drinking.ponies.util.telegram
 
 import org.apache.commons.codec.digest.HmacUtils
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import ru.illine.drinking.ponies.test.tag.UnitTest
@@ -11,7 +13,6 @@ import java.time.Instant
 @UnitTest
 @DisplayName("TelegramWebAppDataHelper Unit Test")
 class TelegramWebAppDataHelperTest {
-
     @Test
     @DisplayName("validateAuthDate(): returns true when auth_date is present and not expired")
     fun `validateAuthDate valid`() {
@@ -43,18 +44,20 @@ class TelegramWebAppDataHelperTest {
     @DisplayName("validateHash(): returns true when hash is valid")
     fun `validateHash valid`() {
         val token = "test-bot-token"
-        val dataFields = sortedMapOf(
-            TelegramWebAppDataHelper.AUTH_DATE_FIELD_NAME to "1234567890",
-            TelegramWebAppDataHelper.QUERY_ID_FIELD_NAME to "test-query-id",
-            TelegramWebAppDataHelper.USER_FIELD_NAME to "{\"id\":1}"
-        )
+        val dataFields =
+            sortedMapOf(
+                TelegramWebAppDataHelper.AUTH_DATE_FIELD_NAME to "1234567890",
+                TelegramWebAppDataHelper.QUERY_ID_FIELD_NAME to "test-query-id",
+                TelegramWebAppDataHelper.USER_FIELD_NAME to "{\"id\":1}",
+            )
         val dataCheckString = dataFields.map { "${it.key}=${it.value}" }.joinToString("\n")
         val secretKey = HmacUtils("HmacSHA256", "WebAppData").hmac(token)
         val expectedHash = HmacUtils("HmacSHA256", secretKey).hmacHex(dataCheckString)
 
-        val dataWithHash = dataFields.toMutableMap().apply {
-            put(TelegramWebAppDataHelper.HASH_FIELD_NAME, expectedHash)
-        }
+        val dataWithHash =
+            dataFields.toMutableMap().apply {
+                put(TelegramWebAppDataHelper.HASH_FIELD_NAME, expectedHash)
+            }
 
         assertTrue(TelegramWebAppDataHelper.validateHash(dataWithHash, token))
     }
@@ -62,10 +65,11 @@ class TelegramWebAppDataHelperTest {
     @Test
     @DisplayName("validateHash(): returns false when hash is invalid")
     fun `validateHash invalid`() {
-        val data = mapOf(
-            TelegramWebAppDataHelper.AUTH_DATE_FIELD_NAME to "1234567890",
-            TelegramWebAppDataHelper.HASH_FIELD_NAME to "wrong-hash"
-        )
+        val data =
+            mapOf(
+                TelegramWebAppDataHelper.AUTH_DATE_FIELD_NAME to "1234567890",
+                TelegramWebAppDataHelper.HASH_FIELD_NAME to "wrong-hash",
+            )
 
         assertFalse(TelegramWebAppDataHelper.validateHash(data, "test-bot-token"))
     }

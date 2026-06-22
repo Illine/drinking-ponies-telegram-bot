@@ -7,7 +7,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class TelegramUserDto(
     @JsonProperty("id")
-    val telegramId: Long,
+    val externalUserId: Long,
     @JsonProperty("first_name")
     val firstName: String?,
     @JsonProperty("last_name")
@@ -20,9 +20,8 @@ data class TelegramUserDto(
     val isPremium: Boolean = false,
     @JsonProperty("allows_write_to_pm")
     val allowsWriteToPm: Boolean = false,
-
     // Internal-only flag enriched by TelegramAuthInterceptor from DB.
     // Never accept from incoming JSON (initData) and never expose in API responses.
     @JsonIgnore
-    val isAdmin: Boolean = false
+    val isAdmin: Boolean = false,
 )

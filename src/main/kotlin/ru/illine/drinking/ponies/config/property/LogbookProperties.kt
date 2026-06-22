@@ -7,6 +7,5 @@ import javax.validation.constraints.NotEmpty
 @Validated
 @ConfigurationProperties("logbook.logger")
 data class LogbookProperties(
-
-    @NotEmpty val name: String
+    @NotEmpty val name: String,
 )

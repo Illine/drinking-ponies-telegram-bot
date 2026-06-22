@@ -6,5 +6,5 @@ data class InsightStatsContext(
     val avgMlPerDay: Int,
     val bestDay: BestDayDto?,
     val currentStreakDays: Int,
-    val dailyGoalMl: Int
+    val dailyGoalMl: Int,
 ) : MessageContext

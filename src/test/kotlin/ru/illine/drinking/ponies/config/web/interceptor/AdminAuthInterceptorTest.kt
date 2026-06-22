@@ -8,7 +8,10 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import org.mockito.Mockito.*
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
+import org.mockito.kotlin.whenever
 import org.springframework.web.method.HandlerMethod
 import ru.illine.drinking.ponies.config.web.security.AdminOnly
 import ru.illine.drinking.ponies.config.web.security.AuthErrorType
@@ -19,33 +22,34 @@ import ru.illine.drinking.ponies.util.telegram.TelegramGeneralConstants
 @UnitTest
 @DisplayName("AdminAuthInterceptor Unit Test")
 class AdminAuthInterceptorTest {
-
     private lateinit var request: HttpServletRequest
     private lateinit var response: HttpServletResponse
     private lateinit var handlerMethod: HandlerMethod
     private lateinit var interceptor: AdminAuthInterceptor
 
-    private val adminUser = TelegramUserDto(
-        telegramId = 1L,
-        firstName = "Admin",
-        lastName = null,
-        username = null,
-        isAdmin = true
-    )
+    private val adminUser =
+        TelegramUserDto(
+            externalUserId = 1L,
+            firstName = "Admin",
+            lastName = null,
+            username = null,
+            isAdmin = true,
+        )
 
-    private val nonAdminUser = TelegramUserDto(
-        telegramId = 2L,
-        firstName = "User",
-        lastName = null,
-        username = null,
-        isAdmin = false
-    )
+    private val nonAdminUser =
+        TelegramUserDto(
+            externalUserId = 2L,
+            firstName = "User",
+            lastName = null,
+            username = null,
+            isAdmin = false,
+        )
 
     @BeforeEach
     fun setUp() {
-        request = mock(HttpServletRequest::class.java)
-        response = mock(HttpServletResponse::class.java)
-        handlerMethod = mock(HandlerMethod::class.java)
+        request = mock<HttpServletRequest>()
+        response = mock<HttpServletResponse>()
+        handlerMethod = mock<HandlerMethod>()
         interceptor = AdminAuthInterceptor()
     }
 
@@ -62,7 +66,7 @@ class AdminAuthInterceptorTest {
     @Test
     @DisplayName("preHandle(): handler without @AdminOnly - returns true")
     fun `handler without AdminOnly returns true`() {
-        `when`(handlerMethod.getMethodAnnotation(AdminOnly::class.java)).thenReturn(null)
+        whenever(handlerMethod.getMethodAnnotation(AdminOnly::class.java)).thenReturn(null)
 
         val result = interceptor.preHandle(request, response, handlerMethod)
 
@@ -73,8 +77,8 @@ class AdminAuthInterceptorTest {
     @Test
     @DisplayName("preHandle(): @AdminOnly + admin user - returns true")
     fun `admin user returns true`() {
-        `when`(handlerMethod.getMethodAnnotation(AdminOnly::class.java)).thenReturn(AdminOnly())
-        `when`(request.getAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE)).thenReturn(adminUser)
+        whenever(handlerMethod.getMethodAnnotation(AdminOnly::class.java)).thenReturn(AdminOnly())
+        whenever(request.getAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE)).thenReturn(adminUser)
 
         val result = interceptor.preHandle(request, response, handlerMethod)
 
@@ -85,8 +89,8 @@ class AdminAuthInterceptorTest {
     @Test
     @DisplayName("preHandle(): @AdminOnly + non-admin user - returns false, 403, X-Auth-Error-Code forbidden_admin")
     fun `non-admin user returns false with 403 and forbidden_admin header`() {
-        `when`(handlerMethod.getMethodAnnotation(AdminOnly::class.java)).thenReturn(AdminOnly())
-        `when`(request.getAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE)).thenReturn(nonAdminUser)
+        whenever(handlerMethod.getMethodAnnotation(AdminOnly::class.java)).thenReturn(AdminOnly())
+        whenever(request.getAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE)).thenReturn(nonAdminUser)
 
         val result = interceptor.preHandle(request, response, handlerMethod)
 
@@ -98,8 +102,8 @@ class AdminAuthInterceptorTest {
     @Test
     @DisplayName("preHandle(): @AdminOnly + missing telegramUser attribute - throws IllegalStateException")
     fun `missing telegramUser attribute fails fast`() {
-        `when`(handlerMethod.getMethodAnnotation(AdminOnly::class.java)).thenReturn(AdminOnly())
-        `when`(request.getAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE)).thenReturn(null)
+        whenever(handlerMethod.getMethodAnnotation(AdminOnly::class.java)).thenReturn(AdminOnly())
+        whenever(request.getAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE)).thenReturn(null)
 
         assertThrows<IllegalStateException> {
             interceptor.preHandle(request, response, handlerMethod)

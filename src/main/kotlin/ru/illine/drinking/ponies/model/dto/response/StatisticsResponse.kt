@@ -20,7 +20,7 @@ data class StatisticsResponse(
     @Schema(
         description = "Timestamp of the user's earliest water entry; used as the left bound of the calendar",
         example = "2026-04-15T10:30:00Z",
-        nullable = true
+        nullable = true,
     )
     val firstEntryAt: Instant?,
 )

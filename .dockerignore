@@ -1,0 +1,7 @@
+# Send only the built artifact to the Docker daemon - nothing else is COPYed.
+*
+!build
+build/*
+!build/libs
+build/libs/*
+!build/libs/drinking-ponies.jar

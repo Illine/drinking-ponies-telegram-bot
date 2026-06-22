@@ -8,7 +8,10 @@ import ru.illine.drinking.ponies.model.entity.NotificationSettingEntity
 import java.time.LocalTime
 
 interface NotificationSettingRepository : JpaRepository<NotificationSettingEntity, Long> {
-
+    // Spring Data derived query: the underscore explicitly resolves the nested property path
+    // telegramUser.externalUserId. Renaming it would break query derivation, so the ktlint
+    // naming rule is suppressed here intentionally.
+    @Suppress("ktlint:standard:function-naming")
     fun findByTelegramUser_ExternalUserId(externalUserId: Long): NotificationSettingEntity?
 
     @Query(
@@ -18,9 +21,11 @@ interface NotificationSettingRepository : JpaRepository<NotificationSettingEntit
             inner join telegram_users u on ns.telegram_user_id = u.id
             where u.external_user_id = :externalUserId
         """,
-        nativeQuery = true
+        nativeQuery = true,
     )
-    fun isEnabledByTelegramUserId(@Param("externalUserId") externalUserId: Long): Boolean
+    fun isEnabledByExternalUserId(
+        @Param("externalUserId") externalUserId: Long,
+    ): Boolean
 
     @Modifying
     @Query(
@@ -31,11 +36,11 @@ interface NotificationSettingRepository : JpaRepository<NotificationSettingEntit
         where ns.telegram_user_id = u.id
           and u.external_user_id = :externalUserId
         """,
-        nativeQuery = true
+        nativeQuery = true,
     )
     fun switchEnabled(
         @Param("externalUserId") externalUserId: Long,
-        @Param("enabled") enabled: Boolean
+        @Param("enabled") enabled: Boolean,
     )
 
     @Modifying
@@ -47,12 +52,12 @@ interface NotificationSettingRepository : JpaRepository<NotificationSettingEntit
         where ns.telegram_user_id = u.id
           and u.external_user_id = :externalUserId
         """,
-        nativeQuery = true
+        nativeQuery = true,
     )
     fun updateQuietMode(
         @Param("externalUserId") externalUserId: Long,
         @Param("start") start: LocalTime? = null,
-        @Param("end") end: LocalTime? = null
+        @Param("end") end: LocalTime? = null,
     )
 
     @Modifying
@@ -64,9 +69,11 @@ interface NotificationSettingRepository : JpaRepository<NotificationSettingEntit
         where ns.telegram_user_id = u.id
           and u.external_user_id = :externalUserId
         """,
-        nativeQuery = true
+        nativeQuery = true,
     )
-    fun clearPause(@Param("externalUserId") externalUserId: Long)
+    fun clearPause(
+        @Param("externalUserId") externalUserId: Long,
+    )
 
     @Modifying
     @Query(
@@ -77,11 +84,10 @@ interface NotificationSettingRepository : JpaRepository<NotificationSettingEntit
         where ns.telegram_user_id = u.id
           and u.external_user_id = :externalUserId
         """,
-        nativeQuery = true
+        nativeQuery = true,
     )
     fun updateDailyGoal(
         @Param("externalUserId") externalUserId: Long,
-        @Param("goalMl") goalMl: Int
+        @Param("goalMl") goalMl: Int,
     )
-
 }

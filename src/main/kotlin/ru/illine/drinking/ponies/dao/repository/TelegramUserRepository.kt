@@ -4,10 +4,9 @@ import org.springframework.data.jpa.repository.JpaRepository
 import ru.illine.drinking.ponies.model.entity.TelegramUserEntity
 
 interface TelegramUserRepository : JpaRepository<TelegramUserEntity, Long> {
+    fun findByExternalUserId(externalUserId: Long): TelegramUserEntity?
 
-    fun findByExternalUserId(telegramUserId: Long): TelegramUserEntity?
+    fun findAllByExternalUserIdIn(externalUserId: Collection<Long>): Set<TelegramUserEntity>
 
-    fun findAllByExternalUserIdIn(telegramUserId: Collection<Long>): Set<TelegramUserEntity>
-
-    fun existsByExternalUserId(telegramUserId: Long): Boolean
+    fun existsByExternalUserId(externalUserId: Long): Boolean
 }

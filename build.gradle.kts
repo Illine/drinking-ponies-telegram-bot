@@ -1,3 +1,5 @@
+import org.jmailen.gradle.kotlinter.tasks.FormatTask
+import org.jmailen.gradle.kotlinter.tasks.LintTask
 import java.io.FileInputStream
 import java.util.*
 
@@ -11,6 +13,9 @@ plugins {
     alias(libs.plugins.kotlin.spring)
     alias(libs.plugins.kotlin.jpa)
     alias(libs.plugins.kotlin.kapt)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.kotlinter)
+    alias(libs.plugins.detekt)
 }
 
 group = "ru.illine"
@@ -29,9 +34,15 @@ repositories {
 dependencies {
     implementation(libs.spring.boot.starter.actuator)
     implementation(libs.spring.boot.starter.cache)
-    implementation(libs.spring.boot.starter.data.jpa)
+    implementation(libs.spring.boot.starter.data.jpa) {
+        // Unused: caching/@Transactional are proxy-based, no AspectJ weaving needed.
+        exclude(group = "org.springframework", module = "spring-aspects")
+    }
     implementation(libs.spring.boot.starter.validation)
-    implementation(libs.spring.boot.starter.web)
+    implementation(libs.spring.boot.starter.web) {
+        // Unused: REST + long polling only, no websocket.
+        exclude(group = "org.apache.tomcat.embed", module = "tomcat-embed-websocket")
+    }
     implementation(libs.caffeine)
 
     implementation(libs.kotlin.reflect)
@@ -41,7 +52,12 @@ dependencies {
     implementation(libs.logbook.okhttp)
     implementation(libs.telegrambots.client)
     implementation(libs.telegrambots.longpolling)
-    implementation(libs.telegrambots.abilities)
+    implementation(libs.telegrambots.abilities) {
+        // Unused: webhook server, long polling only.
+        exclude(group = "org.telegram", module = "telegrambots-webhook")
+        // MapDB replaced by InMemoryDBContext.
+        exclude(group = "org.mapdb", module = "mapdb")
+    }
     implementation(libs.datasource.decorator.spring.boot)
     implementation(libs.p6spy)
     implementation(libs.micrometer.registry.prometheus)
@@ -50,6 +66,7 @@ dependencies {
     implementation(libs.commons.codec)
     implementation(libs.commons.lang3)
     implementation(libs.springdoc.openapi.starter.webmvc.ui)
+    implementation(libs.konvert.api)
 
     liquibaseRuntime(libs.liquibase.core)
     liquibaseRuntime(libs.liquibase.groovy.dsl)
@@ -62,6 +79,7 @@ dependencies {
     runtimeOnly(libs.micrometer.exposition.formats)
 
     kapt(libs.spring.boot.configuration.processor)
+    ksp(libs.konvert)
 
     testImplementation(libs.spring.boot.starter.test) {
         exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
@@ -79,6 +97,20 @@ allOpen {
     annotation("jakarta.persistence.Entity")
     annotation("jakarta.persistence.MappedSuperclass")
     annotation("jakarta.persistence.Embeddable")
+}
+
+ksp {
+    // Konvert: make the build fail on incomplete or invalid mappings - the core goal of DPTB-136.
+    arg("konvert.invalid-mapping-strategy", "fail")
+    arg("konvert.non-constructor-properties-mapping", "all")
+    arg("konvert.enforce-not-null", "true")
+}
+
+detekt {
+    // ktlint owns formatting; detekt runs code-smell/complexity rules only (no formatting ruleset).
+    buildUponDefaultConfig = true
+    config.setFrom("$projectDir/config/detekt/detekt.yml")
+    baseline = file("$projectDir/config/detekt/baseline.xml")
 }
 
 liquibase {
@@ -115,6 +147,17 @@ tasks {
     compileKotlin {
         compilerOptions {
             freeCompilerArgs.add("-Xjsr305=strict")
+            // KT-73255: opt in to the upcoming Kotlin default where a constructor-parameter
+            // annotation without an explicit use-site target is applied to both the parameter
+            // and the property/field. See https://youtrack.jetbrains.com/issue/KT-73255
+            freeCompilerArgs.add("-Xannotation-default-target=param-property")
+        }
+    }
+
+    compileTestKotlin {
+        compilerOptions {
+            // Keep the annotation default target consistent with main (KT-73255).
+            freeCompilerArgs.add("-Xannotation-default-target=param-property")
         }
     }
 
@@ -164,4 +207,8 @@ tasks {
             })
         )
     }
+
+    // ktlint (kotlinter) must not lint generated KSP/Konvert sources - KSP adds build/generated to the source set.
+    withType<LintTask>().configureEach { exclude { it.file.path.contains("/build/generated/") } }
+    withType<FormatTask>().configureEach { exclude { it.file.path.contains("/build/generated/") } }
 }

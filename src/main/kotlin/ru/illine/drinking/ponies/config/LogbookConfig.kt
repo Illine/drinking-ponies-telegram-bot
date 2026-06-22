@@ -11,22 +11,27 @@ import ru.illine.drinking.ponies.config.property.LogbookProperties
 
 @Configuration
 class LogbookConfig {
-
     @Bean
     fun writer(properties: LogbookProperties) = DefaultHttpLogWriter(properties)
 
-    class DefaultHttpLogWriter(properties: LogbookProperties) : HttpLogWriter {
+    class DefaultHttpLogWriter(
+        properties: LogbookProperties,
+    ) : HttpLogWriter {
         private val logger: Logger
 
-        override fun isActive(): Boolean {
-            return logger.isInfoEnabled
-        }
+        override fun isActive(): Boolean = logger.isInfoEnabled
 
-        override fun write(precorrelation: Precorrelation, request: String) {
+        override fun write(
+            precorrelation: Precorrelation,
+            request: String,
+        ) {
             logger.info(request)
         }
 
-        override fun write(correlation: Correlation, response: String) {
+        override fun write(
+            correlation: Correlation,
+            response: String,
+        ) {
             logger.info(response)
         }
 

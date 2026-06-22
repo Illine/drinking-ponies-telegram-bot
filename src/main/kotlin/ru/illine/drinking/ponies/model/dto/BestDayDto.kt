@@ -6,5 +6,5 @@ import java.time.LocalDate
 data class BestDayDto(
     val date: LocalDate,
     val valueMl: Int,
-    val weekday: DayOfWeek
+    val weekday: DayOfWeek,
 )

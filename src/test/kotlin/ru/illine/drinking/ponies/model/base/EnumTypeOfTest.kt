@@ -4,15 +4,14 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
 import ru.illine.drinking.ponies.test.tag.UnitTest
-import java.util.*
+import java.util.UUID
 
 @UnitTest
 abstract class EnumTypeOfTest<T>(
     private val entries: List<T>,
     private val typeOf: (String) -> T?,
-    private val queryData: (T) -> UUID
+    private val queryData: (T) -> UUID,
 ) {
-
     @Test
     fun `typeOf returns entry for known queryData`() {
         entries.forEach { entry ->

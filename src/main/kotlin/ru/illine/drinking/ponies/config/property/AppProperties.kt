@@ -7,7 +7,6 @@ import javax.validation.constraints.NotBlank
 @Validated
 @ConfigurationProperties("app")
 data class AppProperties(
-
     @NotBlank
-    val version: String = "local"
+    val version: String = "local",
 )

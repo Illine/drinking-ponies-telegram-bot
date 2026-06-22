@@ -8,41 +8,56 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 
 interface NotificationAccessService {
-
     fun findAllNotificationSettings(): Set<NotificationSettingDto>
 
-    fun findNotificationSettingByTelegramUserId(telegramUserId: Long): NotificationSettingDto
+    fun findNotificationSettingByExternalUserId(externalUserId: Long): NotificationSettingDto
 
-    fun existsByTelegramUserId(telegramUserId: Long): Boolean
+    fun existsByExternalUserId(externalUserId: Long): Boolean
 
     fun save(
         user: TelegramUserDto,
         chat: TelegramChatDto,
-        setting: NotificationSettingDto
+        setting: NotificationSettingDto,
     ): TelegramUserDto
 
     fun updateNotificationSettings(
-        telegramUserId: Long, notificationInterval: IntervalNotificationType
+        externalUserId: Long,
+        notificationInterval: IntervalNotificationType,
     ): NotificationSettingDto
 
-    fun updateTimeOfLastNotification(telegramUserId: Long, time: LocalDateTime): NotificationSettingDto
+    fun updateTimeOfLastNotification(
+        externalUserId: Long,
+        time: LocalDateTime,
+    ): NotificationSettingDto
 
     fun updateNotificationSettings(settings: Collection<NotificationSettingDto>): Set<NotificationSettingDto>
 
-    fun isEnabledNotifications(telegramUserId: Long): Boolean
+    fun findIsEnabledNotificationsByExternalUserId(externalUserId: Long): Boolean
 
-    fun enableNotifications(telegramUserId: Long)
+    fun updateNotificationsEnabled(externalUserId: Long)
 
-    fun disableNotifications(telegramUserId: Long)
+    fun updateNotificationsDisabled(externalUserId: Long)
 
-    fun changeQuietMode(userId: Long, start: LocalTime, end: LocalTime)
+    fun updateQuietMode(
+        externalUserId: Long,
+        start: LocalTime,
+        end: LocalTime,
+    )
 
-    fun disableQuietMode(userId: Long)
+    fun updateQuietModeDisabled(externalUserId: Long)
 
-    fun changeTimezone(telegramUserId: Long, timezone: String)
+    fun updateTimezone(
+        externalUserId: Long,
+        timezone: String,
+    )
 
-    fun setPause(telegramUserId: Long, pauseUntil: LocalDateTime?): NotificationSettingDto
+    fun updatePause(
+        externalUserId: Long,
+        pauseUntil: LocalDateTime?,
+    ): NotificationSettingDto
 
-    fun updateDailyGoal(telegramUserId: Long, goalMl: Int)
-
+    fun updateDailyGoal(
+        externalUserId: Long,
+        goalMl: Int,
+    )
 }

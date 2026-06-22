@@ -1,10 +1,9 @@
 package ru.illine.drinking.ponies.util
 
 object FunctionHelper {
-
     inline fun <T> Boolean.check(
         ifTrue: Boolean.() -> T,
-        ifFalse: Boolean.() -> T
+        ifFalse: Boolean.() -> T,
     ) = when (this) {
         true -> ifTrue()
         false -> ifFalse()
@@ -13,7 +12,7 @@ object FunctionHelper {
     inline fun catchAny(
         action: () -> Unit,
         ifException: (Exception) -> Unit = {},
-        errorLogging: (Exception) -> Unit = {}
+        errorLogging: (Exception) -> Unit = {},
     ) {
         try {
             action()
@@ -26,13 +25,12 @@ object FunctionHelper {
     inline fun <T> catchAnyWithReturn(
         action: () -> T,
         noinline ifException: ((Exception) -> T?)? = null,
-        errorLogging: (Exception) -> Unit = {}
-    ): T? {
-        return try {
+        errorLogging: (Exception) -> Unit = {},
+    ): T? =
+        try {
             action()
         } catch (e: Exception) {
             errorLogging(e)
             ifException?.invoke(e)
         }
-    }
 }

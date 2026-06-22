@@ -6,8 +6,8 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import org.mockito.Mockito.`when`
 import org.mockito.kotlin.any
+import org.mockito.kotlin.whenever
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.web.client.TestRestTemplate
 import org.springframework.cache.CacheManager
@@ -30,120 +30,145 @@ import ru.illine.drinking.ponies.test.tag.SpringIntegrationTest
 @Sql(
     scripts = ["classpath:sql/access/TelegramUserAccessService.sql"],
     config = SqlConfig(transactionMode = SqlConfig.TransactionMode.ISOLATED),
-    executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD
+    executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD,
 )
 @Sql(
     scripts = ["classpath:sql/clear.sql"],
     config = SqlConfig(transactionMode = SqlConfig.TransactionMode.ISOLATED),
-    executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD
+    executionPhase = Sql.ExecutionPhase.AFTER_TEST_METHOD,
 )
-class UserControllerTest @Autowired constructor(
-    private val restTemplate: TestRestTemplate,
-    private val cacheManager: CacheManager,
-) {
+class UserControllerTest
+    @Autowired
+    constructor(
+        private val restTemplate: TestRestTemplate,
+        private val cacheManager: CacheManager,
+    ) {
+        @MockitoBean
+        private lateinit var telegramValidatorService: TelegramValidatorService
 
-    @MockitoBean
-    private lateinit var telegramValidatorService: TelegramValidatorService
+        private val telegramUser = DtoGenerator.generateTelegramUserDto(externalUserId = ADMIN_USER_ID)
 
-    private val ADMIN_USER_ID = 1L
-    private val NON_ADMIN_USER_ID = 2L
-    private val MISSING_USER_ID = 0L
+        @BeforeEach
+        fun setUp() {
+            cacheManager.getCache(CacheConfig.USER_IS_ADMIN)?.clear()
+            whenever(telegramValidatorService.verifySignature(any())).thenReturn(true)
+            whenever(telegramValidatorService.map(any())).thenReturn(telegramUser)
+        }
 
-    private val telegramUser = DtoGenerator.generateTelegramUserDto(telegramId = ADMIN_USER_ID)
+        private fun buildHeaders(): HttpHeaders =
+            HttpHeaders().apply {
+                set("X-Authorization-Telegram-Data", "test-init-data")
+            }
 
-    @BeforeEach
-    fun setUp() {
-        cacheManager.getCache(CacheConfig.USER_IS_ADMIN)?.clear()
-        `when`(telegramValidatorService.verifySignature(any())).thenReturn(true)
-        `when`(telegramValidatorService.map(any())).thenReturn(telegramUser)
-    }
+        @Nested
+        @DisplayName("GET /users/me")
+        inner class GetMe {
+            @Test
+            @DisplayName("admin user - returns 200 with isAdmin=true")
+            fun `returns 200 with isAdmin true for admin`() {
+                val headers = buildHeaders()
 
-    private fun buildHeaders(): HttpHeaders {
-        return HttpHeaders().apply {
-            set("X-Authorization-Telegram-Data", "test-init-data")
+                val response =
+                    restTemplate.exchange(
+                        "/users/me",
+                        HttpMethod.GET,
+                        HttpEntity<Void>(headers),
+                        MeResponse::class.java,
+                    )
+
+                assertEquals(HttpStatus.OK, response.statusCode)
+                assertNotNull(response.body)
+                assertEquals(ADMIN_USER_ID, response.body!!.externalUserId)
+                assertEquals(true, response.body!!.isAdmin)
+            }
+
+            @Test
+            @DisplayName("non-admin user - returns 200 with isAdmin=false")
+            fun `returns 200 with isAdmin false for non-admin`() {
+                whenever(
+                    telegramValidatorService.map(any()),
+                ).thenReturn(telegramUser.copy(externalUserId = NON_ADMIN_USER_ID))
+                val headers = buildHeaders()
+
+                val response =
+                    restTemplate.exchange(
+                        "/users/me",
+                        HttpMethod.GET,
+                        HttpEntity<Void>(headers),
+                        MeResponse::class.java,
+                    )
+
+                assertEquals(HttpStatus.OK, response.statusCode)
+                assertNotNull(response.body)
+                assertEquals(NON_ADMIN_USER_ID, response.body!!.externalUserId)
+                assertEquals(false, response.body!!.isAdmin)
+            }
+
+            @Test
+            @DisplayName("user not in DB - returns 200 with isAdmin=false")
+            fun `returns 200 with isAdmin false for user not in db`() {
+                whenever(
+                    telegramValidatorService.map(any()),
+                ).thenReturn(telegramUser.copy(externalUserId = MISSING_USER_ID))
+                val headers = buildHeaders()
+
+                val response =
+                    restTemplate.exchange(
+                        "/users/me",
+                        HttpMethod.GET,
+                        HttpEntity<Void>(headers),
+                        MeResponse::class.java,
+                    )
+
+                assertEquals(HttpStatus.OK, response.statusCode)
+                assertNotNull(response.body)
+                assertEquals(MISSING_USER_ID, response.body!!.externalUserId)
+                assertEquals(false, response.body!!.isAdmin)
+            }
+
+            @Test
+            @DisplayName("missing auth header - returns 401 with X-Auth-Error-Code invalid_auth_signature")
+            fun `returns 401 with invalid_auth_signature header`() {
+                val response =
+                    restTemplate.exchange(
+                        "/users/me",
+                        HttpMethod.GET,
+                        HttpEntity<Void>(HttpHeaders()),
+                        Void::class.java,
+                    )
+
+                assertEquals(HttpStatus.UNAUTHORIZED, response.statusCode)
+                assertEquals(
+                    AuthErrorType.INVALID_AUTH_SIGNATURE.value,
+                    response.headers.getFirst(AuthErrorType.HEADER_NAME),
+                )
+            }
+
+            @Test
+            @DisplayName("expired auth_date - returns 403 with X-Auth-Error-Code session_expired")
+            fun `returns 403 with session_expired header`() {
+                whenever(telegramValidatorService.verifySignature(any())).thenReturn(false)
+                val headers = buildHeaders()
+
+                val response =
+                    restTemplate.exchange(
+                        "/users/me",
+                        HttpMethod.GET,
+                        HttpEntity<Void>(headers),
+                        Void::class.java,
+                    )
+
+                assertEquals(HttpStatus.FORBIDDEN, response.statusCode)
+                assertEquals(
+                    AuthErrorType.SESSION_EXPIRED.value,
+                    response.headers.getFirst(AuthErrorType.HEADER_NAME),
+                )
+            }
+        }
+
+        companion object {
+            private const val ADMIN_USER_ID = 1L
+            private const val NON_ADMIN_USER_ID = 2L
+            private const val MISSING_USER_ID = 0L
         }
     }
-
-    @Nested
-    @DisplayName("GET /users/me")
-    inner class GetMe {
-
-        @Test
-        @DisplayName("admin user - returns 200 with isAdmin=true")
-        fun `returns 200 with isAdmin true for admin`() {
-            val headers = buildHeaders()
-
-            val response = restTemplate.exchange(
-                "/users/me", HttpMethod.GET, HttpEntity<Void>(headers), MeResponse::class.java
-            )
-
-            assertEquals(HttpStatus.OK, response.statusCode)
-            assertNotNull(response.body)
-            assertEquals(ADMIN_USER_ID, response.body!!.telegramUserId)
-            assertEquals(true, response.body!!.isAdmin)
-        }
-
-        @Test
-        @DisplayName("non-admin user - returns 200 with isAdmin=false")
-        fun `returns 200 with isAdmin false for non-admin`() {
-            `when`(telegramValidatorService.map(any())).thenReturn(telegramUser.copy(telegramId = NON_ADMIN_USER_ID))
-            val headers = buildHeaders()
-
-            val response = restTemplate.exchange(
-                "/users/me", HttpMethod.GET, HttpEntity<Void>(headers), MeResponse::class.java
-            )
-
-            assertEquals(HttpStatus.OK, response.statusCode)
-            assertNotNull(response.body)
-            assertEquals(NON_ADMIN_USER_ID, response.body!!.telegramUserId)
-            assertEquals(false, response.body!!.isAdmin)
-        }
-
-        @Test
-        @DisplayName("user not in DB - returns 200 with isAdmin=false")
-        fun `returns 200 with isAdmin false for user not in db`() {
-            `when`(telegramValidatorService.map(any())).thenReturn(telegramUser.copy(telegramId = MISSING_USER_ID))
-            val headers = buildHeaders()
-
-            val response = restTemplate.exchange(
-                "/users/me", HttpMethod.GET, HttpEntity<Void>(headers), MeResponse::class.java
-            )
-
-            assertEquals(HttpStatus.OK, response.statusCode)
-            assertNotNull(response.body)
-            assertEquals(MISSING_USER_ID, response.body!!.telegramUserId)
-            assertEquals(false, response.body!!.isAdmin)
-        }
-
-        @Test
-        @DisplayName("missing auth header - returns 401 with X-Auth-Error-Code invalid_auth_signature")
-        fun `returns 401 with invalid_auth_signature header`() {
-            val response = restTemplate.exchange(
-                "/users/me", HttpMethod.GET, HttpEntity<Void>(HttpHeaders()), Void::class.java
-            )
-
-            assertEquals(HttpStatus.UNAUTHORIZED, response.statusCode)
-            assertEquals(
-                AuthErrorType.INVALID_AUTH_SIGNATURE.value,
-                response.headers.getFirst(AuthErrorType.HEADER_NAME)
-            )
-        }
-
-        @Test
-        @DisplayName("expired auth_date - returns 403 with X-Auth-Error-Code session_expired")
-        fun `returns 403 with session_expired header`() {
-            `when`(telegramValidatorService.verifySignature(any())).thenReturn(false)
-            val headers = buildHeaders()
-
-            val response = restTemplate.exchange(
-                "/users/me", HttpMethod.GET, HttpEntity<Void>(headers), Void::class.java
-            )
-
-            assertEquals(HttpStatus.FORBIDDEN, response.statusCode)
-            assertEquals(
-                AuthErrorType.SESSION_EXPIRED.value,
-                response.headers.getFirst(AuthErrorType.HEADER_NAME)
-            )
-        }
-    }
-}

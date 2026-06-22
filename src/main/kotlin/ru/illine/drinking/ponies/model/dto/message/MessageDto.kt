@@ -1,5 +1,5 @@
 package ru.illine.drinking.ponies.model.dto.message
 
 data class MessageDto(
-    val text: String
+    val text: String,
 )

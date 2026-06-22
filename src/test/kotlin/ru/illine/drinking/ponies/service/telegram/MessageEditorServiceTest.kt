@@ -3,8 +3,13 @@ package ru.illine.drinking.ponies.service.telegram
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
-import org.mockito.Mockito.*
 import org.mockito.kotlin.any
+import org.mockito.kotlin.doThrow
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
+import org.mockito.kotlin.whenever
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageReplyMarkup
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText
@@ -16,7 +21,6 @@ import ru.illine.drinking.ponies.test.tag.UnitTest
 @UnitTest
 @DisplayName("MessageEditorService Unit Test")
 class MessageEditorServiceTest {
-
     private val chatId = 1L
     private val messageId = 2
 
@@ -25,7 +29,7 @@ class MessageEditorServiceTest {
 
     @BeforeEach
     fun setUp() {
-        sender = mock(TelegramClient::class.java)
+        sender = mock<TelegramClient>()
         service = MessageEditorServiceImpl(sender)
     }
 
@@ -49,7 +53,7 @@ class MessageEditorServiceTest {
     @Test
     @DisplayName("editReplyMarkup(): deletes old markup and sends new text with keyboard")
     fun `editReplyMarkup with keyboard`() {
-        val keyboard = mock(InlineKeyboardMarkup::class.java)
+        val keyboard = mock<InlineKeyboardMarkup>()
 
         service.editReplyMarkup("new text", chatId, messageId, replyKeyboard = keyboard)
 
@@ -76,10 +80,11 @@ class MessageEditorServiceTest {
     @Test
     @DisplayName("deleteMessages(): executes DeleteMessage for each element")
     fun `deleteMessages with elements`() {
-        val messages = listOf(
-            Pair(chatId, 1),
-            Pair(chatId, 2)
-        )
+        val messages =
+            listOf(
+                Pair(chatId, 1),
+                Pair(chatId, 2),
+            )
 
         service.deleteMessages(messages)
 
@@ -97,7 +102,7 @@ class MessageEditorServiceTest {
     @Test
     @DisplayName("deleteMessage(): catches exception and does not rethrow")
     fun `deleteMessage catches exception`() {
-        doThrow(RuntimeException("Telegram error")).`when`(sender).execute(any<DeleteMessage>())
+        doThrow(RuntimeException("Telegram error")).whenever(sender).execute(any<DeleteMessage>())
 
         service.deleteMessage(chatId, messageId)
 

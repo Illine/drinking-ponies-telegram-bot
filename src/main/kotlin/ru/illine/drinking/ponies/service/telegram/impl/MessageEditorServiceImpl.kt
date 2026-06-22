@@ -12,18 +12,19 @@ import ru.illine.drinking.ponies.util.FunctionHelper
 
 @Service
 class MessageEditorServiceImpl(
-    private val sender: TelegramClient
+    private val sender: TelegramClient,
 ) : MessageEditorService {
-
     private val logger = LoggerFactory.getLogger("SERVICE")
 
-    override fun deleteReplyMarkup(chatId: Long, messageId: Int) {
+    override fun deleteReplyMarkup(
+        chatId: Long,
+        messageId: Int,
+    ) {
         EditMessageReplyMarkup()
             .apply {
                 setChatId(chatId)
                 setMessageId(messageId)
-            }
-            .apply { sender.execute(this) }
+            }.apply { sender.execute(this) }
     }
 
     override fun editReplyMarkup(
@@ -31,40 +32,42 @@ class MessageEditorServiceImpl(
         chatId: Long,
         messageId: Int,
         enableMarkDown: Boolean,
-        replyKeyboard: InlineKeyboardMarkup?
+        replyKeyboard: InlineKeyboardMarkup?,
     ) {
         deleteReplyMarkup(chatId, messageId)
 
         EditMessageText(
-            newText
+            newText,
         ).apply {
-                setChatId(chatId)
-                setMessageId(messageId)
-                enableMarkdown(enableMarkDown)
-                setReplyMarkup(replyKeyboard)
+            setChatId(chatId)
+            setMessageId(messageId)
+            enableMarkdown(enableMarkDown)
+            setReplyMarkup(replyKeyboard)
         }.apply { sender.execute(this) }
-
     }
 
-    override fun deleteMessage(chatId: Long, messageId: Int) {
+    override fun deleteMessage(
+        chatId: Long,
+        messageId: Int,
+    ) {
         deleteMessage(Pair(chatId, messageId))
     }
 
     override fun deleteMessage(messageInfo: Pair<Long, Int>) {
         DeleteMessage(
             messageInfo.first.toString(),
-            messageInfo.second
+            messageInfo.second,
         ).apply {
-                FunctionHelper.catchAny(
-                    action = { sender.execute(this) },
-                    errorLogging = {
-                        logger.error(
-                            "A previous message can't be deleted! A chatId: [${this.chatId}], messageId: [${this.messageId}]",
-                            it
-                        )
-                    }
-                )
-            }
+            FunctionHelper.catchAny(
+                action = { sender.execute(this) },
+                errorLogging = {
+                    logger.error(
+                        "A previous message can't be deleted! A chatId: [${this.chatId}], messageId: [${this.messageId}]",
+                        it,
+                    )
+                },
+            )
+        }
     }
 
     override fun deleteMessages(messageInfo: Collection<Pair<Long, Int>>) {

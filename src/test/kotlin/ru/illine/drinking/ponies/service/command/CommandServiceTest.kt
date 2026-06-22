@@ -4,10 +4,10 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
-import org.mockito.ArgumentCaptor
-import org.mockito.Mockito.mock
-import org.mockito.Mockito.verify
-import org.mockito.Mockito.verifyNoInteractions
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.verifyNoInteractions
 import org.telegram.telegrambots.meta.api.methods.menubutton.SetChatMenuButton
 import org.telegram.telegrambots.meta.api.objects.menubutton.MenuButtonWebApp
 import org.telegram.telegrambots.meta.generics.TelegramClient
@@ -19,12 +19,11 @@ import ru.illine.drinking.ponies.util.telegram.TelegramMenuConstants
 @UnitTest
 @DisplayName("CommandService Unit Test")
 class CommandServiceTest {
-
     private lateinit var sender: TelegramClient
 
     @BeforeEach
     fun setUp() {
-        sender = mock(TelegramClient::class.java)
+        sender = mock<TelegramClient>()
     }
 
     @Test
@@ -34,10 +33,10 @@ class CommandServiceTest {
 
         service.register()
 
-        val menuCaptor = ArgumentCaptor.forClass(SetChatMenuButton::class.java)
+        val menuCaptor = argumentCaptor<SetChatMenuButton>()
         verify(sender).execute(menuCaptor.capture())
 
-        val menuButton = menuCaptor.value.menuButton as MenuButtonWebApp
+        val menuButton = menuCaptor.firstValue.menuButton as MenuButtonWebApp
         assertEquals(TelegramMenuConstants.MENU_BUTTON_TEXT, menuButton.text)
         assertEquals(MINI_APP_URL, menuButton.webAppInfo.url)
     }
@@ -53,13 +52,14 @@ class CommandServiceTest {
     }
 
     private fun buildService(autoUpdateTelegramConfig: Boolean): CommandServiceImpl {
-        val properties = TelegramBotProperties(
-            token = "token",
-            username = "username",
-            miniAppUrl = MINI_APP_URL,
-            autoUpdateTelegramConfig = autoUpdateTelegramConfig,
-            http = TelegramBotProperties.Http(connectionTimeToLiveInSec = 30, maxConnectionTotal = 10)
-        )
+        val properties =
+            TelegramBotProperties(
+                token = "token",
+                username = "username",
+                miniAppUrl = MINI_APP_URL,
+                autoUpdateTelegramConfig = autoUpdateTelegramConfig,
+                http = TelegramBotProperties.Http(connectionTimeToLiveInSec = 30, maxConnectionTotal = 10),
+            )
         return CommandServiceImpl(properties, sender)
     }
 

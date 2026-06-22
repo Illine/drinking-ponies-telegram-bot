@@ -27,7 +27,6 @@ class NotificationSenderServiceImpl(
     private val waterStatisticService: WaterStatisticService,
     private val clock: Clock,
 ) : NotificationSenderService {
-
     private val logger = LoggerFactory.getLogger("SERVICE")
 
     override fun sendNotifications(notifications: Collection<NotificationSettingDto>) {
@@ -38,21 +37,26 @@ class NotificationSenderServiceImpl(
 
         deletePreviousNotificationMessages(notifications)
 
-        val sent = notifications.filter {
-            sendOrDisableOnBlock(it) {
-                ++it.notificationAttempts
-                it.timeOfLastNotification = TimeHelper.nextNotificationTimeByNow(
-                    clock, it.notificationInterval.minutes, telegramBotProperties.notification.retryIntervalMinutes
-                )
-                it.telegramChat.previousNotificationMessageId =
-                    SendMessage(
-                        it.telegramChat.externalChatId.toString(),
-                        TelegramMessageConstants.NOTIFICATION_QUESTION_MESSAGE
-                    ).apply {
-                        replyMarkup = TelegramBotKeyboardHelper.notifyButtons()
-                    }.let { sender.execute(it) }.messageId
+        val sent =
+            notifications.filter {
+                sendOrDisableOnBlock(it) {
+                    ++it.notificationAttempts
+                    it.timeOfLastNotification =
+                        TimeHelper.nextNotificationTimeByNow(
+                            clock,
+                            it.notificationInterval.minutes,
+                            telegramBotProperties.notification.retryIntervalMinutes,
+                        )
+                    it.telegramChat.previousNotificationMessageId =
+                        SendMessage(
+                            it.telegramChat.externalChatId.toString(),
+                            TelegramMessageConstants.NOTIFICATION_QUESTION_MESSAGE,
+                        ).apply {
+                            replyMarkup = TelegramBotKeyboardHelper.notifyButtons()
+                        }.let { sender.execute(it) }
+                            .messageId
+                }
             }
-        }
 
         notificationAccessService.updateNotificationSettings(sent)
     }
@@ -65,53 +69,59 @@ class NotificationSenderServiceImpl(
 
         deletePreviousNotificationMessages(notifications)
 
-        val sent = notifications.filter {
-            sendOrDisableOnBlock(it) {
-                SendMessage(
-                    it.telegramChat.externalChatId.toString(),
-                    TelegramMessageConstants.NOTIFICATION_SUSPEND_MESSAGE.format(it.notificationInterval.displayName)
-                ).apply {
-                    disableNotification = true
-                }.apply { sender.execute(this) }
+        val sent =
+            notifications.filter {
+                sendOrDisableOnBlock(it) {
+                    SendMessage(
+                        it.telegramChat.externalChatId.toString(),
+                        TelegramMessageConstants.NOTIFICATION_SUSPEND_MESSAGE.format(
+                            it.notificationInterval.displayName,
+                        ),
+                    ).apply {
+                        disableNotification = true
+                    }.apply { sender.execute(this) }
 
-                it.notificationAttempts = 0
-                it.timeOfLastNotification = LocalDateTime.now(clock)
-                it.telegramChat.previousNotificationMessageId = null
+                    it.notificationAttempts = 0
+                    it.timeOfLastNotification = LocalDateTime.now(clock)
+                    it.telegramChat.previousNotificationMessageId = null
+                }
             }
-        }
 
         notificationAccessService.updateNotificationSettings(sent)
         waterStatisticService.recordEvents(
             sent.map { it.telegramUser },
-            AnswerNotificationType.CANCEL
+            AnswerNotificationType.CANCEL,
         )
     }
 
-    private fun sendOrDisableOnBlock(notification: NotificationSettingDto, send: () -> Unit): Boolean {
-        return try {
+    private fun sendOrDisableOnBlock(
+        notification: NotificationSettingDto,
+        send: () -> Unit,
+    ): Boolean =
+        try {
             send()
             true
         } catch (e: TelegramApiRequestException) {
             if (e.errorCode == 403) {
                 logger.warn(
                     "User (externalUserId: [{}]) blocked the bot, disabling notifications",
-                    notification.telegramUser.externalUserId
+                    notification.telegramUser.externalUserId,
                 )
-                notificationAccessService.disableNotifications(notification.telegramUser.externalUserId)
+                notificationAccessService.updateNotificationsDisabled(notification.telegramUser.externalUserId)
                 false
             } else {
                 throw e
             }
         }
-    }
 
     private fun deletePreviousNotificationMessages(settings: Collection<NotificationSettingDto>) {
         logger.info("Deleting all old notifications messages...")
 
-        val messageInfo = settings
-            .filter { it.telegramChat.previousNotificationMessageId != null }
-            .map { Pair(it.telegramChat.externalChatId, it.telegramChat.previousNotificationMessageId!!) }
-            .toList()
+        val messageInfo =
+            settings
+                .filter { it.telegramChat.previousNotificationMessageId != null }
+                .map { Pair(it.telegramChat.externalChatId, it.telegramChat.previousNotificationMessageId!!) }
+                .toList()
 
         logger.info("Found [${messageInfo.size}] the old notification messages")
         logger.debug("The old messages: \n{}", messageInfo)

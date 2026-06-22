@@ -1,7 +1,10 @@
 package ru.illine.drinking.ponies.service.telegram
 
 import org.apache.commons.codec.digest.HmacUtils
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
@@ -18,7 +21,6 @@ import java.time.Instant
 @UnitTest
 @DisplayName("TelegramValidatorService Unit Test")
 class TelegramValidatorServiceTest {
-
     private val token = "token"
     private val userJson = """{"id":1,"first_name":"First Name"}"""
     private val queryId = "query"
@@ -27,14 +29,15 @@ class TelegramValidatorServiceTest {
 
     @BeforeEach
     fun setUp() {
-        val properties = TelegramBotProperties(
-            token = token,
-            username = "username",
-            miniAppUrl = "https://t.me/Test/app",
-            autoUpdateTelegramConfig = false,
-            authDateExpirationSeconds = 3600,
-            http = TelegramBotProperties.Http(connectionTimeToLiveInSec = 30, maxConnectionTotal = 10)
-        )
+        val properties =
+            TelegramBotProperties(
+                token = token,
+                username = "username",
+                miniAppUrl = "https://t.me/Test/app",
+                autoUpdateTelegramConfig = false,
+                authDateExpirationSeconds = 3600,
+                http = TelegramBotProperties.Http(connectionTimeToLiveInSec = 30, maxConnectionTotal = 10),
+            )
         service = TelegramValidatorServiceImpl(properties)
     }
 
@@ -82,7 +85,7 @@ class TelegramValidatorServiceTest {
 
         val result = service.map(initData)
 
-        assertEquals(1L, result.telegramId)
+        assertEquals(1L, result.externalUserId)
         assertEquals("First Name", result.firstName)
     }
 
@@ -97,11 +100,12 @@ class TelegramValidatorServiceTest {
     }
 
     private fun buildInitData(authDate: Long): String {
-        val fields = sortedMapOf(
-            "auth_date" to authDate.toString(),
-            "query_id" to queryId,
-            "user" to userJson
-        )
+        val fields =
+            sortedMapOf(
+                "auth_date" to authDate.toString(),
+                "query_id" to queryId,
+                "user" to userJson,
+            )
         val dataCheckString = fields.entries.joinToString("\n") { "${it.key}=${it.value}" }
         val secretKey = HmacUtils("HmacSHA256", "WebAppData").hmac(token)
         val hash = HmacUtils("HmacSHA256", secretKey).hmacHex(dataCheckString)

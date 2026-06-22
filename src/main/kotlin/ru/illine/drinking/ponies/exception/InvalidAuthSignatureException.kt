@@ -1,3 +1,5 @@
 package ru.illine.drinking.ponies.exception
 
-class InvalidAuthSignatureException(message: String) : RuntimeException(message)
+class InvalidAuthSignatureException(
+    message: String,
+) : RuntimeException(message)

@@ -21,18 +21,17 @@ class SnoozeApplyReplyButtonStrategy(
     private val notificationSettingsService: NotificationSettingsService,
     private val waterStatisticService: WaterStatisticService,
     private val messageEditorService: MessageEditorService,
-    private val clock: Clock
+    private val clock: Clock,
 ) : ReplyButtonStrategy {
-
     private val logger = LoggerFactory.getLogger("STRATEGY")
 
     override fun reply(callbackQuery: CallbackQuery) {
         messageEditorService.deleteReplyMarkup(
             callbackQuery.message.chatId,
-            callbackQuery.message.messageId
+            callbackQuery.message.messageId,
         )
 
-        val userId = callbackQuery.from.id
+        val externalUserId = callbackQuery.from.id
         val chatId = callbackQuery.message.chatId
         val queryData = callbackQuery.data
 
@@ -40,20 +39,21 @@ class SnoozeApplyReplyButtonStrategy(
 
         logger.info(
             "A telegram user [{}] for telegram chat [{}] will snooze notification for [{}] minutes",
-            userId,
+            externalUserId,
             chatId,
-            snoozeType.minutes
+            snoozeType.minutes,
         )
 
-        val notificationSetting = notificationSettingsService.getNotificationSettings(userId)
+        val notificationSetting = notificationSettingsService.getNotificationSettings(externalUserId)
         val nextNotificationTime =
             TimeHelper.nextNotificationTimeByNow(
                 clock,
                 notificationSetting.notificationInterval.minutes,
-                snoozeType.minutes
+                snoozeType.minutes,
             )
 
-        notificationSettingsService.resetNotificationTimer(userId, nextNotificationTime)
+        notificationSettingsService
+            .resetNotificationTimer(externalUserId, nextNotificationTime)
             .also { setting ->
                 runCatching {
                     waterStatisticService.recordEvent(setting.telegramUser, AnswerNotificationType.SNOOZE)
@@ -61,17 +61,16 @@ class SnoozeApplyReplyButtonStrategy(
                     logger.error(
                         "Failed to record water statistic for user [{}]",
                         setting.telegramUser.externalUserId,
-                        e
+                        e,
                     )
                 }
             }
 
         SendMessage(
             chatId.toString(),
-            TelegramMessageConstants.NOTIFICATION_SUSPEND_MESSAGE.format(snoozeType.displayName)
+            TelegramMessageConstants.NOTIFICATION_SUSPEND_MESSAGE.format(snoozeType.displayName),
         ).apply { sender.execute(this) }
     }
 
     override fun isQueryData(queryData: String): Boolean = SnoozeNotificationType.typeOf(queryData) != null
-
 }

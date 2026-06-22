@@ -4,11 +4,10 @@ import ru.illine.drinking.ponies.model.dto.internal.WaterStatisticDto
 import java.time.LocalDateTime
 
 interface WaterStatisticAccessService {
-    
     fun findByUserAndEventTimeBetween(
         externalUserId: Long,
         startInclusive: LocalDateTime,
-        endExclusive: LocalDateTime
+        endExclusive: LocalDateTime,
     ): List<WaterStatisticDto>
 
     fun findEarliestEventTimeByUser(externalUserId: Long): LocalDateTime?
@@ -16,5 +15,4 @@ interface WaterStatisticAccessService {
     fun save(dto: WaterStatisticDto): WaterStatisticDto
 
     fun saveAll(statistics: Collection<WaterStatisticDto>): List<WaterStatisticDto>
-
 }

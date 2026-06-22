@@ -7,12 +7,15 @@ import ru.illine.drinking.ponies.test.tag.UnitTest
 import ru.illine.drinking.ponies.util.TimeHelper.DEFAULT_TIME_FORMATTER
 import ru.illine.drinking.ponies.util.TimeHelper.nextNotificationTimeByNow
 import ru.illine.drinking.ponies.util.TimeHelper.timeToString
-import java.time.*
+import java.time.Clock
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.ZoneOffset
 
 @UnitTest
 @DisplayName("TimeHelper Unit Test")
 class TimeHelperTest {
-
     private val clock = Clock.fixed(Instant.now(), ZoneOffset.UTC)
     private val now = LocalDateTime.now(clock)
 

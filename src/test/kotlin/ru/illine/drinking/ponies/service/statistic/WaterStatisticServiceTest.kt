@@ -7,11 +7,11 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.ValueSource
-import org.mockito.Mockito.mock
-import org.mockito.Mockito.never
-import org.mockito.Mockito.verify
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.mock
+import org.mockito.kotlin.never
+import org.mockito.kotlin.verify
 import ru.illine.drinking.ponies.dao.access.WaterStatisticAccessService
 import ru.illine.drinking.ponies.model.base.AnswerNotificationType
 import ru.illine.drinking.ponies.model.base.WaterEntrySourceType
@@ -28,7 +28,6 @@ import java.time.temporal.ChronoUnit
 @UnitTest
 @DisplayName("WaterStatisticService Unit Test")
 class WaterStatisticServiceTest {
-
     private val fixedNow = LocalDateTime.of(2025, 1, 1, 14, 0, 0)
     private val fixedClock = Clock.fixed(fixedNow.toInstant(ZoneOffset.UTC), ZoneOffset.UTC)
 
@@ -37,7 +36,7 @@ class WaterStatisticServiceTest {
 
     @BeforeEach
     fun setUp() {
-        waterStatisticAccessService = mock(WaterStatisticAccessService::class.java)
+        waterStatisticAccessService = mock<WaterStatisticAccessService>()
         service = WaterStatisticServiceImpl(waterStatisticAccessService, fixedClock)
     }
 
@@ -75,10 +74,11 @@ class WaterStatisticServiceTest {
     @Test
     @DisplayName("recordEvents(): saves all statistics with correct eventType and source=NOTIFICATION")
     fun `recordEvents saves all statistics`() {
-        val users = listOf(
-            DtoGenerator.generateNotificationDto(externalUserId = 1L).telegramUser,
-            DtoGenerator.generateNotificationDto(externalUserId = 2L).telegramUser
-        )
+        val users =
+            listOf(
+                DtoGenerator.generateNotificationDto(externalUserId = 1L).telegramUser,
+                DtoGenerator.generateNotificationDto(externalUserId = 2L).telegramUser,
+            )
         val captor = argumentCaptor<Collection<WaterStatisticDto>>()
 
         service.recordEvents(users, AnswerNotificationType.CANCEL)
@@ -97,7 +97,9 @@ class WaterStatisticServiceTest {
     }
 
     @Test
-    @DisplayName("manualRecordEvent(): saves statistic with source=MANUAL, eventType=YES and converts consumedAt to UTC LocalDateTime")
+    @DisplayName(
+        "manualRecordEvent(): saves statistic with source=MANUAL, eventType=YES and converts consumedAt to UTC LocalDateTime",
+    )
     fun `manualRecordEvent saves statistic with manual source`() {
         val externalUserId = 1L
         val consumedAt = fixedClock.instant().minus(2, ChronoUnit.HOURS)
@@ -189,13 +191,14 @@ class WaterStatisticServiceTest {
     @Test
     @DisplayName("manualRecordEvent(): rejects consumedAt older than MAX_DAYS_AGO")
     fun `manualRecordEvent rejects consumedAt older than max days`() {
-        val tooOld = fixedClock.instant()
-            .minus(WaterEntryConstants.MAX_DAYS_AGO, ChronoUnit.DAYS)
-            .minus(1, ChronoUnit.SECONDS)
+        val tooOld =
+            fixedClock
+                .instant()
+                .minus(WaterEntryConstants.MAX_DAYS_AGO, ChronoUnit.DAYS)
+                .minus(1, ChronoUnit.SECONDS)
         assertThrows(IllegalArgumentException::class.java) {
             service.manualRecordEvent(1L, tooOld, 250)
         }
         verify(waterStatisticAccessService, never()).save(any())
     }
-
 }

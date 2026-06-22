@@ -5,7 +5,8 @@ import ru.illine.drinking.ponies.model.dto.message.MessageDto
 import ru.illine.drinking.ponies.util.message.MessageSpec
 
 interface MessageProvider {
-
-    fun <C : MessageContext> getMessage(spec: MessageSpec<C>, context: C): MessageDto
-
+    fun <C : MessageContext> getMessage(
+        spec: MessageSpec<C>,
+        context: C,
+    ): MessageDto
 }
