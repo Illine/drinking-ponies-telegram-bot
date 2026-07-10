@@ -7,12 +7,14 @@ import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.illine.drinking.ponies.model.base.AnswerNotificationType
 import ru.illine.drinking.ponies.model.base.SnoozeNotificationType
+import ru.illine.drinking.ponies.model.dto.message.NotificationSuspendContext
 import ru.illine.drinking.ponies.service.button.ReplyButtonStrategy
+import ru.illine.drinking.ponies.service.message.MessageProvider
 import ru.illine.drinking.ponies.service.notification.NotificationSettingsService
 import ru.illine.drinking.ponies.service.statistic.WaterStatisticService
 import ru.illine.drinking.ponies.service.telegram.MessageEditorService
 import ru.illine.drinking.ponies.util.TimeHelper
-import ru.illine.drinking.ponies.util.telegram.TelegramMessageConstants
+import ru.illine.drinking.ponies.util.message.MessageSpec
 import java.time.Clock
 
 @Service
@@ -22,6 +24,7 @@ class SnoozeApplyReplyButtonStrategy(
     private val waterStatisticService: WaterStatisticService,
     private val messageEditorService: MessageEditorService,
     private val clock: Clock,
+    private val messageProvider: MessageProvider,
 ) : ReplyButtonStrategy {
     private val logger = LoggerFactory.getLogger("STRATEGY")
 
@@ -68,7 +71,11 @@ class SnoozeApplyReplyButtonStrategy(
 
         SendMessage(
             chatId.toString(),
-            TelegramMessageConstants.NOTIFICATION_SUSPEND_MESSAGE.format(snoozeType.displayName),
+            messageProvider
+                .getMessage(
+                    MessageSpec.NotificationSuspend,
+                    NotificationSuspendContext(snoozeType.displayName),
+                ).text,
         ).apply { sender.execute(this) }
     }
 
