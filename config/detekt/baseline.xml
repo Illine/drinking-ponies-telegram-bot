@@ -55,11 +55,6 @@
     <ID>MaxLineLength:WaterStatisticServiceImpl.kt:WaterStatisticServiceImpl$"Water amount must be between ${WaterEntryConstants.MIN_ML} and ${WaterEntryConstants.MAX_ML} ml, got: $amountMl"</ID>
     <ID>MaxLineLength:WaterStatisticServiceTest.kt:WaterStatisticServiceTest$"manualRecordEvent(): saves statistic with source=MANUAL, eventType=YES and converts consumedAt to UTC LocalDateTime"</ID>
     <ID>MayBeConstant:ClockHelperTest.kt:ClockHelperTest$val DEFAULT_TIME = "2025-01-01T12:00:00Z"</ID>
-    <ID>MayBeConstant:TelegramMessageConstants.kt:TelegramMessageConstants$val NOTIFICATION_ANSWER_CANCEL_MESSAGE = "Милый зайчик, пожалуйста, напейся в следующий раз!"</ID>
-    <ID>MayBeConstant:TelegramMessageConstants.kt:TelegramMessageConstants$val NOTIFICATION_ANSWER_YES_MESSAGE = "Ты - солнышко! Так держать!"</ID>
-    <ID>MayBeConstant:TelegramMessageConstants.kt:TelegramMessageConstants$val NOTIFICATION_QUESTION_MESSAGE = "Водица выпита?"</ID>
-    <ID>MayBeConstant:TelegramMessageConstants.kt:TelegramMessageConstants$val NOTIFICATION_SNOOZE_MENU_MESSAGE = "Выбери, на сколько хочешь отложить уведомление"</ID>
-    <ID>MayBeConstant:TelegramMessageConstants.kt:TelegramMessageConstants$val NOTIFICATION_WATER_AMOUNT_MENU_MESSAGE = "Сколько водицы выпито?"</ID>
     <ID>MayBeConstant:TelegramWebAppDataHelper.kt:TelegramWebAppDataHelper$private val ALGORITHM_HASH_KEY = "WebAppData"</ID>
     <ID>MayBeConstant:TelegramWebAppDataHelper.kt:TelegramWebAppDataHelper$private val ALGORITHM_NAME = "HmacSHA256"</ID>
     <ID>MayBeConstant:TelegramWebAppDataHelper.kt:TelegramWebAppDataHelper$val AUTH_DATE_FIELD_NAME = "auth_date"</ID>

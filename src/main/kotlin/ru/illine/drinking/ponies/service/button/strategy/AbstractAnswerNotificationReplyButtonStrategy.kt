@@ -4,14 +4,17 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.illine.drinking.ponies.model.base.AnswerNotificationType
+import ru.illine.drinking.ponies.model.dto.message.NotificationQuestionEditedContext
 import ru.illine.drinking.ponies.service.button.ReplyButtonStrategy
+import ru.illine.drinking.ponies.service.message.MessageProvider
 import ru.illine.drinking.ponies.service.telegram.MessageEditorService
-import ru.illine.drinking.ponies.util.telegram.TelegramMessageConstants
+import ru.illine.drinking.ponies.util.message.MessageSpec
 import java.util.Objects
 
 abstract class AbstractAnswerNotificationReplyButtonStrategy<T>(
     private val messageSender: TelegramClient,
     private val messageEditorService: MessageEditorService,
+    protected val messageProvider: MessageProvider,
 ) : ReplyButtonStrategy {
     override fun reply(callbackQuery: CallbackQuery) {
         editNotification(callbackQuery)
@@ -29,7 +32,11 @@ abstract class AbstractAnswerNotificationReplyButtonStrategy<T>(
 
     protected fun editNotification(callbackQuery: CallbackQuery) {
         messageEditorService.editReplyMarkup(
-            TelegramMessageConstants.NOTIFICATION_QUESTION_EDITED_MESSAGE_PATTERN.format(getAnswerType().displayName),
+            messageProvider
+                .getMessage(
+                    MessageSpec.NotificationQuestionEdited,
+                    NotificationQuestionEditedContext(getAnswerType().displayName),
+                ).text,
             callbackQuery.message.chatId,
             callbackQuery.message.messageId,
             true,

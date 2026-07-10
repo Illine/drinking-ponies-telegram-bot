@@ -8,6 +8,11 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import ru.illine.drinking.ponies.exception.MessageTemplateException
+import ru.illine.drinking.ponies.model.dto.message.DefaultSettingsContext
+import ru.illine.drinking.ponies.model.dto.message.GreetingContext
+import ru.illine.drinking.ponies.model.dto.message.NoContext
+import ru.illine.drinking.ponies.model.dto.message.NotificationQuestionEditedContext
+import ru.illine.drinking.ponies.model.dto.message.NotificationSuspendContext
 import ru.illine.drinking.ponies.service.message.impl.LocalMessageProvider
 import ru.illine.drinking.ponies.test.generator.DtoGenerator
 import ru.illine.drinking.ponies.test.tag.UnitTest
@@ -349,5 +354,92 @@ class LocalMessageProviderTest {
             assertTrue(text.isNotBlank(), "blank text for ctx=$c")
             assertFalse(unfilled.containsMatchIn(text), "unfilled placeholder for ctx=$c: $text")
         }
+    }
+
+    @Test
+    @DisplayName("getMessage(): NotificationAnswerYes returns the static confirmation phrase")
+    fun `notification answer yes static phrase`() {
+        val text = provider.getMessage(MessageSpec.NotificationAnswerYes, NoContext).text
+
+        assertEquals("Ты - солнышко! Так держать!", text)
+    }
+
+    @Test
+    @DisplayName("getMessage(): NotificationAnswerCancel returns the static cancel phrase")
+    fun `notification answer cancel static phrase`() {
+        val text = provider.getMessage(MessageSpec.NotificationAnswerCancel, NoContext).text
+
+        assertEquals("Милый зайчик, пожалуйста, напейся в следующий раз!", text)
+    }
+
+    @Test
+    @DisplayName("getMessage(): NotificationWaterAmountMenu returns the static menu prompt")
+    fun `notification water amount menu static phrase`() {
+        val text = provider.getMessage(MessageSpec.NotificationWaterAmountMenu, NoContext).text
+
+        assertEquals("Сколько водицы выпито?", text)
+    }
+
+    @Test
+    @DisplayName("getMessage(): NotificationSnoozeMenu returns the static menu prompt")
+    fun `notification snooze menu static phrase`() {
+        val text = provider.getMessage(MessageSpec.NotificationSnoozeMenu, NoContext).text
+
+        assertEquals("Выбери, на сколько хочешь отложить уведомление", text)
+    }
+
+    @Test
+    @DisplayName("getMessage(): NotificationQuestionEdited substitutes the answer display name")
+    fun `notification question edited substitutes answer`() {
+        val text =
+            provider
+                .getMessage(
+                    MessageSpec.NotificationQuestionEdited,
+                    NotificationQuestionEditedContext("Выпил"),
+                ).text
+
+        assertEquals("Водица выпита?\nБыло выбрано: *Выпил*", text)
+    }
+
+    @Test
+    @DisplayName("getMessage(): NotificationSuspend substitutes the duration display name")
+    fun `notification suspend substitutes duration`() {
+        val text =
+            provider
+                .getMessage(
+                    MessageSpec.NotificationSuspend,
+                    NotificationSuspendContext("10 минут"),
+                ).text
+
+        assertEquals(
+            "Котик, твое уведомление отложено!\nЧерез 10 минут я тебя снова побеспокою, жди!",
+            text,
+        )
+    }
+
+    @Test
+    @DisplayName("getMessage(): Greeting substitutes the user name")
+    fun `greeting substitutes user name`() {
+        val text = provider.getMessage(MessageSpec.Greeting, GreetingContext("Женя")).text
+
+        assertEquals(
+            "Здравствуй, Женя!\n" +
+                "Я бот Пьющие Поняшки. Я полностью понимающий и знаю, что всем нужно пить!",
+            text,
+        )
+    }
+
+    @Test
+    @DisplayName("getMessage(): DefaultSettings substitutes the interval display name")
+    fun `default settings substitutes interval`() {
+        val text = provider.getMessage(MessageSpec.DefaultSettings, DefaultSettingsContext("каждый час")).text
+
+        assertEquals(
+            "Установлены настройки по-умолчанию:\n" +
+                "Периодичность уведомлений: каждый час\n" +
+                "Часовой пояс: Москва\n" +
+                "Время тихого режима: с 23:00 до 11:00",
+            text,
+        )
     }
 }

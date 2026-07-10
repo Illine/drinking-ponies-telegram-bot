@@ -9,12 +9,15 @@ import ru.illine.drinking.ponies.config.property.TelegramBotProperties
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
 import ru.illine.drinking.ponies.model.base.AnswerNotificationType
 import ru.illine.drinking.ponies.model.dto.internal.NotificationSettingDto
+import ru.illine.drinking.ponies.model.dto.message.NoContext
+import ru.illine.drinking.ponies.model.dto.message.NotificationSuspendContext
+import ru.illine.drinking.ponies.service.message.MessageProvider
 import ru.illine.drinking.ponies.service.notification.NotificationSenderService
 import ru.illine.drinking.ponies.service.statistic.WaterStatisticService
 import ru.illine.drinking.ponies.service.telegram.MessageEditorService
 import ru.illine.drinking.ponies.util.TimeHelper
+import ru.illine.drinking.ponies.util.message.MessageSpec
 import ru.illine.drinking.ponies.util.telegram.TelegramBotKeyboardHelper
-import ru.illine.drinking.ponies.util.telegram.TelegramMessageConstants
 import java.time.Clock
 import java.time.LocalDateTime
 
@@ -26,6 +29,7 @@ class NotificationSenderServiceImpl(
     private val telegramBotProperties: TelegramBotProperties,
     private val waterStatisticService: WaterStatisticService,
     private val clock: Clock,
+    private val messageProvider: MessageProvider,
 ) : NotificationSenderService {
     private val logger = LoggerFactory.getLogger("SERVICE")
 
@@ -50,7 +54,7 @@ class NotificationSenderServiceImpl(
                     it.telegramChat.previousNotificationMessageId =
                         SendMessage(
                             it.telegramChat.externalChatId.toString(),
-                            TelegramMessageConstants.NOTIFICATION_QUESTION_MESSAGE,
+                            messageProvider.getMessage(MessageSpec.NotificationQuestion, NoContext).text,
                         ).apply {
                             replyMarkup = TelegramBotKeyboardHelper.notifyButtons()
                         }.let { sender.execute(it) }
@@ -74,9 +78,11 @@ class NotificationSenderServiceImpl(
                 sendOrDisableOnBlock(it) {
                     SendMessage(
                         it.telegramChat.externalChatId.toString(),
-                        TelegramMessageConstants.NOTIFICATION_SUSPEND_MESSAGE.format(
-                            it.notificationInterval.displayName,
-                        ),
+                        messageProvider
+                            .getMessage(
+                                MessageSpec.NotificationSuspend,
+                                NotificationSuspendContext(it.notificationInterval.displayName),
+                            ).text,
                     ).apply {
                         disableNotification = true
                     }.apply { sender.execute(this) }

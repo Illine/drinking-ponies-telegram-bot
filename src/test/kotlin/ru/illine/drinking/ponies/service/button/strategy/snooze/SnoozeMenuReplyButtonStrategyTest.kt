@@ -18,9 +18,10 @@ import org.telegram.telegrambots.meta.api.objects.message.Message
 import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.illine.drinking.ponies.model.base.AnswerNotificationType
 import ru.illine.drinking.ponies.model.base.SnoozeNotificationType
+import ru.illine.drinking.ponies.service.message.impl.LocalMessageProvider
 import ru.illine.drinking.ponies.service.telegram.MessageEditorService
 import ru.illine.drinking.ponies.test.tag.UnitTest
-import ru.illine.drinking.ponies.util.telegram.TelegramMessageConstants
+import kotlin.random.Random
 
 @UnitTest
 @DisplayName("SnoozeMenuReplyButtonStrategy Unit Test")
@@ -36,7 +37,7 @@ class SnoozeMenuReplyButtonStrategyTest {
     fun setUp() {
         sender = mock<TelegramClient>()
         messageEditorService = mock<MessageEditorService>()
-        strategy = SnoozeMenuReplyButtonStrategy(sender, messageEditorService)
+        strategy = SnoozeMenuReplyButtonStrategy(sender, messageEditorService, LocalMessageProvider(Random(42)))
     }
 
     @Test
@@ -46,9 +47,7 @@ class SnoozeMenuReplyButtonStrategyTest {
 
         strategy.reply(callbackQuery)
 
-        val expectedText =
-            TelegramMessageConstants.NOTIFICATION_QUESTION_EDITED_MESSAGE_PATTERN
-                .format(AnswerNotificationType.SNOOZE.displayName)
+        val expectedText = "Водица выпита?\nБыло выбрано: *${AnswerNotificationType.SNOOZE.displayName}*"
         verify(messageEditorService).editReplyMarkup(expectedText, chatId, messageId, true)
     }
 
@@ -63,7 +62,7 @@ class SnoozeMenuReplyButtonStrategyTest {
         verify(sender).execute(captor.capture())
         val sent = captor.firstValue
         assertEquals(chatId.toString(), sent.chatId)
-        assertEquals(TelegramMessageConstants.NOTIFICATION_SNOOZE_MENU_MESSAGE, sent.text)
+        assertEquals("Выбери, на сколько хочешь отложить уведомление", sent.text)
         val buttons =
             (sent.replyMarkup as org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup)
                 .keyboard

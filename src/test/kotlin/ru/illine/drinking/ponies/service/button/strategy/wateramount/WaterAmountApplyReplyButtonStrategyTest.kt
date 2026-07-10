@@ -22,15 +22,16 @@ import org.telegram.telegrambots.meta.api.objects.message.Message
 import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.illine.drinking.ponies.model.base.AnswerNotificationType
 import ru.illine.drinking.ponies.model.base.WaterAmountType
+import ru.illine.drinking.ponies.service.message.impl.LocalMessageProvider
 import ru.illine.drinking.ponies.service.notification.NotificationSettingsService
 import ru.illine.drinking.ponies.service.statistic.WaterStatisticService
 import ru.illine.drinking.ponies.service.telegram.MessageEditorService
 import ru.illine.drinking.ponies.test.generator.DtoGenerator
 import ru.illine.drinking.ponies.test.tag.UnitTest
-import ru.illine.drinking.ponies.util.telegram.TelegramMessageConstants
 import java.time.Clock
 import java.time.LocalDateTime
 import java.time.ZoneOffset
+import kotlin.random.Random
 
 @UnitTest
 @DisplayName("WaterAmountApplyReplyButtonStrategy Unit Test")
@@ -60,6 +61,7 @@ class WaterAmountApplyReplyButtonStrategyTest {
                 waterStatisticService,
                 messageEditorService,
                 fixedClock,
+                LocalMessageProvider(Random(42)),
             )
     }
 
@@ -106,7 +108,7 @@ class WaterAmountApplyReplyButtonStrategyTest {
         verify(sender).execute(captor.capture())
         val sent = captor.firstValue
         assertEquals(chatId.toString(), sent.chatId)
-        assertEquals(TelegramMessageConstants.NOTIFICATION_ANSWER_YES_MESSAGE, sent.text)
+        assertEquals("Ты - солнышко! Так держать!", sent.text)
     }
 
     @ParameterizedTest
@@ -204,7 +206,7 @@ class WaterAmountApplyReplyButtonStrategyTest {
         verify(sender).execute(captor.capture())
         val sent = captor.firstValue
         assertEquals(chatId.toString(), sent.chatId)
-        assertEquals(TelegramMessageConstants.NOTIFICATION_ANSWER_YES_MESSAGE, sent.text)
+        assertEquals("Ты - солнышко! Так держать!", sent.text)
     }
 
     private fun buildCallbackQuery(queryData: String): CallbackQuery {

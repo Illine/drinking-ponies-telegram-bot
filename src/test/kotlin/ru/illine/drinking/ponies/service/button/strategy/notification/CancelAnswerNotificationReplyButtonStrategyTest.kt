@@ -20,15 +20,16 @@ import org.telegram.telegrambots.meta.api.objects.User
 import org.telegram.telegrambots.meta.api.objects.message.Message
 import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.illine.drinking.ponies.model.base.AnswerNotificationType
+import ru.illine.drinking.ponies.service.message.impl.LocalMessageProvider
 import ru.illine.drinking.ponies.service.notification.NotificationSettingsService
 import ru.illine.drinking.ponies.service.statistic.WaterStatisticService
 import ru.illine.drinking.ponies.service.telegram.MessageEditorService
 import ru.illine.drinking.ponies.test.generator.DtoGenerator
 import ru.illine.drinking.ponies.test.tag.UnitTest
-import ru.illine.drinking.ponies.util.telegram.TelegramMessageConstants
 import java.time.Clock
 import java.time.LocalDateTime
 import java.time.ZoneOffset
+import kotlin.random.Random
 
 @UnitTest
 @DisplayName("CancelAnswerNotificationReplyButtonStrategy Unit Test")
@@ -58,6 +59,7 @@ class CancelAnswerNotificationReplyButtonStrategyTest {
                 notificationSettingsService,
                 waterStatisticService,
                 fixedClock,
+                LocalMessageProvider(Random(42)),
             )
     }
 
@@ -71,9 +73,7 @@ class CancelAnswerNotificationReplyButtonStrategyTest {
 
         strategy.reply(buildCallbackQuery())
 
-        val expectedText =
-            TelegramMessageConstants.NOTIFICATION_QUESTION_EDITED_MESSAGE_PATTERN
-                .format(AnswerNotificationType.CANCEL.displayName)
+        val expectedText = "Водица выпита?\nБыло выбрано: *${AnswerNotificationType.CANCEL.displayName}*"
         verify(messageEditorService).editReplyMarkup(expectedText, chatId, messageId, true)
     }
 
@@ -117,7 +117,7 @@ class CancelAnswerNotificationReplyButtonStrategyTest {
         verify(sender).execute(captor.capture())
         val sent = captor.firstValue
         assertEquals(chatId.toString(), sent.chatId)
-        assertEquals(TelegramMessageConstants.NOTIFICATION_ANSWER_CANCEL_MESSAGE, sent.text)
+        assertEquals("Милый зайчик, пожалуйста, напейся в следующий раз!", sent.text)
     }
 
     @Test
@@ -159,7 +159,7 @@ class CancelAnswerNotificationReplyButtonStrategyTest {
         verify(sender).execute(captor.capture())
         val sent = captor.firstValue
         assertEquals(chatId.toString(), sent.chatId)
-        assertEquals(TelegramMessageConstants.NOTIFICATION_ANSWER_CANCEL_MESSAGE, sent.text)
+        assertEquals("Милый зайчик, пожалуйста, напейся в следующий раз!", sent.text)
     }
 
     private fun buildCallbackQuery(): CallbackQuery {
