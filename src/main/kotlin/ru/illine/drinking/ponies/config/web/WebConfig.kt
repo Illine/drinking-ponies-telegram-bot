@@ -11,6 +11,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
 import ru.illine.drinking.ponies.config.property.CorsProperties
 import ru.illine.drinking.ponies.config.web.interceptor.AdminAuthInterceptor
 import ru.illine.drinking.ponies.config.web.interceptor.TelegramAuthInterceptor
+import ru.illine.drinking.ponies.config.web.security.AuthErrorType
 
 @Configuration
 class WebConfig(
@@ -49,6 +50,7 @@ class WebConfig(
                         HttpMethod.DELETE.name(),
                     )
                 allowedHeaders = listOf("*")
+                exposedHeaders = listOf(AuthErrorType.HEADER_NAME)
                 allowCredentials = true
             }
         val source = UrlBasedCorsConfigurationSource()

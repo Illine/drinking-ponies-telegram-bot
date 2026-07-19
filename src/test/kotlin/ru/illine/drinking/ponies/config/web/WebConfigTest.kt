@@ -12,6 +12,7 @@ import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import org.springframework.http.RequestEntity
+import ru.illine.drinking.ponies.config.web.security.AuthErrorType
 import ru.illine.drinking.ponies.test.tag.SpringIntegrationTest
 import java.net.URI
 
@@ -40,6 +41,25 @@ class WebConfigTest
             assertEquals(HttpStatus.OK, response.statusCode)
             assertEquals(allowedOrigin, response.headers["Access-Control-Allow-Origin"]?.first())
             assertTrue(response.headers["Access-Control-Allow-Methods"]?.first()?.contains("PUT") == true)
+        }
+
+        @Test
+        @DisplayName("actual request from allowed origin - exposes X-Auth-Error-Code to the browser")
+        fun `cors actual request exposes auth error code header`() {
+            val headers =
+                HttpHeaders().apply {
+                    set("Origin", "http://localhost:3000")
+                }
+            val request = RequestEntity<Void>(headers, HttpMethod.GET, URI(url))
+
+            val response = restTemplate.exchange(request, Void::class.java)
+
+            assertEquals("http://localhost:3000", response.headers["Access-Control-Allow-Origin"]?.first())
+            assertTrue(
+                response.headers[HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS]
+                    ?.first()
+                    ?.contains(AuthErrorType.HEADER_NAME) == true,
+            )
         }
 
         @Test
