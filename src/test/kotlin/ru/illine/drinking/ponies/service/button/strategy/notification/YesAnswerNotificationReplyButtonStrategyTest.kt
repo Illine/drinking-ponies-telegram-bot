@@ -18,13 +18,12 @@ import org.mockito.kotlin.whenever
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.api.objects.message.Message
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup
 import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.illine.drinking.ponies.model.base.AnswerNotificationType
-import ru.illine.drinking.ponies.model.base.WaterAmountType
 import ru.illine.drinking.ponies.service.message.impl.LocalMessageProvider
 import ru.illine.drinking.ponies.service.telegram.MessageEditorService
 import ru.illine.drinking.ponies.test.tag.UnitTest
+import ru.illine.drinking.ponies.util.telegram.TelegramBotKeyboardHelper
 import kotlin.random.Random
 
 @UnitTest
@@ -65,8 +64,7 @@ class YesAnswerNotificationReplyButtonStrategyTest {
         val sent = captor.firstValue
         assertEquals(chatId.toString(), sent.chatId)
         assertEquals("Сколько водицы выпито?", sent.text)
-        val buttons = (sent.replyMarkup as InlineKeyboardMarkup).keyboard
-        assertEquals(WaterAmountType.entries.size, buttons.size)
+        assertEquals(TelegramBotKeyboardHelper.waterAmountButtons(), sent.replyMarkup)
     }
 
     @Test
