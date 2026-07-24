@@ -40,6 +40,7 @@
     <ID>MagicNumber:WaterAmountType.kt:WaterAmountType.ML_250$250</ID>
     <ID>MagicNumber:WaterAmountType.kt:WaterAmountType.ML_450$450</ID>
     <ID>MagicNumber:WaterAmountType.kt:WaterAmountType.ML_50$50</ID>
+    <ID>MagicNumber:WaterAmountType.kt:WaterAmountType.ML_750$750</ID>
     <ID>MaxLineLength:MeResponse.kt:MeResponse$// The JSON key is intentionally kept as "telegramUserId" - it is the public /users/me contract consumed by the MiniApp.</ID>
     <ID>MaxLineLength:MessageEditorServiceImpl.kt:MessageEditorServiceImpl$"A previous message can't be deleted! A chatId: [${this.chatId}], messageId: [${this.messageId}]"</ID>
     <ID>MaxLineLength:NotificationAccessServiceTest.kt:NotificationAccessServiceTest$"findNotificationSettingByExternalUserId(): throws NotificationSettingsNotFoundException when record not found by externalUserId"</ID>
