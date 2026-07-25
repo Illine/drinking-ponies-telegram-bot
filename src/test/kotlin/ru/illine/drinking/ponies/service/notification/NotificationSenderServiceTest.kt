@@ -7,10 +7,13 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.doThrow
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
+import org.mockito.kotlin.times
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
@@ -22,6 +25,7 @@ import ru.illine.drinking.ponies.config.property.TelegramBotProperties
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
 import ru.illine.drinking.ponies.model.base.AnswerNotificationType
 import ru.illine.drinking.ponies.model.base.IntervalNotificationType
+import ru.illine.drinking.ponies.model.dto.internal.NotificationSettingDto
 import ru.illine.drinking.ponies.service.message.impl.LocalMessageProvider
 import ru.illine.drinking.ponies.service.notification.impl.NotificationSenderServiceImpl
 import ru.illine.drinking.ponies.service.statistic.WaterStatisticService
@@ -132,6 +136,57 @@ class NotificationSenderServiceTest {
     }
 
     @Test
+    @DisplayName("sendNotifications(): 400 error - skips user without disabling notifications")
+    fun `sendNotifications on 400 chat not found`() {
+        val dto = DtoGenerator.generateNotificationDto(externalUserId = externalUserId, externalChatId = chatId)
+        val exception = mock<TelegramApiRequestException>()
+        whenever(exception.errorCode).thenReturn(400)
+        doThrow(exception).whenever(sender).execute(any<SendMessage>())
+
+        service.sendNotifications(listOf(dto))
+
+        val captor = argumentCaptor<Collection<NotificationSettingDto>>()
+        verify(notificationAccessService, never()).updateNotificationsDisabled(any())
+        verify(notificationAccessService).updateNotificationSettings(captor.capture())
+        assertEquals(emptyList<NotificationSettingDto>(), captor.firstValue.toList())
+    }
+
+    @Test
+    @DisplayName("sendNotifications(): 400 error for one notification - the rest of the batch is still sent")
+    fun `sendNotifications on 400 keeps sending the rest of the batch`() {
+        val failingChatId = chatId + 1
+        val first = DtoGenerator.generateNotificationDto(externalUserId = externalUserId, externalChatId = chatId)
+        val failing =
+            DtoGenerator.generateNotificationDto(
+                externalUserId = externalUserId + 1,
+                externalChatId = failingChatId,
+            )
+        val last =
+            DtoGenerator.generateNotificationDto(
+                externalUserId = externalUserId + 2,
+                externalChatId = chatId + 2,
+            )
+        val exception = mock<TelegramApiRequestException>()
+        whenever(exception.errorCode).thenReturn(400)
+        val returnedMessage = mock<Message>()
+        whenever(returnedMessage.messageId).thenReturn(2)
+        doAnswer { invocation ->
+            if (invocation.getArgument<SendMessage>(0).chatId == failingChatId.toString()) {
+                throw exception
+            }
+            returnedMessage
+        }.whenever(sender).execute(any<SendMessage>())
+
+        service.sendNotifications(listOf(first, failing, last))
+
+        val captor = argumentCaptor<Collection<NotificationSettingDto>>()
+        verify(sender, times(3)).execute(any<SendMessage>())
+        verify(notificationAccessService, never()).updateNotificationsDisabled(any())
+        verify(notificationAccessService).updateNotificationSettings(captor.capture())
+        assertEquals(listOf(first, last), captor.firstValue.toList())
+    }
+
+    @Test
     @DisplayName("suspendNotifications(): empty collection - no interactions with sender or access service")
     fun `suspendNotifications with empty list does nothing`() {
         service.suspendNotifications(emptyList())
@@ -183,6 +238,22 @@ class NotificationSenderServiceTest {
 
         verify(notificationAccessService).updateNotificationsDisabled(externalUserId)
         verify(notificationAccessService).updateNotificationSettings(any())
+    }
+
+    @Test
+    @DisplayName("suspendNotifications(): 400 error - skips user without disabling notifications")
+    fun `suspendNotifications on 400 chat not found`() {
+        val dto = DtoGenerator.generateNotificationDto(externalUserId = externalUserId, externalChatId = chatId)
+        val exception = mock<TelegramApiRequestException>()
+        whenever(exception.errorCode).thenReturn(400)
+        doThrow(exception).whenever(sender).execute(any<SendMessage>())
+
+        service.suspendNotifications(listOf(dto))
+
+        val captor = argumentCaptor<Collection<NotificationSettingDto>>()
+        verify(notificationAccessService, never()).updateNotificationsDisabled(any())
+        verify(notificationAccessService).updateNotificationSettings(captor.capture())
+        assertEquals(emptyList<NotificationSettingDto>(), captor.firstValue.toList())
     }
 
     @Test
