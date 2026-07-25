@@ -58,7 +58,8 @@ class NotificationSenderServiceImpl(
                             messageProvider.getMessage(MessageSpec.NotificationQuestion, NoContext).text,
                         ).apply {
                             replyMarkup = TelegramBotKeyboardHelper.notifyButtons()
-                        }.let { sender.execute(it) }.messageId
+                        }.let { sender.execute(it) }
+                            .messageId
                 }
             }
 
