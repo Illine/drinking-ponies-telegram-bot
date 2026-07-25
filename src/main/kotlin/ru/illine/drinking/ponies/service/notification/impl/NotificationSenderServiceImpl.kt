@@ -1,6 +1,7 @@
 package ru.illine.drinking.ponies.service.notification.impl
 
 import org.slf4j.LoggerFactory
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.exceptions.TelegramApiRequestException
@@ -43,7 +44,7 @@ class NotificationSenderServiceImpl(
 
         val sent =
             notifications.filter {
-                sendOrDisableOnBlock(it) {
+                trySend(it) {
                     ++it.notificationAttempts
                     it.timeOfLastNotification =
                         TimeHelper.nextNotificationTimeByNow(
@@ -57,8 +58,7 @@ class NotificationSenderServiceImpl(
                             messageProvider.getMessage(MessageSpec.NotificationQuestion, NoContext).text,
                         ).apply {
                             replyMarkup = TelegramBotKeyboardHelper.notifyButtons()
-                        }.let { sender.execute(it) }
-                            .messageId
+                        }.let { sender.execute(it) }.messageId
                 }
             }
 
@@ -75,7 +75,7 @@ class NotificationSenderServiceImpl(
 
         val sent =
             notifications.filter {
-                sendOrDisableOnBlock(it) {
+                trySend(it) {
                     SendMessage(
                         it.telegramChat.externalChatId.toString(),
                         messageProvider
@@ -100,7 +100,7 @@ class NotificationSenderServiceImpl(
         )
     }
 
-    private fun sendOrDisableOnBlock(
+    private fun trySend(
         notification: NotificationSettingDto,
         send: () -> Unit,
     ): Boolean =
@@ -108,12 +108,15 @@ class NotificationSenderServiceImpl(
             send()
             true
         } catch (e: TelegramApiRequestException) {
-            if (e.errorCode == 403) {
-                logger.warn(
+            if (e.errorCode == HttpStatus.FORBIDDEN.value()) {
+                logger.info(
                     "User (externalUserId: [{}]) blocked the bot, disabling notifications",
                     notification.telegramUser.externalUserId,
                 )
                 notificationAccessService.updateNotificationsDisabled(notification.telegramUser.externalUserId)
+                false
+            } else if (e.errorCode == HttpStatus.BAD_REQUEST.value()) {
+                logger.info("Bad request: [{}]", e.message)
                 false
             } else {
                 throw e

@@ -18,7 +18,6 @@
     <ID>MagicNumber:IntervalNotificationType.kt:IntervalNotificationType.THREE_HOURS$180</ID>
     <ID>MagicNumber:IntervalNotificationType.kt:IntervalNotificationType.TWO_HOURS$120</ID>
     <ID>MagicNumber:NotificationController.kt:NotificationController$300</ID>
-    <ID>MagicNumber:NotificationSenderServiceImpl.kt:NotificationSenderServiceImpl$403</ID>
     <ID>MagicNumber:NotificationSettingDto.kt:NotificationSettingDto.Companion$11</ID>
     <ID>MagicNumber:NotificationSettingDto.kt:NotificationSettingDto.Companion$23</ID>
     <ID>MagicNumber:PluralizationHelper.kt:PluralizationHelper$10</ID>
