@@ -18,13 +18,13 @@ import org.mockito.kotlin.whenever
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.api.objects.message.Message
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup
 import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.illine.drinking.ponies.model.base.AnswerNotificationType
-import ru.illine.drinking.ponies.model.base.WaterAmountType
+import ru.illine.drinking.ponies.service.message.impl.LocalMessageProvider
 import ru.illine.drinking.ponies.service.telegram.MessageEditorService
 import ru.illine.drinking.ponies.test.tag.UnitTest
-import ru.illine.drinking.ponies.util.telegram.TelegramMessageConstants
+import ru.illine.drinking.ponies.util.telegram.TelegramBotKeyboardHelper
+import kotlin.random.Random
 
 @UnitTest
 @DisplayName("YesAnswerNotificationReplyButtonStrategy Unit Test")
@@ -40,7 +40,8 @@ class YesAnswerNotificationReplyButtonStrategyTest {
     fun setUp() {
         sender = mock<TelegramClient>()
         messageEditorService = mock<MessageEditorService>()
-        strategy = YesAnswerNotificationReplyButtonStrategy(sender, messageEditorService)
+        strategy =
+            YesAnswerNotificationReplyButtonStrategy(sender, messageEditorService, LocalMessageProvider(Random(42)))
     }
 
     @Test
@@ -48,9 +49,7 @@ class YesAnswerNotificationReplyButtonStrategyTest {
     fun `reply edits original message`() {
         strategy.reply(buildCallbackQuery())
 
-        val expectedText =
-            TelegramMessageConstants.NOTIFICATION_QUESTION_EDITED_MESSAGE_PATTERN
-                .format(AnswerNotificationType.YES.displayName)
+        val expectedText = "Водица выпита?\nБыло выбрано: *${AnswerNotificationType.YES.displayName}*"
         verify(messageEditorService).editReplyMarkup(expectedText, chatId, messageId, true)
     }
 
@@ -64,9 +63,8 @@ class YesAnswerNotificationReplyButtonStrategyTest {
         verify(sender).execute(captor.capture())
         val sent = captor.firstValue
         assertEquals(chatId.toString(), sent.chatId)
-        assertEquals(TelegramMessageConstants.NOTIFICATION_WATER_AMOUNT_MENU_MESSAGE, sent.text)
-        val buttons = (sent.replyMarkup as InlineKeyboardMarkup).keyboard
-        assertEquals(WaterAmountType.entries.size, buttons.size)
+        assertEquals("Сколько водицы выпито?", sent.text)
+        assertEquals(TelegramBotKeyboardHelper.waterAmountButtons(), sent.replyMarkup)
     }
 
     @Test

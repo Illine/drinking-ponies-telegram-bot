@@ -22,6 +22,7 @@ import ru.illine.drinking.ponies.config.property.TelegramBotProperties
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
 import ru.illine.drinking.ponies.model.base.AnswerNotificationType
 import ru.illine.drinking.ponies.model.base.IntervalNotificationType
+import ru.illine.drinking.ponies.service.message.impl.LocalMessageProvider
 import ru.illine.drinking.ponies.service.notification.impl.NotificationSenderServiceImpl
 import ru.illine.drinking.ponies.service.statistic.WaterStatisticService
 import ru.illine.drinking.ponies.service.telegram.MessageEditorService
@@ -31,6 +32,7 @@ import java.time.Clock
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneOffset
+import kotlin.random.Random
 
 @UnitTest
 @DisplayName("NotificationSenderService Unit Test")
@@ -71,6 +73,7 @@ class NotificationSenderServiceTest {
                 botProperties,
                 waterStatisticService,
                 clock,
+                LocalMessageProvider(Random(42)),
             )
     }
 

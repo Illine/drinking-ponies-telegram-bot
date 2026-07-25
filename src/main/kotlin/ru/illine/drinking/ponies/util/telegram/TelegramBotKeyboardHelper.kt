@@ -10,6 +10,8 @@ import ru.illine.drinking.ponies.model.base.WaterAmountType
 import java.util.UUID
 
 object TelegramBotKeyboardHelper {
+    private const val WATER_AMOUNT_BUTTONS_PER_ROW = 3
+
     fun snoozeTimeButtons(): ReplyKeyboard =
         buildInlineKeyboard(
             SnoozeNotificationType.entries,
@@ -22,6 +24,7 @@ object TelegramBotKeyboardHelper {
             WaterAmountType.entries,
             WaterAmountType::displayName,
             WaterAmountType::queryData,
+            buttonsPerRow = WATER_AMOUNT_BUTTONS_PER_ROW,
         )
 
     fun notifyButtons(): ReplyKeyboard =
@@ -29,30 +32,25 @@ object TelegramBotKeyboardHelper {
             AnswerNotificationType.entries,
             AnswerNotificationType::displayName,
             AnswerNotificationType::queryData,
-            singleRow = true,
+            buttonsPerRow = AnswerNotificationType.entries.size,
         )
 
     private fun <T> buildInlineKeyboard(
         entries: List<T>,
         displayName: (T) -> String,
         queryData: (T) -> UUID,
-        singleRow: Boolean = false,
+        buttonsPerRow: Int = 1,
     ): ReplyKeyboard {
-        val buttons =
-            entries.map {
-                InlineKeyboardButton
-                    .builder()
-                    .text(displayName(it))
-                    .callbackData(queryData(it).toString())
-                    .build()
-            }
-
         val keyboard =
-            if (singleRow) {
-                listOf(InlineKeyboardRow(buttons))
-            } else {
-                buttons.map { InlineKeyboardRow(it) }
-            }
+            entries
+                .map {
+                    InlineKeyboardButton
+                        .builder()
+                        .text(displayName(it))
+                        .callbackData(queryData(it).toString())
+                        .build()
+                }.chunked(buttonsPerRow)
+                .map { InlineKeyboardRow(it) }
 
         return InlineKeyboardMarkup
             .builder()

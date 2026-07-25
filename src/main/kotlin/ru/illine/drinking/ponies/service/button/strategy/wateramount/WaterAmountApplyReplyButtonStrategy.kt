@@ -7,11 +7,13 @@ import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.illine.drinking.ponies.model.base.AnswerNotificationType
 import ru.illine.drinking.ponies.model.base.WaterAmountType
+import ru.illine.drinking.ponies.model.dto.message.NoContext
 import ru.illine.drinking.ponies.service.button.ReplyButtonStrategy
+import ru.illine.drinking.ponies.service.message.MessageProvider
 import ru.illine.drinking.ponies.service.notification.NotificationSettingsService
 import ru.illine.drinking.ponies.service.statistic.WaterStatisticService
 import ru.illine.drinking.ponies.service.telegram.MessageEditorService
-import ru.illine.drinking.ponies.util.telegram.TelegramMessageConstants
+import ru.illine.drinking.ponies.util.message.MessageSpec
 import java.time.Clock
 import java.time.LocalDateTime
 
@@ -22,6 +24,7 @@ class WaterAmountApplyReplyButtonStrategy(
     private val waterStatisticService: WaterStatisticService,
     private val messageEditorService: MessageEditorService,
     private val clock: Clock,
+    private val messageProvider: MessageProvider,
 ) : ReplyButtonStrategy {
     private val logger = LoggerFactory.getLogger("STRATEGY")
 
@@ -68,7 +71,7 @@ class WaterAmountApplyReplyButtonStrategy(
 
         SendMessage(
             chatId.toString(),
-            TelegramMessageConstants.NOTIFICATION_ANSWER_YES_MESSAGE,
+            messageProvider.getMessage(MessageSpec.NotificationAnswerYes, NoContext).text,
         ).apply { sender.execute(this) }
     }
 

@@ -9,21 +9,25 @@ import ru.illine.drinking.ponies.dao.access.NotificationAccessService
 import ru.illine.drinking.ponies.model.dto.internal.NotificationSettingDto
 import ru.illine.drinking.ponies.model.dto.internal.TelegramChatDto
 import ru.illine.drinking.ponies.model.dto.internal.TelegramUserDto
+import ru.illine.drinking.ponies.model.dto.message.DefaultSettingsContext
+import ru.illine.drinking.ponies.model.dto.message.GreetingContext
+import ru.illine.drinking.ponies.service.message.MessageProvider
 import ru.illine.drinking.ponies.service.notification.NotificationService
 import ru.illine.drinking.ponies.util.FunctionHelper.check
-import ru.illine.drinking.ponies.util.telegram.TelegramMessageConstants
+import ru.illine.drinking.ponies.util.message.MessageSpec
 
 @Service
 class NotificationServiceImpl(
     private val sender: TelegramClient,
     private val notificationAccessService: NotificationAccessService,
+    private val messageProvider: MessageProvider,
 ) : NotificationService {
     private val logger = LoggerFactory.getLogger("SERVICE")
 
     override fun start(messageContext: MessageContext) {
         SendMessage(
             messageContext.chatId().toString(),
-            TelegramMessageConstants.START_GREETING_MESSAGE.format(messageContext.user().userName),
+            messageProvider.getMessage(MessageSpec.Greeting, GreetingContext(messageContext.user().userName)).text,
         ).apply { sender.execute(this) }
 
         val externalUserId = messageContext.user().id
@@ -41,7 +45,11 @@ class NotificationServiceImpl(
 
         SendMessage(
             messageContext.chatId().toString(),
-            TelegramMessageConstants.START_DEFAULT_SETTINGS_MESSAGE.format(setting.notificationInterval.displayName),
+            messageProvider
+                .getMessage(
+                    MessageSpec.DefaultSettings,
+                    DefaultSettingsContext(setting.notificationInterval.displayName),
+                ).text,
         ).apply { sender.execute(this) }
     }
 

@@ -14,6 +14,7 @@ import ru.illine.drinking.ponies.model.base.WaterAmountType
 import ru.illine.drinking.ponies.service.button.impl.ReplyButtonFactoryImpl
 import ru.illine.drinking.ponies.service.button.strategy.snooze.SnoozeApplyReplyButtonStrategy
 import ru.illine.drinking.ponies.service.button.strategy.wateramount.WaterAmountApplyReplyButtonStrategy
+import ru.illine.drinking.ponies.service.message.MessageProvider
 import ru.illine.drinking.ponies.service.notification.NotificationSettingsService
 import ru.illine.drinking.ponies.service.statistic.WaterStatisticService
 import ru.illine.drinking.ponies.service.telegram.MessageEditorService
@@ -34,6 +35,7 @@ class ReplyButtonFactoryTest {
                 mock<WaterStatisticService>(),
                 mock<MessageEditorService>(),
                 Clock.systemUTC(),
+                mock<MessageProvider>(),
             )
         val waterAmountStrategy =
             WaterAmountApplyReplyButtonStrategy(
@@ -42,6 +44,7 @@ class ReplyButtonFactoryTest {
                 mock<WaterStatisticService>(),
                 mock<MessageEditorService>(),
                 Clock.systemUTC(),
+                mock<MessageProvider>(),
             )
         factory = ReplyButtonFactoryImpl(listOf(snoozeStrategy, waterAmountStrategy))
     }

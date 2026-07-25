@@ -15,9 +15,11 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.User
 import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
+import ru.illine.drinking.ponies.service.message.impl.LocalMessageProvider
 import ru.illine.drinking.ponies.service.notification.impl.NotificationServiceImpl
 import ru.illine.drinking.ponies.test.generator.DtoGenerator
 import ru.illine.drinking.ponies.test.tag.UnitTest
+import kotlin.random.Random
 
 @UnitTest
 @DisplayName("NotificationService Unit Test")
@@ -37,6 +39,7 @@ class NotificationServiceTest {
             NotificationServiceImpl(
                 sender,
                 notificationAccessService,
+                LocalMessageProvider(Random(42)),
             )
     }
 

@@ -22,15 +22,16 @@ import org.telegram.telegrambots.meta.api.objects.message.Message
 import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.illine.drinking.ponies.model.base.AnswerNotificationType
 import ru.illine.drinking.ponies.model.base.SnoozeNotificationType
+import ru.illine.drinking.ponies.service.message.impl.LocalMessageProvider
 import ru.illine.drinking.ponies.service.notification.NotificationSettingsService
 import ru.illine.drinking.ponies.service.statistic.WaterStatisticService
 import ru.illine.drinking.ponies.service.telegram.MessageEditorService
 import ru.illine.drinking.ponies.test.generator.DtoGenerator
 import ru.illine.drinking.ponies.test.tag.UnitTest
-import ru.illine.drinking.ponies.util.telegram.TelegramMessageConstants
 import java.time.Clock
 import java.time.LocalDateTime
 import java.time.ZoneOffset
+import kotlin.random.Random
 
 @UnitTest
 @DisplayName("SnoozeApplyReplyButtonStrategy Unit Test")
@@ -60,6 +61,7 @@ class SnoozeApplyReplyButtonStrategyTest {
                 waterStatisticService,
                 messageEditorService,
                 fixedClock,
+                LocalMessageProvider(Random(42)),
             )
     }
 
@@ -116,7 +118,7 @@ class SnoozeApplyReplyButtonStrategyTest {
         val sent = captor.firstValue
         assertEquals(chatId.toString(), sent.chatId)
         assertEquals(
-            TelegramMessageConstants.NOTIFICATION_SUSPEND_MESSAGE.format(snoozeType.displayName),
+            "Котик, твое уведомление отложено!\nЧерез ${snoozeType.displayName} я тебя снова побеспокою, жди!",
             sent.text,
         )
     }
@@ -194,7 +196,10 @@ class SnoozeApplyReplyButtonStrategyTest {
         verify(sender).execute(captor.capture())
         val sent = captor.firstValue
         assertEquals(chatId.toString(), sent.chatId)
-        assertEquals(TelegramMessageConstants.NOTIFICATION_SUSPEND_MESSAGE.format(snoozeType.displayName), sent.text)
+        assertEquals(
+            "Котик, твое уведомление отложено!\nЧерез ${snoozeType.displayName} я тебя снова побеспокою, жди!",
+            sent.text,
+        )
     }
 
     private fun buildCallbackQuery(queryData: String): CallbackQuery {
