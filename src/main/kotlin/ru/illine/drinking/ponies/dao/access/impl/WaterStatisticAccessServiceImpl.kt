@@ -11,6 +11,8 @@ import ru.illine.drinking.ponies.dao.repository.TelegramUserRepository
 import ru.illine.drinking.ponies.dao.repository.WaterStatisticRepository
 import ru.illine.drinking.ponies.mapper.TelegramUserMapper
 import ru.illine.drinking.ponies.mapper.WaterStatisticMapper
+import ru.illine.drinking.ponies.model.base.AnswerNotificationType
+import ru.illine.drinking.ponies.model.base.WaterEntrySourceType
 import ru.illine.drinking.ponies.model.dto.internal.WaterStatisticDto
 import java.time.LocalDateTime
 
@@ -33,6 +35,34 @@ class WaterStatisticAccessServiceImpl(
         return waterStatisticRepository
             .findByUserAndEventTimeBetween(externalUserId, startInclusive, endExclusive)
             .map { WaterStatisticMapper.toDto(it, TelegramUserMapper.toDto(it.telegramUser)) }
+    }
+
+    @Transactional(readOnly = true)
+    override fun findByUserAndTypesAndEventTimeBetween(
+        externalUserId: Long,
+        sources: Collection<WaterEntrySourceType>,
+        eventTypes: Collection<AnswerNotificationType>,
+        startInclusive: LocalDateTime,
+        endExclusive: LocalDateTime,
+    ): List<WaterStatisticDto> {
+        logger.debug(
+            "Finding [$sources] water statistics for externalUserId [$externalUserId] " +
+                "between [$startInclusive] and [$endExclusive]",
+        )
+        return waterStatisticRepository
+            .findByUserAndTypesAndEventTimeBetween(externalUserId, sources, eventTypes, startInclusive, endExclusive)
+            .map { WaterStatisticMapper.toDto(it, TelegramUserMapper.toDto(it.telegramUser)) }
+    }
+
+    @Transactional(readOnly = true)
+    override fun findByIdAndUser(
+        id: Long,
+        externalUserId: Long,
+    ): WaterStatisticDto? {
+        logger.debug("Finding a water statistic [$id] for externalUserId [$externalUserId]")
+        return waterStatisticRepository
+            .findByIdAndUser(id, externalUserId)
+            ?.let { WaterStatisticMapper.toDto(it, TelegramUserMapper.toDto(it.telegramUser)) }
     }
 
     @Transactional(readOnly = true)
