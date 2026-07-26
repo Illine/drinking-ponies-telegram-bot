@@ -2,4 +2,4 @@ package ru.illine.drinking.ponies.exception
 
 class NotificationSettingsNotFoundException(
     message: String,
-) : RuntimeException(message)
+) : NotFoundException("notification settings not found", message)

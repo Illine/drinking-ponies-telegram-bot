@@ -10,10 +10,12 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.function.ThrowingSupplier
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.context.jdbc.SqlConfig
 import ru.illine.drinking.ponies.model.base.AnswerNotificationType
 import ru.illine.drinking.ponies.model.base.WaterAmountType
+import ru.illine.drinking.ponies.model.base.WaterEntrySourceType
 import ru.illine.drinking.ponies.test.generator.DtoGenerator
 import ru.illine.drinking.ponies.test.tag.SpringIntegrationTest
 import java.time.LocalDateTime
@@ -34,6 +36,7 @@ class WaterStatisticAccessServiceTest
     @Autowired
     constructor(
         private val accessService: WaterStatisticAccessService,
+        private val jdbcTemplate: JdbcTemplate,
     ) {
         @Test
         @DisplayName("save(): returns a saved record with id")
@@ -52,6 +55,44 @@ class WaterStatisticAccessServiceTest
             assertEquals(DEFAULT_EXTERNAL_USER_ID, actual.telegramUser.externalUserId)
             assertEquals(AnswerNotificationType.YES, actual.eventType)
             assertEquals(expectedWaterAmount, actual.waterAmountMl)
+        }
+
+        @Test
+        @DisplayName("save(): updates the stored row in place when the record already has an id")
+        fun `successful save updates an existing record`() {
+            val stored =
+                accessService.save(
+                    DtoGenerator.generateWaterStatisticDto(
+                        externalUserId = DEFAULT_EXTERNAL_USER_ID,
+                        eventType = AnswerNotificationType.YES,
+                        waterAmountMl = WaterAmountType.ML_250.amountMl,
+                    ),
+                )
+
+            val actual =
+                assertDoesNotThrow(
+                    ThrowingSupplier {
+                        accessService.save(stored.copy(eventType = AnswerNotificationType.CANCEL, waterAmountMl = 0))
+                    },
+                )
+
+            // The returned DTO alone cannot tell an update from an insert - a second row would silently double
+            // the drunk volume on every edit of the journal - so the table itself is read back.
+            val rows =
+                jdbcTemplate.queryForList(
+                    """
+                    select ws.id, ws.event_type, ws.water_amount_ml
+                    from water_statistics ws
+                    join telegram_users u on u.id = ws.user_id
+                    where u.external_user_id = ?
+                    """.trimIndent(),
+                    DEFAULT_EXTERNAL_USER_ID,
+                )
+            assertEquals(1, rows.size)
+            assertEquals(stored.id, (rows.single()["id"] as Number).toLong())
+            assertEquals(AnswerNotificationType.CANCEL.name, rows.single()["event_type"])
+            assertEquals(0, rows.single()["water_amount_ml"])
+            assertEquals(stored.id, actual.id)
         }
 
         @Test
@@ -306,6 +347,154 @@ class WaterStatisticAccessServiceTest
         }
 
         @Test
+        @DisplayName("findByUserAndTypesAndEventTimeBetween(): keeps only the requested sources and event types")
+        fun `successful findByUserAndTypesAndEventTimeBetween filters by source and event type`() {
+            val baseTime = LocalDateTime.of(2025, 6, 15, 10, 0)
+            val matching =
+                accessService.save(
+                    DtoGenerator.generateWaterStatisticDto(
+                        externalUserId = DEFAULT_EXTERNAL_USER_ID,
+                        eventTime = baseTime,
+                        eventType = AnswerNotificationType.YES,
+                        source = WaterEntrySourceType.NOTIFICATION,
+                    ),
+                )
+            // Right source, wrong event type.
+            accessService.save(
+                DtoGenerator.generateWaterStatisticDto(
+                    externalUserId = DEFAULT_EXTERNAL_USER_ID,
+                    eventTime = baseTime.plusMinutes(1),
+                    eventType = AnswerNotificationType.SNOOZE,
+                    source = WaterEntrySourceType.NOTIFICATION,
+                ),
+            )
+            // Right event type, wrong source.
+            accessService.save(
+                DtoGenerator.generateWaterStatisticDto(
+                    externalUserId = DEFAULT_EXTERNAL_USER_ID,
+                    eventTime = baseTime.plusMinutes(2),
+                    eventType = AnswerNotificationType.YES,
+                    source = WaterEntrySourceType.MANUAL,
+                ),
+            )
+
+            val actual =
+                accessService.findByUserAndTypesAndEventTimeBetween(
+                    DEFAULT_EXTERNAL_USER_ID,
+                    setOf(WaterEntrySourceType.NOTIFICATION),
+                    setOf(AnswerNotificationType.YES, AnswerNotificationType.CANCEL),
+                    baseTime,
+                    baseTime.plusHours(1),
+                )
+
+            assertEquals(1, actual.size)
+            assertEquals(matching.id, actual[0].id)
+            assertEquals(AnswerNotificationType.YES, actual[0].eventType)
+            assertEquals(WaterEntrySourceType.NOTIFICATION, actual[0].source)
+        }
+
+        @Test
+        @DisplayName("findByUserAndTypesAndEventTimeBetween(): returns only records of the requested user")
+        fun `successful findByUserAndTypesAndEventTimeBetween filters by user`() {
+            val time = LocalDateTime.of(2025, 6, 15, 10, 0)
+            val mine =
+                accessService.save(
+                    DtoGenerator.generateWaterStatisticDto(
+                        externalUserId = DEFAULT_EXTERNAL_USER_ID,
+                        eventTime = time,
+                        eventType = AnswerNotificationType.YES,
+                        source = WaterEntrySourceType.NOTIFICATION,
+                    ),
+                )
+            // Same window, same source and event type, another owner: the journal must never show it.
+            accessService.save(
+                DtoGenerator.generateWaterStatisticDto(
+                    externalUserId = SECOND_EXTERNAL_USER_ID,
+                    eventTime = time,
+                    eventType = AnswerNotificationType.YES,
+                    source = WaterEntrySourceType.NOTIFICATION,
+                ),
+            )
+
+            val actual =
+                accessService.findByUserAndTypesAndEventTimeBetween(
+                    DEFAULT_EXTERNAL_USER_ID,
+                    setOf(WaterEntrySourceType.NOTIFICATION),
+                    setOf(AnswerNotificationType.YES, AnswerNotificationType.CANCEL),
+                    time.minusMinutes(1),
+                    time.plusMinutes(1),
+                )
+
+            assertEquals(1, actual.size)
+            assertEquals(mine.id, actual[0].id)
+            assertEquals(DEFAULT_EXTERNAL_USER_ID, actual[0].telegramUser.externalUserId)
+        }
+
+        @Test
+        @DisplayName("findByIdAndUser(): returns the record of the requesting user, together with its owner")
+        fun `findByIdAndUser returns own record`() {
+            val eventTime = LocalDateTime.of(2025, 6, 15, 10, 0)
+            // The saved DTO deliberately carries another timezone: the owner of the record comes from the
+            // database, and the notification journal measures its edit window by exactly that value.
+            val saved =
+                accessService.save(
+                    DtoGenerator.generateWaterStatisticDto(
+                        externalUserId = THIRD_EXTERNAL_USER_ID,
+                        eventTime = eventTime,
+                        waterAmountMl = WaterAmountType.ML_150.amountMl,
+                        userTimeZone = "UTC",
+                    ),
+                )
+
+            val actual = accessService.findByIdAndUser(saved.id!!, THIRD_EXTERNAL_USER_ID)
+
+            assertNotNull(actual)
+            assertEquals(saved.id, actual!!.id)
+            assertEquals(eventTime, actual.eventTime)
+            assertEquals(WaterAmountType.ML_150.amountMl, actual.waterAmountMl)
+            assertEquals(THIRD_EXTERNAL_USER_ID, actual.telegramUser.externalUserId)
+            assertEquals(THIRD_USER_TIME_ZONE, actual.telegramUser.userTimeZone)
+        }
+
+        @Test
+        @DisplayName("findByIdAndUser(): returns null for a record of another user")
+        fun `findByIdAndUser hides a foreign record`() {
+            val saved =
+                accessService.save(
+                    DtoGenerator.generateWaterStatisticDto(externalUserId = DEFAULT_EXTERNAL_USER_ID),
+                )
+
+            val actual = accessService.findByIdAndUser(saved.id!!, SECOND_EXTERNAL_USER_ID)
+
+            assertNull(actual)
+        }
+
+        @Test
+        @DisplayName("findByIdAndUser(): returns null for an unknown id")
+        fun `findByIdAndUser unknown id`() {
+            val actual = accessService.findByIdAndUser(NOT_EXISTED_ENTRY_ID, DEFAULT_EXTERNAL_USER_ID)
+
+            assertNull(actual)
+        }
+
+        @Test
+        @DisplayName("findByIdAndUser(): returns null once the owner is deleted")
+        fun `findByIdAndUser hides a record of a deleted user`() {
+            val saved =
+                accessService.save(
+                    DtoGenerator.generateWaterStatisticDto(externalUserId = SECOND_EXTERNAL_USER_ID),
+                )
+            assertNotNull(accessService.findByIdAndUser(saved.id!!, SECOND_EXTERNAL_USER_ID))
+
+            jdbcTemplate.update(
+                "update telegram_users set deleted = true where external_user_id = ?",
+                SECOND_EXTERNAL_USER_ID,
+            )
+
+            assertNull(accessService.findByIdAndUser(saved.id!!, SECOND_EXTERNAL_USER_ID))
+        }
+
+        @Test
         @DisplayName("findEarliestEventTimeByUser(): returns the minimum eventTime for the user")
         fun `findEarliestEventTimeByUser returns min`() {
             val earliest = LocalDateTime.of(2025, 1, 5, 9, 30)
@@ -375,6 +564,11 @@ class WaterStatisticAccessServiceTest
         companion object {
             private const val DEFAULT_EXTERNAL_USER_ID = 1L
             private const val SECOND_EXTERNAL_USER_ID = 2L
+            private const val THIRD_EXTERNAL_USER_ID = 3L
+
+            // The timezone the seed script stores for the third user.
+            private const val THIRD_USER_TIME_ZONE = "Asia/Kolkata"
             private const val NOT_EXISTED_USER_ID = 0L
+            private const val NOT_EXISTED_ENTRY_ID = 0L
         }
     }

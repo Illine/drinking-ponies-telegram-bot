@@ -2,6 +2,7 @@ package ru.illine.drinking.ponies.test.generator
 
 import ru.illine.drinking.ponies.model.base.AnswerNotificationType
 import ru.illine.drinking.ponies.model.base.IntervalNotificationType
+import ru.illine.drinking.ponies.model.base.NotificationHistoryStatus
 import ru.illine.drinking.ponies.model.base.WaterEntrySourceType
 import ru.illine.drinking.ponies.model.dto.BestDayDto
 import ru.illine.drinking.ponies.model.dto.SettingDto
@@ -13,6 +14,7 @@ import ru.illine.drinking.ponies.model.dto.internal.TelegramChatDto
 import ru.illine.drinking.ponies.model.dto.internal.WaterStatisticDto
 import ru.illine.drinking.ponies.model.dto.message.InsightStatsContext
 import ru.illine.drinking.ponies.model.dto.request.WaterEntryRequest
+import ru.illine.drinking.ponies.model.dto.response.NotificationHistoryEvent
 import ru.illine.drinking.ponies.model.dto.response.PauseStateResponse
 import java.time.DayOfWeek
 import java.time.Instant
@@ -62,6 +64,7 @@ class DtoGenerator {
         }
 
         fun generateWaterStatisticDto(
+            id: Long? = null,
             externalUserId: Long = Random.nextLong(),
             eventTime: LocalDateTime = LocalDateTime.now(),
             eventType: AnswerNotificationType = AnswerNotificationType.YES,
@@ -75,6 +78,7 @@ class DtoGenerator {
                     userTimeZone = userTimeZone,
                 )
             return WaterStatisticDto(
+                id = id,
                 telegramUser = user,
                 eventTime = eventTime,
                 eventType = eventType,
@@ -185,6 +189,23 @@ class DtoGenerator {
                 currentStreakDays = currentStreakDays,
                 insightText = insightText,
                 firstEntryAt = firstEntryAt,
+            )
+
+        fun generateNotificationHistoryEvent(
+            id: Long = 1042L,
+            eventTime: Instant = Instant.parse("2026-05-10T09:30:00Z"),
+            status: NotificationHistoryStatus = NotificationHistoryStatus.CONFIRMED,
+            amountMl: Int = 300,
+            source: WaterEntrySourceType = WaterEntrySourceType.NOTIFICATION,
+            editable: Boolean = true,
+        ): NotificationHistoryEvent =
+            NotificationHistoryEvent(
+                id = id,
+                eventTime = eventTime,
+                status = status,
+                amountMl = amountMl,
+                source = source,
+                editable = editable,
             )
 
         fun generatePauseStateResponse(

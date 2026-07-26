@@ -3,6 +3,8 @@ package ru.illine.drinking.ponies.dao.repository
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
+import ru.illine.drinking.ponies.model.base.AnswerNotificationType
+import ru.illine.drinking.ponies.model.base.WaterEntrySourceType
 import ru.illine.drinking.ponies.model.entity.WaterStatisticEntity
 import java.time.LocalDateTime
 
@@ -22,6 +24,39 @@ interface WaterStatisticRepository : JpaRepository<WaterStatisticEntity, Long> {
         @Param("startInclusive") startInclusive: LocalDateTime,
         @Param("endExclusive") endExclusive: LocalDateTime,
     ): List<WaterStatisticEntity>
+
+    @Query(
+        value = """
+            select ws from WaterStatisticEntity ws
+            join fetch ws.telegramUser u
+            where u.externalUserId = :externalUserId
+              and ws.source in :sources
+              and ws.eventType in :eventTypes
+              and ws.eventTime >= :startInclusive
+              and ws.eventTime < :endExclusive
+            order by ws.eventTime asc
+        """,
+    )
+    fun findByUserAndTypesAndEventTimeBetween(
+        @Param("externalUserId") externalUserId: Long,
+        @Param("sources") sources: Collection<WaterEntrySourceType>,
+        @Param("eventTypes") eventTypes: Collection<AnswerNotificationType>,
+        @Param("startInclusive") startInclusive: LocalDateTime,
+        @Param("endExclusive") endExclusive: LocalDateTime,
+    ): List<WaterStatisticEntity>
+
+    @Query(
+        value = """
+            select ws from WaterStatisticEntity ws
+            join fetch ws.telegramUser u
+            where ws.id = :id
+              and u.externalUserId = :externalUserId
+        """,
+    )
+    fun findByIdAndUser(
+        @Param("id") id: Long,
+        @Param("externalUserId") externalUserId: Long,
+    ): WaterStatisticEntity?
 
     @Query(
         value = """
