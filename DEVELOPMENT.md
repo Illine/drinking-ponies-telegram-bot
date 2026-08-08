@@ -26,7 +26,7 @@ CI runs `gradle check -x test` as the `lint` job, which the `test` job depends o
 
 ### Configuration cache
 
-[`gradle.properties`](gradle.properties) turns the configuration cache on for every build. Locally that pays off on every repeated command. In CI it currently does not: a cache entry is keyed by the set of requested tasks, and only the `lint` job pushes the cache - `test` and `build-jar` request different tasks and run with `policy: pull`, so they recompute their configuration each pipeline. Build logic must therefore read the environment and files through `providers` - a plain `System.getenv` or `File(...)` is invisible to the cache, and the build silently replays stale values. When a plugin upgrade breaks the cache the build fails rather than degrades; `--no-configuration-cache` unblocks a single invocation.
+[`gradle.properties`](gradle.properties) turns the configuration cache on for every build. Locally that pays off on every repeated command. In CI only the `lint` job benefits: an entry is keyed by the set of requested tasks, and `lint` is the one job that pushes the cache, so its entry survives to the next pipeline. `test` and `build-jar` request different tasks and run with `policy: pull` - whatever they write is thrown away with the container, so they pass `--no-configuration-cache` and skip writing it at all. Build logic must therefore read the environment and files through `providers` - a plain `System.getenv` or `File(...)` is invisible to the cache, and the build silently replays stale values. When a plugin upgrade breaks the cache the build fails rather than degrades; `--no-configuration-cache` unblocks a single invocation.
 
 ### detekt baseline
 
