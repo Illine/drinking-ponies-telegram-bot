@@ -26,9 +26,9 @@ class CacheConfigTest {
 
         val manager = CacheConfig(properties).cacheManager()
 
-        assertTrue(manager.cacheNames.contains(CacheConfig.USER_IS_ADMIN))
+        assertTrue(manager.cacheNames.contains(CacheConfig.USER_ACCESS_FLAGS))
         assertTrue(manager.cacheNames.contains(CacheConfig.WATER_FIRST_ENTRY))
-        assertNotNull(manager.getCache(CacheConfig.USER_IS_ADMIN))
+        assertNotNull(manager.getCache(CacheConfig.USER_ACCESS_FLAGS))
         assertNotNull(manager.getCache(CacheConfig.WATER_FIRST_ENTRY))
         assertEquals(2, manager.cacheNames.size)
     }
@@ -60,7 +60,7 @@ class CacheConfigTest {
                 default = CacheEntry(ttl = Duration.ofMinutes(7), maximumSize = 50),
                 overrides =
                     mapOf(
-                        CacheConfig.USER_IS_ADMIN to
+                        CacheConfig.USER_ACCESS_FLAGS to
                             CacheEntryOverride(
                                 ttl = Duration.ofMinutes(15),
                                 maximumSize = 200,
@@ -70,7 +70,7 @@ class CacheConfigTest {
 
         val manager = CacheConfig(properties).cacheManager()
 
-        assertNotNull(manager.getCache(CacheConfig.USER_IS_ADMIN))
+        assertNotNull(manager.getCache(CacheConfig.USER_ACCESS_FLAGS))
         assertNotNull(manager.getCache(CacheConfig.WATER_FIRST_ENTRY))
         assertEquals(2, manager.cacheNames.size)
     }
@@ -83,7 +83,7 @@ class CacheConfigTest {
                 default = CacheEntry(ttl = Duration.ofMinutes(7), maximumSize = 50),
                 overrides =
                     mapOf(
-                        CacheConfig.USER_IS_ADMIN to
+                        CacheConfig.USER_ACCESS_FLAGS to
                             CacheEntryOverride(
                                 ttl = null,
                                 maximumSize = null,
@@ -93,7 +93,7 @@ class CacheConfigTest {
 
         val manager = CacheConfig(properties).cacheManager()
 
-        assertNotNull(manager.getCache(CacheConfig.USER_IS_ADMIN))
+        assertNotNull(manager.getCache(CacheConfig.USER_ACCESS_FLAGS))
         assertNotNull(manager.getCache(CacheConfig.WATER_FIRST_ENTRY))
         assertEquals(2, manager.cacheNames.size)
     }

@@ -56,6 +56,31 @@ class NotificationAccessServiceTest
         }
 
         @Test
+        @DisplayName("findAllNotificationSettings(): survives a soft-deleted user instead of failing the whole batch")
+        fun `findAllNotificationSettings survives a soft deleted user`() {
+            // Reading the user through the lazy association threw EntityNotFoundException here:
+            // @SQLRestriction hides the row even from a load by id, and the mailing died for
+            // everyone on every tick, not just for the deleted user.
+            val settings = assertDoesNotThrow(ThrowingSupplier { accessService.findAllNotificationSettings() })
+
+            assertFalse(settings.isEmpty(), "The users who are still around have to survive the deleted one")
+        }
+
+        @Test
+        @DisplayName("findAllNotificationSettings(): leaves the soft-deleted user out and keeps the live ones")
+        fun `findAllNotificationSettings returns the live users only`() {
+            val externalUserIds = accessService.findAllNotificationSettings().map { it.telegramUser.externalUserId }
+
+            // Only the live user who still has notifications on: the deleted one is dropped by the
+            // join, the disabled one by @SQLRestriction(enabled = true) on the settings themselves.
+            assertEquals(listOf(DEFAULT_EXTERNAL_USER_ID), externalUserIds)
+            assertFalse(
+                externalUserIds.contains(DELETED_EXTERNAL_USER_ID),
+                "A deleted user must not be reminded to drink, even with notifications enabled",
+            )
+        }
+
+        @Test
         @DisplayName("findNotificationSettingByExternalUserId(): returns a found record")
         fun `successful findNotificationSettingByExternalUserId`() {
             assertDoesNotThrow { accessService.findNotificationSettingByExternalUserId(DEFAULT_EXTERNAL_USER_ID) }
@@ -629,6 +654,7 @@ class NotificationAccessServiceTest
             private const val NOT_EXISTED_USER_ID = 0L
             private const val DEFAULT_EXTERNAL_USER_ID = 1L
             private const val DISABLED_EXTERNAL_USER_ID = 2L
+            private const val DELETED_EXTERNAL_USER_ID = 3L
             private const val WITHOUT_NOTIFICATION_ATTEMPTS = 0
         }
     }

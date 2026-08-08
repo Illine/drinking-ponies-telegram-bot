@@ -6,9 +6,11 @@ import org.telegram.telegrambots.abilitybots.api.objects.MessageContext
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
+import ru.illine.drinking.ponies.dao.access.TelegramUserAccessService
 import ru.illine.drinking.ponies.model.dto.internal.NotificationSettingDto
 import ru.illine.drinking.ponies.model.dto.internal.TelegramChatDto
 import ru.illine.drinking.ponies.model.dto.internal.TelegramUserDto
+import ru.illine.drinking.ponies.model.dto.internal.TelegramUserProfile
 import ru.illine.drinking.ponies.model.dto.message.DefaultSettingsContext
 import ru.illine.drinking.ponies.model.dto.message.GreetingContext
 import ru.illine.drinking.ponies.service.message.MessageProvider
@@ -20,6 +22,7 @@ import ru.illine.drinking.ponies.util.message.MessageSpec
 class NotificationServiceImpl(
     private val sender: TelegramClient,
     private val notificationAccessService: NotificationAccessService,
+    private val telegramUserAccessService: TelegramUserAccessService,
     private val messageProvider: MessageProvider,
 ) : NotificationService {
     private val logger = LoggerFactory.getLogger("SERVICE")
@@ -32,6 +35,11 @@ class NotificationServiceImpl(
 
         val externalUserId = messageContext.user().id
         val chatId = messageContext.chatId()
+        val profile = with(messageContext.user()) { TelegramUserProfile(firstName, lastName, userName) }
+
+        // An admin may have soft deleted this user: derived queries do not see such a row, so
+        // without bringing it back /start would treat them as new and hit the unique index.
+        telegramUserAccessService.restoreIfDeleted(externalUserId)
 
         val setting =
             notificationAccessService.existsByExternalUserId(externalUserId).check(
@@ -39,7 +47,7 @@ class NotificationServiceImpl(
                     notificationAccessService.findNotificationSettingByExternalUserId(externalUserId)
                 },
                 ifFalse = {
-                    createNewUser(externalUserId, chatId)
+                    createNewUser(externalUserId, chatId, profile)
                 },
             )
 
@@ -56,8 +64,9 @@ class NotificationServiceImpl(
     private fun createNewUser(
         externalUserId: Long,
         chatId: Long,
+        profile: TelegramUserProfile,
     ): NotificationSettingDto {
-        val user = TelegramUserDto.create(externalUserId)
+        val user = TelegramUserDto.create(externalUserId, profile)
         val chat = TelegramChatDto.create(chatId, user)
         val setting = NotificationSettingDto.create(user, chat)
 

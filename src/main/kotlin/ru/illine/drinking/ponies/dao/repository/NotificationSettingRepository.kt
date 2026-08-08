@@ -14,9 +14,21 @@ interface NotificationSettingRepository : JpaRepository<NotificationSettingEntit
     @Suppress("ktlint:standard:function-naming")
     fun findByTelegramUser_ExternalUserId(externalUserId: Long): NotificationSettingEntity?
 
+    // The join is what keeps a soft-deleted user out of the mailing: @SQLRestriction(deleted = false)
+    // applies to the joined entity, so their settings drop out of the result entirely. Reading the
+    // association lazily instead would blow up on the hidden row and take the whole batch down.
     @Query(
         value = """
-            select ns.enabled 
+            select ns from NotificationSettingEntity ns
+            join fetch ns.telegramUser
+            join fetch ns.telegramChat
+        """,
+    )
+    fun findAllWithUserAndChat(): List<NotificationSettingEntity>
+
+    @Query(
+        value = """
+            select ns.enabled
             from notification_settings ns
             inner join telegram_users u on ns.telegram_user_id = u.id
             where u.external_user_id = :externalUserId

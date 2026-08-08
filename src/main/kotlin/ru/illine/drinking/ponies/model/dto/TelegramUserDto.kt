@@ -20,8 +20,12 @@ data class TelegramUserDto(
     val isPremium: Boolean = false,
     @JsonProperty("allows_write_to_pm")
     val allowsWriteToPm: Boolean = false,
-    // Internal-only flag enriched by TelegramAuthInterceptor from DB.
+    // Internal-only flags enriched by TelegramAuthInterceptor from DB.
     // Never accept from incoming JSON (initData) and never expose in API responses.
     @JsonIgnore
     val isAdmin: Boolean = false,
+    @JsonIgnore
+    val isBanned: Boolean = false,
+    @JsonIgnore
+    val isActive: Boolean = false,
 )

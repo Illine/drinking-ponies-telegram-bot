@@ -13,7 +13,7 @@ import ru.illine.drinking.ponies.util.telegram.TelegramGeneralConstants
 
 @RestController
 @RequestMapping("/users")
-@Tag(name = "User", description = "Current user identity and profile")
+@Tag(name = "User", description = "Current user identity")
 class UserController {
     @GetMapping("/me")
     @Operation(summary = "Get current user identity")
@@ -24,5 +24,7 @@ class UserController {
         MeResponse(
             externalUserId = telegramUser.externalUserId,
             isAdmin = telegramUser.isAdmin,
+            isBanned = telegramUser.isBanned,
+            isActive = telegramUser.isActive,
         )
 }

@@ -9,6 +9,7 @@ import org.springframework.web.servlet.HandlerInterceptor
 import ru.illine.drinking.ponies.config.web.security.AuthErrorType
 import ru.illine.drinking.ponies.dao.access.TelegramUserAccessService
 import ru.illine.drinking.ponies.exception.InvalidAuthSignatureException
+import ru.illine.drinking.ponies.model.dto.internal.TelegramUserProfile
 import ru.illine.drinking.ponies.service.telegram.TelegramValidatorService
 import ru.illine.drinking.ponies.util.telegram.TelegramGeneralConstants
 
@@ -52,8 +53,21 @@ class TelegramAuthInterceptor(
 
         if (validSignature) {
             val telegramUser = telegramValidatorService.map(initData)
-            val isAdmin = telegramUserAccessService.findIsAdminByExternalUserId(telegramUser.externalUserId)
-            val enriched = telegramUser.copy(isAdmin = isAdmin)
+            val access =
+                telegramUserAccessService.resolveAccessFlags(
+                    telegramUser.externalUserId,
+                    TelegramUserProfile(
+                        firstName = telegramUser.firstName,
+                        lastName = telegramUser.lastName,
+                        username = telegramUser.username,
+                    ),
+                )
+            val enriched =
+                telegramUser.copy(
+                    isAdmin = access.isAdmin,
+                    isBanned = access.isBanned,
+                    isActive = !access.isDeleted,
+                )
             request.setAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE, enriched)
             return true
         }

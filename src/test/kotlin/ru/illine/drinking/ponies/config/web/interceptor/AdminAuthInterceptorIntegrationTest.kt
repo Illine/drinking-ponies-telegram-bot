@@ -64,7 +64,7 @@ class AdminAuthInterceptorIntegrationTest
 
         @BeforeEach
         fun setUp() {
-            cacheManager.getCache(CacheConfig.USER_IS_ADMIN)?.clear()
+            cacheManager.getCache(CacheConfig.USER_ACCESS_FLAGS)?.clear()
             whenever(telegramValidatorService.verifySignature(any())).thenReturn(true)
             whenever(telegramValidatorService.map(any())).thenReturn(telegramUser)
         }

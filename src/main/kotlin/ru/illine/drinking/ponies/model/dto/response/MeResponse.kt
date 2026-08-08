@@ -5,11 +5,18 @@ import io.swagger.v3.oas.annotations.media.Schema
 
 @Schema(description = "Current user identity")
 data class MeResponse(
-    // Kotlin field unified to externalUserId across the codebase (DPTB-140).
+    // Kotlin field unified to externalUserId across the codebase.
     // The JSON key is intentionally kept as "telegramUserId" - it is the public /users/me contract consumed by the MiniApp.
     @JsonProperty("telegramUserId")
     @Schema(description = "Telegram user id", example = "123456789")
     val externalUserId: Long,
     @Schema(description = "Whether the user has admin privileges", example = "false")
     val isAdmin: Boolean,
+    @Schema(description = "Whether the user has been banned", example = "false")
+    val isBanned: Boolean,
+    @Schema(
+        description = "Whether the account is active; false means it was deleted and a /start brings it back",
+        example = "true",
+    )
+    val isActive: Boolean,
 )

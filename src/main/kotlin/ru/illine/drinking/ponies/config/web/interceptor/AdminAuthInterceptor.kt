@@ -21,7 +21,9 @@ class AdminAuthInterceptor : HandlerInterceptor {
         handler: Any,
     ): Boolean {
         if (handler !is HandlerMethod) return true
-        handler.getMethodAnnotation(AdminOnly::class.java) ?: return true
+        handler.getMethodAnnotation(AdminOnly::class.java)
+            ?: handler.beanType.getAnnotation(AdminOnly::class.java)
+            ?: return true
 
         val telegramUser =
             request.getAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE)

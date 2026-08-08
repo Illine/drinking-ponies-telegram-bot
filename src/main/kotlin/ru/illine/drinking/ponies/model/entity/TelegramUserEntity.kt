@@ -17,6 +17,7 @@ import jakarta.persistence.Table
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
 import java.time.LocalDateTime
+import java.time.ZoneOffset
 
 @Entity
 @Table(
@@ -46,9 +47,17 @@ class TelegramUserEntity(
     var userTimeZone: String,
     @Column(name = "is_admin", nullable = false)
     var isAdmin: Boolean = false,
+    @Column(name = "is_banned", nullable = false)
+    var isBanned: Boolean = false,
+    @Column(name = "first_name")
+    var firstName: String? = null,
+    @Column(name = "last_name")
+    var lastName: String? = null,
+    @Column(name = "username")
+    var username: String? = null,
     @Column(name = "created", nullable = false, updatable = false)
     @JsonIgnore
-    var created: LocalDateTime = LocalDateTime.now(),
+    var created: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
     @Column(name = "deleted", nullable = false)
     var deleted: Boolean = false,
     @OneToMany(
