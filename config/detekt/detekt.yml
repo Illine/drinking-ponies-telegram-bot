@@ -646,12 +646,14 @@ style:
     forbiddenImports:
       - reason: 'JPA entities stay inside the dao layer, mappers turn them into internal DTOs'
         value: 'ru.illine.drinking.ponies.model.entity.*'
-  ForbiddenImport/responseOutsideWeb:
+  ForbiddenImport/httpTypesOutsideWeb:
     active: true
     excludes: ['**/controller/**', '**/mapper/**', '**/config/web/**', '**/test/generator/**']
     forbiddenImports:
       - reason: 'A service never returns an HTTP response type, the response is assembled in the controller'
         value: 'ru.illine.drinking.ponies.model.dto.response.*'
+      - reason: 'A request DTO is unpacked in the controller, services take named parameters or an internal DTO'
+        value: 'ru.illine.drinking.ponies.model.dto.request.*'
   ForbiddenMethodCall:
     active: false
     methods:
@@ -676,7 +678,7 @@ style:
     rules:
       - 'ForbiddenImport/repositoryOutsideDao'
       - 'ForbiddenImport/entityOutsideDao'
-      - 'ForbiddenImport/responseOutsideWeb'
+      - 'ForbiddenImport/httpTypesOutsideWeb'
   ForbiddenVoid:
     active: true
     ignoreOverridden: false

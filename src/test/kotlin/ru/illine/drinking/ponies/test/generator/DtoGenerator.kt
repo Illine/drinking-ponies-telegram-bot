@@ -12,10 +12,10 @@ import ru.illine.drinking.ponies.model.dto.internal.PauseStateDto
 import ru.illine.drinking.ponies.model.dto.internal.SettingDto
 import ru.illine.drinking.ponies.model.dto.internal.StatisticsDto
 import ru.illine.drinking.ponies.model.dto.internal.StatisticsPointDto
+import ru.illine.drinking.ponies.model.dto.internal.TelegramAuthUserDto
 import ru.illine.drinking.ponies.model.dto.internal.TelegramChatDto
 import ru.illine.drinking.ponies.model.dto.internal.TelegramUserProfile
 import ru.illine.drinking.ponies.model.dto.internal.WaterStatisticDto
-import ru.illine.drinking.ponies.model.dto.request.TelegramInitDataUser
 import ru.illine.drinking.ponies.model.dto.request.WaterEntryRequest
 import ru.illine.drinking.ponies.model.dto.response.NotificationHistoryEvent
 import java.time.DayOfWeek
@@ -136,8 +136,8 @@ class DtoGenerator {
             firstName: String? = "First Name",
             lastName: String? = null,
             username: String? = "username",
-        ): TelegramInitDataUser =
-            TelegramInitDataUser(
+        ): TelegramAuthUserDto =
+            TelegramAuthUserDto(
                 externalUserId = externalUserId,
                 firstName = firstName,
                 lastName = lastName,

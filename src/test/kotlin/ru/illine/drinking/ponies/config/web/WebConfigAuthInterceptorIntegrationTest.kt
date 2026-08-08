@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import ru.illine.drinking.ponies.config.web.WebConfigAuthInterceptorIntegrationTest.DefaultSecureTestConfig
 import ru.illine.drinking.ponies.config.web.security.AuthErrorType
-import ru.illine.drinking.ponies.model.dto.request.TelegramInitDataUser
+import ru.illine.drinking.ponies.model.dto.internal.TelegramAuthUserDto
 import ru.illine.drinking.ponies.service.telegram.TelegramValidatorService
 import ru.illine.drinking.ponies.test.tag.SpringIntegrationTest
 
@@ -52,7 +52,7 @@ class WebConfigAuthInterceptorIntegrationTest
         private lateinit var telegramValidatorService: TelegramValidatorService
 
         private val telegramUser =
-            TelegramInitDataUser(
+            TelegramAuthUserDto(
                 externalUserId = 1L,
                 firstName = "First Name",
                 lastName = null,

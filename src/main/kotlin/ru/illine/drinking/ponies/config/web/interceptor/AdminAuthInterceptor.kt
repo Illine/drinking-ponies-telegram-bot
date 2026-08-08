@@ -8,7 +8,7 @@ import org.springframework.web.method.HandlerMethod
 import org.springframework.web.servlet.HandlerInterceptor
 import ru.illine.drinking.ponies.config.web.security.AdminOnly
 import ru.illine.drinking.ponies.config.web.security.AuthErrorType
-import ru.illine.drinking.ponies.model.dto.request.TelegramInitDataUser
+import ru.illine.drinking.ponies.model.dto.internal.TelegramAuthUserDto
 import ru.illine.drinking.ponies.util.telegram.TelegramGeneralConstants
 
 @Component
@@ -27,7 +27,7 @@ class AdminAuthInterceptor : HandlerInterceptor {
 
         val telegramUser =
             request.getAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE)
-                as? TelegramInitDataUser ?: error("@AdminOnly used on endpoint without TelegramAuthInterceptor")
+                as? TelegramAuthUserDto ?: error("@AdminOnly used on endpoint without TelegramAuthInterceptor")
 
         if (telegramUser.isAdmin) {
             return true

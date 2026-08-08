@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestAttribute
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
-import ru.illine.drinking.ponies.model.dto.request.TelegramInitDataUser
+import ru.illine.drinking.ponies.model.dto.internal.TelegramAuthUserDto
 import ru.illine.drinking.ponies.model.dto.response.MeResponse
 import ru.illine.drinking.ponies.util.telegram.TelegramGeneralConstants
 
@@ -19,7 +19,7 @@ class UserController {
     @Operation(summary = "Get current user identity")
     fun getMe(
         @Parameter(hidden = true)
-        @RequestAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) telegramUser: TelegramInitDataUser,
+        @RequestAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) telegramUser: TelegramAuthUserDto,
     ): MeResponse =
         MeResponse(
             externalUserId = telegramUser.externalUserId,

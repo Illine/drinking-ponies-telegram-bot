@@ -124,9 +124,9 @@ build instead of waiting for a reviewer. It reads the source tree with
 the whole class runs in seconds.
 
 What it currently enforces: three packages under `model/dto` with an empty root,
-no serialization imports in `internal`, `@Schema` on every response DTO, the
-`*Response` and `*Request` suffixes reserved for their own packages, no test
-inside an `impl` package, and exactly one tag per test class.
+no serialization imports in `internal`, `@Schema` on every request and response
+DTO, the `*Response` and `*Request` suffixes reserved for their own packages, no
+test inside an `impl` package, and exactly one tag per test class.
 
 Two rules for working with it:
 

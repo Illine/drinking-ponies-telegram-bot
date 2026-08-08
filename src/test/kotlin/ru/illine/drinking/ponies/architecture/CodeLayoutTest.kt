@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
+import org.junit.jupiter.params.provider.ValueSource
 import ru.illine.drinking.ponies.test.tag.ArchitectureTest
 
 private const val DTO_PATH = "/model/dto/"
@@ -50,13 +51,14 @@ class CodeLayoutTest {
             }
     }
 
-    @Test
-    @DisplayName("every response DTO is documented with @Schema")
-    fun `response dtos are documented`() {
+    @ParameterizedTest
+    @ValueSource(strings = ["..model.dto.response..", "..model.dto.request.."])
+    @DisplayName("every wire DTO is documented with @Schema")
+    fun `wire dtos are documented`(wirePackage: String) {
         Konsist
             .scopeFromProduction()
             .classes()
-            .withPackage("..model.dto.response..")
+            .withPackage(wirePackage)
             .assertTrue { it.hasAnnotationWithName("Schema") }
     }
 

@@ -16,7 +16,7 @@ import org.mockito.kotlin.whenever
 import org.springframework.web.method.HandlerMethod
 import ru.illine.drinking.ponies.config.web.security.AdminOnly
 import ru.illine.drinking.ponies.config.web.security.AuthErrorType
-import ru.illine.drinking.ponies.model.dto.request.TelegramInitDataUser
+import ru.illine.drinking.ponies.model.dto.internal.TelegramAuthUserDto
 import ru.illine.drinking.ponies.test.tag.UnitTest
 import ru.illine.drinking.ponies.util.telegram.TelegramGeneralConstants
 
@@ -29,7 +29,7 @@ class AdminAuthInterceptorTest {
     private lateinit var interceptor: AdminAuthInterceptor
 
     private val adminUser =
-        TelegramInitDataUser(
+        TelegramAuthUserDto(
             externalUserId = 1L,
             firstName = "Admin",
             lastName = null,
@@ -38,7 +38,7 @@ class AdminAuthInterceptorTest {
         )
 
     private val nonAdminUser =
-        TelegramInitDataUser(
+        TelegramAuthUserDto(
             externalUserId = 2L,
             firstName = "User",
             lastName = null,

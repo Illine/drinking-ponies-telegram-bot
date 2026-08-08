@@ -23,9 +23,9 @@ import org.mockito.kotlin.whenever
 import ru.illine.drinking.ponies.config.web.security.AuthErrorType
 import ru.illine.drinking.ponies.dao.access.TelegramUserAccessService
 import ru.illine.drinking.ponies.exception.InvalidAuthSignatureException
+import ru.illine.drinking.ponies.model.dto.internal.TelegramAuthUserDto
 import ru.illine.drinking.ponies.model.dto.internal.TelegramUserProfile
 import ru.illine.drinking.ponies.model.dto.internal.UserAccessDto
-import ru.illine.drinking.ponies.model.dto.request.TelegramInitDataUser
 import ru.illine.drinking.ponies.service.telegram.TelegramValidatorService
 import ru.illine.drinking.ponies.test.tag.UnitTest
 import ru.illine.drinking.ponies.util.telegram.TelegramGeneralConstants
@@ -132,7 +132,7 @@ class TelegramAuthInterceptorTest {
     ) {
         val initData = "valid-init-data"
         val telegramUser =
-            TelegramInitDataUser(externalUserId = 1L, firstName = "Test", lastName = null, username = null)
+            TelegramAuthUserDto(externalUserId = 1L, firstName = "Test", lastName = null, username = null)
         whenever(request.method).thenReturn("POST")
         whenever(request.getHeader(headerName)).thenReturn(initData)
         whenever(validatorService.verifySignature(any())).thenReturn(true)
@@ -159,7 +159,7 @@ class TelegramAuthInterceptorTest {
     ) {
         val initData = "valid-init-data"
         val telegramUser =
-            TelegramInitDataUser(externalUserId = 1L, firstName = "Test", lastName = null, username = null)
+            TelegramAuthUserDto(externalUserId = 1L, firstName = "Test", lastName = null, username = null)
         whenever(request.method).thenReturn("POST")
         whenever(request.getHeader(headerName)).thenReturn(initData)
         whenever(validatorService.verifySignature(any())).thenReturn(true)
@@ -169,7 +169,7 @@ class TelegramAuthInterceptorTest {
 
         interceptor.preHandle(request, response, Any())
 
-        val captor = argumentCaptor<TelegramInitDataUser>()
+        val captor = argumentCaptor<TelegramAuthUserDto>()
         verify(request).setAttribute(eq(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE), captor.capture())
         assertEquals(expectedIsActive, captor.firstValue.isActive)
     }
@@ -179,7 +179,7 @@ class TelegramAuthInterceptorTest {
     fun `preHandle valid signature forwards initData profile`() {
         val initData = "valid-init-data"
         val telegramUser =
-            TelegramInitDataUser(
+            TelegramAuthUserDto(
                 externalUserId = 42L,
                 firstName = "Alisa",
                 lastName = "Petrova",

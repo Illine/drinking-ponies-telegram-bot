@@ -28,7 +28,7 @@ import ru.illine.drinking.ponies.config.cache.CacheConfig
 import ru.illine.drinking.ponies.config.web.interceptor.AdminAuthInterceptorIntegrationTest.AdminTestConfig
 import ru.illine.drinking.ponies.config.web.security.AdminOnly
 import ru.illine.drinking.ponies.config.web.security.AuthErrorType
-import ru.illine.drinking.ponies.model.dto.request.TelegramInitDataUser
+import ru.illine.drinking.ponies.model.dto.internal.TelegramAuthUserDto
 import ru.illine.drinking.ponies.service.telegram.TelegramValidatorService
 import ru.illine.drinking.ponies.test.tag.SpringIntegrationTest
 
@@ -55,7 +55,7 @@ class AdminAuthInterceptorIntegrationTest
         private lateinit var telegramValidatorService: TelegramValidatorService
 
         private val telegramUser =
-            TelegramInitDataUser(
+            TelegramAuthUserDto(
                 externalUserId = ADMIN_USER_ID,
                 firstName = "First Name",
                 lastName = null,

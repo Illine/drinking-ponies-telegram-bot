@@ -84,7 +84,9 @@ Exactly three packages under `model/dto`, no nesting, nothing in the root:
 | `response` | What the API returns | `@Schema` |
 | `internal` | Everything else: dao ↔ service ↔ controller | no serialization annotations at all |
 
-The question to ask is binary: **is the type visible outside over HTTP?** Yes - `request`/`response`. No - `internal`. There is no other place to put it.
+The question to ask is binary: **is the type part of our HTTP contract?** Yes - `request`/`response`. No - `internal`. There is no other place to put it.
+
+A schema owned by an external system is not our contract and stays out of `model/dto` entirely: it lives next to the code that parses it (`util/telegram/TelegramInitDataUser` beside `TelegramWebAppDataHelper`), keeps its serialization annotations there, and is converted into an `internal` DTO right away. Nothing beyond the parser sees the foreign shape.
 
 Naming: what an endpoint returns carries the `*Response` suffix and what it accepts carries `*Request`; both suffixes belong to their package and are used nowhere else. A shape nested inside a response has no suffix (`WaterEntry`, `ShortUserInfo`, `UserCounts`). Internal carriers end with `*Dto`, except message contexts, which end with `*Context`.
 
@@ -100,11 +102,11 @@ The rules above are not left to review attention - most of them fail the build.
 |---|---|
 | Repositories and projections stay inside `dao` | detekt `ForbiddenImport/repositoryOutsideDao` |
 | Entities stay inside `dao` and `mapper` | detekt `ForbiddenImport/entityOutsideDao` |
-| A service never sees a response type | detekt `ForbiddenImport/responseOutsideWeb` |
+| HTTP types (`request` and `response`) stay in the web layer | detekt `ForbiddenImport/httpTypesOutsideWeb` |
 | A boundary cannot be silenced with `@Suppress` | detekt `ForbiddenSuppress` |
 | Three packages under `model/dto`, empty root | `architecture/CodeLayoutTest` |
 | No serialization annotations in `internal` | `architecture/CodeLayoutTest` |
-| `@Schema` on every response DTO | `architecture/CodeLayoutTest` |
+| `@Schema` on every request and response DTO | `architecture/CodeLayoutTest` |
 | `*Response` and `*Request` suffixes reserved for their own packages | `architecture/CodeLayoutTest` |
 | Tests stay out of `impl` packages, each carries one tag | `architecture/CodeLayoutTest` |
 | `package` matches the directory | detekt `InvalidPackageDeclaration` |
@@ -115,9 +117,8 @@ Three packages cross a boundary by design and are excluded from the import rules
 (interceptors and the exception handler are part of the web layer despite the
 package they live in) and the test fixture factory `test/generator`.
 
-What stays on review: whether a mapper or a constructor fits a given shape,
-whether a request DTO is unpacked in the controller, and whether a comment earns
-its place. None of the three is expressible as a rule.
+What stays on review: whether a mapper or a constructor fits a given shape, and
+whether a comment earns its place. Neither is expressible as a rule.
 
 Adding a convention means adding its check - see
 [`TESTING.md`](TESTING.md#architecture-tests) for how, including the negative
