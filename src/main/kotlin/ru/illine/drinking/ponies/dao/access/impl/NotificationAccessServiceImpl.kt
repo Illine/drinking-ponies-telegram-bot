@@ -34,7 +34,7 @@ class NotificationAccessServiceImpl(
         logger.debug("Finding all notification setting records")
 
         return settingRepository
-            .findAll()
+            .findAllWithUserAndChat()
             .map {
                 val user = TelegramUserMapper.toDto(it.telegramUser)
                 val chat = TelegramChatMapper.toDto(it.telegramChat, user)
