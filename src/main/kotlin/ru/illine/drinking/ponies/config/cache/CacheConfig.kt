@@ -15,10 +15,10 @@ class CacheConfig(
     private val cacheProperties: CacheProperties,
 ) {
     companion object {
-        const val USER_IS_ADMIN = "user-is-admin"
+        const val USER_ACCESS_FLAGS = "user-access-flags"
         const val WATER_FIRST_ENTRY = "water-first-entry"
 
-        private val ALL_CACHES = listOf(USER_IS_ADMIN, WATER_FIRST_ENTRY)
+        private val ALL_CACHES = listOf(USER_ACCESS_FLAGS, WATER_FIRST_ENTRY)
     }
 
     // Wraps the underlying Caffeine manager so cache mutations (@CacheEvict, @CachePut) inside a

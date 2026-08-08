@@ -2,6 +2,7 @@ package ru.illine.drinking.ponies.config.web.interceptor
 
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
@@ -9,8 +10,11 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
+import org.junit.jupiter.params.provider.CsvSource
 import org.junit.jupiter.params.provider.MethodSource
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.eq
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
@@ -20,6 +24,8 @@ import ru.illine.drinking.ponies.config.web.security.AuthErrorType
 import ru.illine.drinking.ponies.dao.access.TelegramUserAccessService
 import ru.illine.drinking.ponies.exception.InvalidAuthSignatureException
 import ru.illine.drinking.ponies.model.dto.TelegramUserDto
+import ru.illine.drinking.ponies.model.dto.internal.TelegramUserProfile
+import ru.illine.drinking.ponies.model.dto.internal.UserAccessDto
 import ru.illine.drinking.ponies.service.telegram.TelegramValidatorService
 import ru.illine.drinking.ponies.test.tag.UnitTest
 import ru.illine.drinking.ponies.util.telegram.TelegramGeneralConstants
@@ -111,46 +117,95 @@ class TelegramAuthInterceptorTest {
         verifyNoInteractions(telegramUserAccessService)
     }
 
-    @Test
-    @DisplayName("preHandle(): valid signature - enriches isAdmin=true and sets telegramUser attribute")
-    fun `preHandle valid signature enriches isAdmin true`() {
+    @ParameterizedTest(name = "[{index}] isAdmin={0}, isBanned={1}, isDeleted={2}")
+    @CsvSource(
+        "true,  false, false",
+        "false, true,  false",
+        "false, false, true",
+        "true,  true,  true",
+    )
+    @DisplayName("preHandle(): valid signature - enriches the access flags and sets telegramUser attribute")
+    fun `preHandle valid signature enriches access flags`(
+        isAdmin: Boolean,
+        isBanned: Boolean,
+        isDeleted: Boolean,
+    ) {
         val initData = "valid-init-data"
         val telegramUser = TelegramUserDto(externalUserId = 1L, firstName = "Test", lastName = null, username = null)
         whenever(request.method).thenReturn("POST")
         whenever(request.getHeader(headerName)).thenReturn(initData)
         whenever(validatorService.verifySignature(any())).thenReturn(true)
         whenever(validatorService.map(initData)).thenReturn(telegramUser)
-        whenever(telegramUserAccessService.findIsAdminByExternalUserId(1L)).thenReturn(true)
+        whenever(telegramUserAccessService.resolveAccessFlags(any(), any()))
+            .thenReturn(UserAccessDto(isAdmin = isAdmin, isBanned = isBanned, isDeleted = isDeleted))
 
         val result = interceptor.preHandle(request, response, Any())
 
         assertTrue(result)
         verify(request).setAttribute(
             TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE,
-            telegramUser.copy(isAdmin = true),
+            // isActive is the opposite of the isDeleted the access service reports, and both
+            // rows of the matrix would fail if that negation were dropped.
+            telegramUser.copy(isAdmin = isAdmin, isBanned = isBanned, isActive = !isDeleted),
         )
         verifyNoMoreInteractions(response)
     }
 
-    @Test
-    @DisplayName("preHandle(): valid signature - enriches isAdmin=false when access service returns false")
-    fun `preHandle valid signature enriches isAdmin false`() {
+    @ParameterizedTest(name = "[{index}] isDeleted={0} - isActive={1}")
+    @CsvSource("true, false", "false, true")
+    @DisplayName("preHandle(): valid signature - a deleted account is reported as inactive, not the other way round")
+    fun `preHandle inverts isDeleted into isActive`(
+        isDeleted: Boolean,
+        expectedIsActive: Boolean,
+    ) {
+        // Spelled out on its own because the sign is easy to lose: the access service speaks in
+        // isDeleted, the request attribute speaks in isActive, and equality on the whole DTO
+        // makes for a poor failure message when only that one flag is wrong.
         val initData = "valid-init-data"
-        val telegramUser = TelegramUserDto(externalUserId = 2L, firstName = "Test", lastName = null, username = null)
+        val telegramUser = TelegramUserDto(externalUserId = 1L, firstName = "Test", lastName = null, username = null)
         whenever(request.method).thenReturn("POST")
         whenever(request.getHeader(headerName)).thenReturn(initData)
         whenever(validatorService.verifySignature(any())).thenReturn(true)
         whenever(validatorService.map(initData)).thenReturn(telegramUser)
-        whenever(telegramUserAccessService.findIsAdminByExternalUserId(2L)).thenReturn(false)
+        whenever(telegramUserAccessService.resolveAccessFlags(any(), any()))
+            .thenReturn(UserAccessDto(isDeleted = isDeleted))
 
-        val result = interceptor.preHandle(request, response, Any())
+        interceptor.preHandle(request, response, Any())
 
-        assertTrue(result)
-        verify(request).setAttribute(
-            TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE,
-            telegramUser.copy(isAdmin = false),
+        val captor = argumentCaptor<TelegramUserDto>()
+        verify(request).setAttribute(eq(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE), captor.capture())
+        assertEquals(expectedIsActive, captor.firstValue.isActive)
+    }
+
+    @Test
+    @DisplayName("preHandle(): valid signature - forwards the initData profile to the access service")
+    fun `preHandle valid signature forwards initData profile`() {
+        val initData = "valid-init-data"
+        val telegramUser =
+            TelegramUserDto(
+                externalUserId = 42L,
+                firstName = "Alisa",
+                lastName = "Petrova",
+                username = "alisaadmin",
+            )
+        whenever(request.method).thenReturn("POST")
+        whenever(request.getHeader(headerName)).thenReturn(initData)
+        whenever(validatorService.verifySignature(any())).thenReturn(true)
+        whenever(validatorService.map(initData)).thenReturn(telegramUser)
+        whenever(telegramUserAccessService.resolveAccessFlags(any(), any())).thenReturn(UserAccessDto())
+
+        interceptor.preHandle(request, response, Any())
+
+        verify(telegramUserAccessService).resolveAccessFlags(
+            eq(42L),
+            eq(
+                TelegramUserProfile(
+                    firstName = "Alisa",
+                    lastName = "Petrova",
+                    username = "alisaadmin",
+                ),
+            ),
         )
-        verifyNoMoreInteractions(response)
     }
 
     @Test
