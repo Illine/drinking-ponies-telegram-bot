@@ -117,16 +117,24 @@ mockito-kotlin.
 
 ## Architecture tests
 
-`architecture/CodeLayoutTest` turns the conventions from
-[`DEVELOPMENT.md`](DEVELOPMENT.md) into assertions, so a layout drift fails the
-build instead of waiting for a reviewer. It reads the source tree with
+The `architecture` package turns the conventions from
+[`DEVELOPMENT.md`](DEVELOPMENT.md) into assertions, so a drift fails the build
+instead of waiting for a reviewer. `CodeLayoutTest` reads the source tree with
 [Konsist](https://github.com/LemonAppDev/konsist) - no compilation, no context,
-the whole class runs in seconds.
+the whole class runs in seconds; `ToolingConsistencyTest` compares version pins
+that live in different files.
 
-What it currently enforces: three packages under `model/dto` with an empty root,
-no serialization imports in `internal`, `@Schema` on every request and response
-DTO, the `*Response` and `*Request` suffixes reserved for their own packages, no
-test inside an `impl` package, and exactly one tag per test class.
+What `CodeLayoutTest` enforces: three packages under `model/dto` with an empty
+root, no serialization imports in `internal`, `@Schema` on every request and
+response DTO, the `*Response` and `*Request` suffixes reserved for their own
+packages, `*Dto`/`*Context` suffixes for internal carriers, `@Konverter` mappers
+only in `mapper`, no test inside an `impl` package, and exactly one tag per test
+class.
+
+`ToolingConsistencyTest` checks that the Liquibase version in
+`gradle/libs.versions.toml` matches `ARG LIQUIBASE_VERSION` in
+`.ansible/Dockerfile` - the tests validate the changelog with one of them and the
+pipeline applies it with the other.
 
 Two rules for working with it:
 

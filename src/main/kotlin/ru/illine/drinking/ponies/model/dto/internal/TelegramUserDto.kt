@@ -18,7 +18,7 @@ data class TelegramUserDto(
     companion object {
         fun create(
             externalUserId: Long,
-            profile: TelegramUserProfile = TelegramUserProfile(),
+            profile: TelegramUserProfileDto = TelegramUserProfileDto(),
         ): TelegramUserDto =
             TelegramUserDto(
                 externalUserId = externalUserId,

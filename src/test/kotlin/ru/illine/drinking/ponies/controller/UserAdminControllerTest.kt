@@ -31,7 +31,7 @@ import org.springframework.test.context.jdbc.SqlConfig
 import ru.illine.drinking.ponies.config.cache.CacheConfig
 import ru.illine.drinking.ponies.config.web.security.AuthErrorType
 import ru.illine.drinking.ponies.dao.access.TelegramUserAccessService
-import ru.illine.drinking.ponies.model.dto.internal.TelegramUserProfile
+import ru.illine.drinking.ponies.model.dto.internal.TelegramUserProfileDto
 import ru.illine.drinking.ponies.model.dto.response.UserDetailsResponse
 import ru.illine.drinking.ponies.model.dto.response.UsersResponse
 import ru.illine.drinking.ponies.service.telegram.TelegramValidatorService
@@ -448,7 +448,7 @@ class UserAdminControllerTest
             @DisplayName("evicts the cached access flags, so the next request of that user is resolved afresh")
             fun `evicts the cached access flags of the updated user`() {
                 val cache = cacheManager.getCache(CacheConfig.USER_ACCESS_FLAGS)!!
-                telegramUserAccessService.resolveAccessFlags(ACTIVE_EXTERNAL_ID, TelegramUserProfile())
+                telegramUserAccessService.resolveAccessFlags(ACTIVE_EXTERNAL_ID, TelegramUserProfileDto())
                 assertNotNull(cache.get(ACTIVE_EXTERNAL_ID))
 
                 patchState(ACTIVE_USER_ID, """{"isActive": false}""")

@@ -19,7 +19,7 @@ import org.springframework.test.context.jdbc.SqlConfig
 import ru.illine.drinking.ponies.config.cache.CacheConfig
 import ru.illine.drinking.ponies.dao.repository.TelegramUserRepository
 import ru.illine.drinking.ponies.model.base.AdminUserStatusFilter
-import ru.illine.drinking.ponies.model.dto.internal.TelegramUserProfile
+import ru.illine.drinking.ponies.model.dto.internal.TelegramUserProfileDto
 import ru.illine.drinking.ponies.model.dto.internal.UserAccessDto
 import ru.illine.drinking.ponies.test.generator.DtoGenerator
 import ru.illine.drinking.ponies.test.tag.SpringIntegrationTest
@@ -68,7 +68,7 @@ class TelegramUserAccessServiceTest
                 isBanned: Boolean,
                 isDeleted: Boolean,
             ) {
-                val access = accessService.resolveAccessFlags(externalUserId, TelegramUserProfile())
+                val access = accessService.resolveAccessFlags(externalUserId, TelegramUserProfileDto())
 
                 assertEquals(UserAccessDto(isAdmin, isBanned, isDeleted), access)
             }
@@ -79,7 +79,7 @@ class TelegramUserAccessServiceTest
                 val cache = cacheManager.getCache(CacheConfig.USER_ACCESS_FLAGS)!!
                 assertNull(cache.get(ADMIN_EXTERNAL_ID))
 
-                accessService.resolveAccessFlags(ADMIN_EXTERNAL_ID, TelegramUserProfile())
+                accessService.resolveAccessFlags(ADMIN_EXTERNAL_ID, TelegramUserProfileDto())
 
                 assertEquals(UserAccessDto(isAdmin = true), cache.get(ADMIN_EXTERNAL_ID)?.get())
             }
@@ -89,7 +89,7 @@ class TelegramUserAccessServiceTest
             fun `caches default flags for missing user`() {
                 val cache = cacheManager.getCache(CacheConfig.USER_ACCESS_FLAGS)!!
 
-                accessService.resolveAccessFlags(MISSING_EXTERNAL_ID, TelegramUserProfile())
+                accessService.resolveAccessFlags(MISSING_EXTERNAL_ID, TelegramUserProfileDto())
 
                 assertEquals(UserAccessDto(), cache.get(MISSING_EXTERNAL_ID)?.get())
             }
@@ -97,27 +97,27 @@ class TelegramUserAccessServiceTest
             @Test
             @DisplayName("keeps serving the cached flags after a DB change until the entry is evicted")
             fun `returns stale value from cache after db change`() {
-                assertTrue(accessService.resolveAccessFlags(ADMIN_EXTERNAL_ID, TelegramUserProfile()).isAdmin)
+                assertTrue(accessService.resolveAccessFlags(ADMIN_EXTERNAL_ID, TelegramUserProfileDto()).isAdmin)
 
                 val entity = telegramUserRepository.findByExternalUserId(ADMIN_EXTERNAL_ID)!!
                 entity.isAdmin = false
                 telegramUserRepository.saveAndFlush(entity)
 
                 assertTrue(
-                    accessService.resolveAccessFlags(ADMIN_EXTERNAL_ID, TelegramUserProfile()).isAdmin,
+                    accessService.resolveAccessFlags(ADMIN_EXTERNAL_ID, TelegramUserProfileDto()).isAdmin,
                     "Expected stale cached value (true) before eviction",
                 )
 
                 cacheManager.getCache(CacheConfig.USER_ACCESS_FLAGS)?.clear()
 
-                assertFalse(accessService.resolveAccessFlags(ADMIN_EXTERNAL_ID, TelegramUserProfile()).isAdmin)
+                assertFalse(accessService.resolveAccessFlags(ADMIN_EXTERNAL_ID, TelegramUserProfileDto()).isAdmin)
             }
 
             @Test
             @DisplayName("stores the profile from initData when it differs from the stored one")
             fun `refreshes profile on mismatch`() {
                 val profile =
-                    DtoGenerator.generateTelegramUserProfile(
+                    DtoGenerator.generateTelegramUserProfileDto(
                         firstName = "Alisa",
                         lastName = "Sidorova",
                         username = "alisamoved",
@@ -134,7 +134,7 @@ class TelegramUserAccessServiceTest
             @Test
             @DisplayName("leaves the stored profile alone when the caller has no first name to offer")
             fun `keeps profile when caller sends nothing`() {
-                accessService.resolveAccessFlags(ADMIN_EXTERNAL_ID, TelegramUserProfile())
+                accessService.resolveAccessFlags(ADMIN_EXTERNAL_ID, TelegramUserProfileDto())
 
                 val stored = telegramUserRepository.findByExternalUserIdIncludingDeleted(ADMIN_EXTERNAL_ID)!!
                 assertEquals("Alisa", stored.firstName)
@@ -146,7 +146,7 @@ class TelegramUserAccessServiceTest
             @DisplayName("drops the optional fields Telegram stopped sending, first name being present")
             fun `drops the fields telegram no longer sends`() {
                 val profile =
-                    DtoGenerator.generateTelegramUserProfile(
+                    DtoGenerator.generateTelegramUserProfileDto(
                         firstName = "Alisa",
                         lastName = null,
                         username = null,
@@ -164,7 +164,7 @@ class TelegramUserAccessServiceTest
             @DisplayName("refreshes the profile of a soft-deleted user as well")
             fun `refreshes profile of soft deleted user`() {
                 val profile =
-                    DtoGenerator.generateTelegramUserProfile(
+                    DtoGenerator.generateTelegramUserProfileDto(
                         firstName = "Carol",
                         lastName = "Renamed",
                         username = "carolback",
@@ -461,7 +461,7 @@ class TelegramUserAccessServiceTest
             @DisplayName("evicts the cached access flags of the user it touches")
             fun `evicts the cached access flags`() {
                 val cache = cacheManager.getCache(CacheConfig.USER_ACCESS_FLAGS)!!
-                accessService.resolveAccessFlags(ACTIVE_EXTERNAL_ID, TelegramUserProfile())
+                accessService.resolveAccessFlags(ACTIVE_EXTERNAL_ID, TelegramUserProfileDto())
                 assertNotNull(cache.get(ACTIVE_EXTERNAL_ID))
 
                 accessService.updateState(ACTIVE_USER_ID, ACTIVE_EXTERNAL_ID, deleted = true)
@@ -473,7 +473,7 @@ class TelegramUserAccessServiceTest
             @DisplayName("evicts the flags even when every field is null and nothing is written")
             fun `evicts the cached access flags on a no-op update`() {
                 val cache = cacheManager.getCache(CacheConfig.USER_ACCESS_FLAGS)!!
-                accessService.resolveAccessFlags(ACTIVE_EXTERNAL_ID, TelegramUserProfile())
+                accessService.resolveAccessFlags(ACTIVE_EXTERNAL_ID, TelegramUserProfileDto())
                 assertNotNull(cache.get(ACTIVE_EXTERNAL_ID))
 
                 accessService.updateState(ACTIVE_USER_ID, ACTIVE_EXTERNAL_ID, deleted = null)
@@ -521,7 +521,7 @@ class TelegramUserAccessServiceTest
             @DisplayName("evicts the cached access flags, so the stale isDeleted is not served on")
             fun `evicts the cached access flags`() {
                 val cache = cacheManager.getCache(CacheConfig.USER_ACCESS_FLAGS)!!
-                accessService.resolveAccessFlags(DELETED_EXTERNAL_ID, TelegramUserProfile())
+                accessService.resolveAccessFlags(DELETED_EXTERNAL_ID, TelegramUserProfileDto())
                 assertNotNull(cache.get(DELETED_EXTERNAL_ID))
 
                 accessService.restoreIfDeleted(DELETED_EXTERNAL_ID)

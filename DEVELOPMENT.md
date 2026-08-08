@@ -51,7 +51,7 @@ With that, the native `Reformat Code` (Cmd/Ctrl+Alt+L) picks up `ktlint_official
 
 ## Database migrations
 
-One Liquibase, one version, everywhere. The CI `migration` stage runs the native CLI from the ansible image (`.ansible/Dockerfile`, `ARG LIQUIBASE_VERSION`); locally the Gradle tasks below run the official image at the version pinned in [`libs.versions.toml`](gradle/libs.versions.toml), and the integration tests apply the same changelog through Spring Boot with the same `liquibase-core`. Keep those two version pins in sync - a changelog validated by one version and applied by another is exactly the drift this project avoids.
+One Liquibase, one version, everywhere. The CI `migration` stage runs the native CLI from the ansible image (`.ansible/Dockerfile`, `ARG LIQUIBASE_VERSION`); locally the Gradle tasks below run the official image at the version pinned in [`libs.versions.toml`](gradle/libs.versions.toml), and the integration tests apply the same changelog through Spring Boot with the same `liquibase-core`. The two pins must match - a changelog validated by one version and applied by another is exactly the drift this project avoids - and `architecture/ToolingConsistencyTest` fails the build when they do not.
 
 ```bash
 ./gradlew status                            # pending changesets
@@ -128,9 +128,17 @@ The rules above are not left to review attention - most of them fail the build.
 | No serialization annotations in `internal` | `architecture/CodeLayoutTest` |
 | `@Schema` on every request and response DTO | `architecture/CodeLayoutTest` |
 | `*Response` and `*Request` suffixes reserved for their own packages | `architecture/CodeLayoutTest` |
+| Internal carriers end with `*Dto` or `*Context` | `architecture/CodeLayoutTest` |
+| `@Konverter` mappers live in `mapper` | `architecture/CodeLayoutTest` |
 | Tests stay out of `impl` packages, each carries one tag | `architecture/CodeLayoutTest` |
+| One Liquibase version for tests and for the CI runner | `architecture/ToolingConsistencyTest` |
 | `package` matches the directory | detekt `InvalidPackageDeclaration` |
 | Naming, formatting, import order | ktlint |
+
+The reverse of the mapper rule is deliberately not enforced: `mapper` may hold a
+hand-written mapper when the conversion carries logic (`SettingMapper` formats
+times and reaches into a nested property). What must not happen is a `@Konverter`
+appearing outside the package - that is what the rule checks.
 
 Three packages cross a boundary by design and are excluded from the import rules:
 `mapper` (turning one shape into another is what it exists for), `config/web`

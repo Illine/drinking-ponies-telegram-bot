@@ -14,7 +14,7 @@ import ru.illine.drinking.ponies.model.dto.internal.StatisticsDto
 import ru.illine.drinking.ponies.model.dto.internal.StatisticsPointDto
 import ru.illine.drinking.ponies.model.dto.internal.TelegramAuthUserDto
 import ru.illine.drinking.ponies.model.dto.internal.TelegramChatDto
-import ru.illine.drinking.ponies.model.dto.internal.TelegramUserProfile
+import ru.illine.drinking.ponies.model.dto.internal.TelegramUserProfileDto
 import ru.illine.drinking.ponies.model.dto.internal.WaterStatisticDto
 import ru.illine.drinking.ponies.model.dto.request.WaterEntryRequest
 import ru.illine.drinking.ponies.model.dto.response.NotificationHistoryEvent
@@ -144,12 +144,12 @@ class DtoGenerator {
                 username = username,
             )
 
-        fun generateTelegramUserProfile(
+        fun generateTelegramUserProfileDto(
             firstName: String? = "First Name",
             lastName: String? = null,
             username: String? = "username",
-        ): TelegramUserProfile =
-            TelegramUserProfile(
+        ): TelegramUserProfileDto =
+            TelegramUserProfileDto(
                 firstName = firstName,
                 lastName = lastName,
                 username = username,

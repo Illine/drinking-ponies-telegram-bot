@@ -77,6 +77,26 @@ class CodeLayoutTest {
     }
 
     @Test
+    @DisplayName("internal carriers end with Dto or Context")
+    fun `internal carriers are named consistently`() {
+        Konsist
+            .scopeFromProduction()
+            .classesAndInterfacesAndObjects(includeNested = false)
+            .withPackage("..model.dto.internal..")
+            .assertTrue { it.hasNameEndingWith("Dto") || it.hasNameEndingWith("Context") }
+    }
+
+    @Test
+    @DisplayName("Konvert mappers live in the mapper package")
+    fun `konvert mappers are grouped`() {
+        Konsist
+            .scopeFromProduction()
+            .classesAndInterfacesAndObjects(includeNested = false)
+            .filter { it.hasAnnotationWithName("Konverter") }
+            .assertTrue { it.resideInPackage("..mapper..") }
+    }
+
+    @Test
     @DisplayName("no test lives in an impl package")
     fun `tests avoid impl packages`() {
         Konsist

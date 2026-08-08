@@ -23,7 +23,7 @@ import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.illine.drinking.ponies.config.cache.CacheConfig
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
 import ru.illine.drinking.ponies.dao.access.TelegramUserAccessService
-import ru.illine.drinking.ponies.model.dto.internal.TelegramUserProfile
+import ru.illine.drinking.ponies.model.dto.internal.TelegramUserProfileDto
 import ru.illine.drinking.ponies.test.tag.SpringIntegrationTest
 
 @SpringIntegrationTest
@@ -80,7 +80,7 @@ class NotificationServiceIntegrationTest
             notificationService.start(messageContext())
             softDelete()
             val cache = cacheManager.getCache(CacheConfig.USER_ACCESS_FLAGS)!!
-            telegramUserAccessService.resolveAccessFlags(EXTERNAL_USER_ID, TelegramUserProfile())
+            telegramUserAccessService.resolveAccessFlags(EXTERNAL_USER_ID, TelegramUserProfileDto())
             assertNotNull(cache.get(EXTERNAL_USER_ID))
 
             notificationService.start(messageContext())

@@ -9,7 +9,7 @@ import org.springframework.web.servlet.HandlerInterceptor
 import ru.illine.drinking.ponies.config.web.security.AuthErrorType
 import ru.illine.drinking.ponies.dao.access.TelegramUserAccessService
 import ru.illine.drinking.ponies.exception.InvalidAuthSignatureException
-import ru.illine.drinking.ponies.model.dto.internal.TelegramUserProfile
+import ru.illine.drinking.ponies.model.dto.internal.TelegramUserProfileDto
 import ru.illine.drinking.ponies.service.telegram.TelegramValidatorService
 import ru.illine.drinking.ponies.util.telegram.TelegramGeneralConstants
 
@@ -56,7 +56,7 @@ class TelegramAuthInterceptor(
             val access =
                 telegramUserAccessService.resolveAccessFlags(
                     telegramUser.externalUserId,
-                    TelegramUserProfile(
+                    TelegramUserProfileDto(
                         firstName = telegramUser.firstName,
                         lastName = telegramUser.lastName,
                         username = telegramUser.username,

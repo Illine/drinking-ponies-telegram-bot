@@ -24,7 +24,7 @@ import ru.illine.drinking.ponies.config.web.security.AuthErrorType
 import ru.illine.drinking.ponies.dao.access.TelegramUserAccessService
 import ru.illine.drinking.ponies.exception.InvalidAuthSignatureException
 import ru.illine.drinking.ponies.model.dto.internal.TelegramAuthUserDto
-import ru.illine.drinking.ponies.model.dto.internal.TelegramUserProfile
+import ru.illine.drinking.ponies.model.dto.internal.TelegramUserProfileDto
 import ru.illine.drinking.ponies.model.dto.internal.UserAccessDto
 import ru.illine.drinking.ponies.service.telegram.TelegramValidatorService
 import ru.illine.drinking.ponies.test.tag.UnitTest
@@ -196,7 +196,7 @@ class TelegramAuthInterceptorTest {
         verify(telegramUserAccessService).resolveAccessFlags(
             eq(42L),
             eq(
-                TelegramUserProfile(
+                TelegramUserProfileDto(
                     firstName = "Alisa",
                     lastName = "Petrova",
                     username = "alisaadmin",
