@@ -74,7 +74,6 @@ class NotificationHistoryServiceTest {
         whenever(waterStatisticAccessService.findByIdAndUser(ENTRY_ID, EXTERNAL_USER_ID)).thenReturn(entry)
     }
 
-    // The access layer returns the record as it was persisted, so the stub echoes the merged DTO back.
     private fun stubSaveEcho() {
         whenever(waterStatisticAccessService.save(any())).thenAnswer { it.getArgument<WaterStatisticDto>(0) }
     }
@@ -111,7 +110,6 @@ class NotificationHistoryServiceTest {
 
         service.getHistory(EXTERNAL_USER_ID, LocalDate.of(2026, 5, 4), LocalDate.of(2026, 5, 4))
 
-        // Snoozed answers and manual entries are cut off by the query itself, not in memory.
         verify(waterStatisticAccessService).findByUserAndTypesAndEventTimeBetween(
             eq(EXTERNAL_USER_ID),
             argThat { toSet() == setOf(WaterEntrySourceType.NOTIFICATION) },
@@ -228,7 +226,6 @@ class NotificationHistoryServiceTest {
 
         val actual = service.getHistory(EXTERNAL_USER_ID, LocalDate.of(2026, 5, 2), LocalDate.of(2026, 5, 3))
 
-        // A day is indivisible: the client draws a single lock per day, so a day never mixes both flags.
         assertEquals(listOf(LocalDate.of(2026, 5, 2), LocalDate.of(2026, 5, 3)), actual.days.map { it.date })
         assertEquals(listOf(false, false), actual.days[0].events.map { it.editable })
         assertEquals(listOf(true, true), actual.days[1].events.map { it.editable })
@@ -273,8 +270,6 @@ class NotificationHistoryServiceTest {
     @Test
     @DisplayName("getHistory(): rejects a range before the supported year")
     fun `getHistory rejects a range before the supported year`() {
-        // The zone is stubbed on purpose: shifting the start of such a range into UTC underflows with a
-        // DateTimeException, which is a server error, so the range has to be turned down as an invalid one.
         stubZone("Europe/Moscow")
 
         assertThrows<IllegalArgumentException> {
@@ -330,11 +325,10 @@ class NotificationHistoryServiceTest {
 
         val actual = service.updateEntry(EXTERNAL_USER_ID, ENTRY_ID, NotificationHistoryStatus.CONFIRMED, 300)
 
-        // Only the status and the volume change, every other field of the stored record is kept as is.
         verify(waterStatisticAccessService)
             .save(stored.copy(eventType = AnswerNotificationType.YES, waterAmountMl = 300))
         assertEquals(
-            DtoGenerator.generateNotificationHistoryEvent(
+            DtoGenerator.generateNotificationHistoryEventDto(
                 id = ENTRY_ID,
                 eventTime = Instant.parse("2026-05-10T08:00:00Z"),
                 status = NotificationHistoryStatus.CONFIRMED,
@@ -342,7 +336,6 @@ class NotificationHistoryServiceTest {
             ),
             actual,
         )
-        // The record arrives with its owner, so the settings are never read on this path.
         verifyNoInteractions(notificationAccessService)
     }
 
@@ -391,8 +384,6 @@ class NotificationHistoryServiceTest {
         verify(waterStatisticAccessService, never()).save(any())
     }
 
-    // The service is the only place bounding the volume: the request DTO carries no constraint annotations,
-    // because a missed entry ignores the amount and clients send the whole form snapshot, zero included.
     @ParameterizedTest(name = "[{index}] amountMl={0}")
     @ValueSource(ints = [49, 1001])
     @DisplayName("updateEntry(): rejects a confirmed amount outside the allowed range")
@@ -417,8 +408,6 @@ class NotificationHistoryServiceTest {
         verify(waterStatisticAccessService, never()).save(any())
     }
 
-    // Same cases as the 'editable' flag of getHistory above: the flag and the refusal to update are one
-    // predicate, so an entry the journal shows as locked is exactly the entry the update refuses.
     @ParameterizedTest(name = "[{index}] {0}, eventTime={1} -> editable={2}")
     @MethodSource("provideEditWindowCases")
     @DisplayName("updateEntry(): refuses exactly the entries the journal marks read-only")
@@ -443,8 +432,6 @@ class NotificationHistoryServiceTest {
 
             verify(waterStatisticAccessService, never()).save(any())
         }
-        // The window is measured in the timezone carried by the entry itself, without a lookup of the settings:
-        // the last second of May 2nd in New York, for one, is already May 3rd in UTC.
         verifyNoInteractions(notificationAccessService)
     }
 
@@ -454,11 +441,9 @@ class NotificationHistoryServiceTest {
         private val NOW = Instant.parse("2026-05-10T12:00:00Z")
         private val DEFAULT_EVENT_TIME = LocalDateTime.of(2026, 5, 10, 8, 0, 0)
 
-        // Wide enough to cover every edit window case below; the access layer is stubbed, so it does not filter.
         private val WINDOW_CASE_FROM = LocalDate.of(2026, 5, 1)
         private val WINDOW_CASE_TO = LocalDate.of(2026, 5, 10)
 
-        // A persisted entry always arrives with its owner, so it carries the very timezone the settings hold.
         private fun entry(
             id: Long = ENTRY_ID,
             eventTime: LocalDateTime = DEFAULT_EVENT_TIME,
@@ -517,10 +502,6 @@ class NotificationHistoryServiceTest {
                 ),
             )
 
-        // With the clock fixed at 2026-05-10T12:00:00Z the local day is May 10th in every zone below,
-        // so the oldest editable local date is May 3rd and May 2nd is already locked.
-        // Event times are stored in UTC; the cases pair the last second of May 2nd with the first second
-        // of May 3rd of each zone, which is where the window flips.
         @JvmStatic
         fun provideEditWindowCases(): Stream<Arguments> =
             Stream.of(
@@ -576,8 +557,6 @@ class NotificationHistoryServiceTest {
                 ),
             )
 
-        // The first and the last second of May 2nd and of May 3rd, in UTC, per zone: two whole local days
-        // around the edge of the edit window.
         @JvmStatic
         fun provideLocalDayEdges(): Stream<Arguments> =
             Stream.of(

@@ -36,7 +36,6 @@ class NotificationSchedulerIntegrationTest
         private val scheduler: NotificationScheduler,
         private val clock: Clock,
     ) {
-        // The real one would talk to Telegram; mocked, it also records who was about to be reminded.
         @MockitoBean
         private lateinit var notificationSenderService: NotificationSenderService
 
@@ -48,9 +47,6 @@ class NotificationSchedulerIntegrationTest
         @Test
         @DisplayName("sendDrinkingReminders(): a soft-deleted account no longer silences the reminders of everyone")
         fun `a deleted user does not stop the mailing`() {
-            // The scheduler swallows exceptions, so the old failure was invisible from the outside:
-            // loading the deleted user through the lazy association threw EntityNotFoundException
-            // before a single reminder went out, and the bot just went quiet for all users.
             scheduler.sendDrinkingReminders()
 
             val captor = argumentCaptor<List<NotificationSettingDto>>()

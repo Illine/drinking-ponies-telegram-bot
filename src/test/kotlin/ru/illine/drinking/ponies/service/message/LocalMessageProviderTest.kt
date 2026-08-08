@@ -8,11 +8,11 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import ru.illine.drinking.ponies.exception.MessageTemplateException
-import ru.illine.drinking.ponies.model.dto.message.DefaultSettingsContext
-import ru.illine.drinking.ponies.model.dto.message.GreetingContext
-import ru.illine.drinking.ponies.model.dto.message.NoContext
-import ru.illine.drinking.ponies.model.dto.message.NotificationQuestionEditedContext
-import ru.illine.drinking.ponies.model.dto.message.NotificationSuspendContext
+import ru.illine.drinking.ponies.model.dto.internal.DefaultSettingsContext
+import ru.illine.drinking.ponies.model.dto.internal.GreetingContext
+import ru.illine.drinking.ponies.model.dto.internal.NoContext
+import ru.illine.drinking.ponies.model.dto.internal.NotificationQuestionEditedContext
+import ru.illine.drinking.ponies.model.dto.internal.NotificationSuspendContext
 import ru.illine.drinking.ponies.service.message.impl.LocalMessageProvider
 import ru.illine.drinking.ponies.test.generator.DtoGenerator
 import ru.illine.drinking.ponies.test.tag.UnitTest
@@ -34,8 +34,6 @@ class LocalMessageProviderTest {
     @Test
     @DisplayName("getMessage(): streak in 2..6 phrasing is reachable and includes 'подряд'")
     fun `streak small bucket contains number and word`() {
-        // All rules (specific + fallback) compete with equal priority, so specific phrasing
-        // is reachable but not guaranteed on every seed.
         val outcomes =
             (0L until 50L).map { seed ->
                 LocalMessageProvider(Random(seed))
@@ -72,7 +70,6 @@ class LocalMessageProviderTest {
                         DtoGenerator.generateInsightStatsContext(currentStreakDays = 7),
                     ).text
             }
-        // streak number must be present in at least one template; the other refers to it implicitly.
         assertTrue(
             outcomes.any { it.contains("7") || it.contains("привычка") },
             "expected medium streak phrasing, sample: ${outcomes.first()}",
@@ -99,7 +96,6 @@ class LocalMessageProviderTest {
     @Test
     @DisplayName("getMessage(): streak phrase includes correct russian plural form (1 -> день, 2 -> дня, 5 -> дней)")
     fun `streak pluralization`() {
-        // streak=2 -> "дня"
         val outcomes2 =
             (0L until 30L).map { seed ->
                 LocalMessageProvider(Random(seed))
@@ -110,7 +106,6 @@ class LocalMessageProviderTest {
             }
         assertTrue(outcomes2.any { it.contains("2 дня") }, "expected '2 дня' at least once, got: ${outcomes2.first()}")
 
-        // streak=5 -> "дней"
         val outcomes5 =
             (0L until 30L).map { seed ->
                 LocalMessageProvider(Random(seed))
@@ -136,7 +131,6 @@ class LocalMessageProviderTest {
                         DtoGenerator.generateInsightStatsContext(avgMlPerDay = 2200, dailyGoalMl = 2000),
                     ).text
             }
-        // AVG_GOOD competes with the fallback rule on equal footing - must be reachable, not exclusive.
         assertTrue(
             outcomes.any { it.contains("выше цели") || it.contains("перебирает") },
             "expected AVG_GOOD phrasing at least once across seeds",
@@ -146,9 +140,6 @@ class LocalMessageProviderTest {
     @Test
     @DisplayName("getMessage(): avg >= goal but goal <= 0 does NOT trigger AVG_GOOD (guards against bogus daily goal)")
     fun `avg above non-positive goal does not trigger specific bucket`() {
-        // Predicate is `avgMlPerDay >= dailyGoalMl && dailyGoalMl > 0`.
-        // With dailyGoalMl=0 the first part is true (0 >= 0) but the guard `> 0` must veto the AVG_GOOD rule,
-        // so only the fallback bucket may surface - never the "выше цели"/"перебирает" phrasing.
         val outcomes =
             (0L until 100L).map { seed ->
                 LocalMessageProvider(Random(seed))
@@ -190,15 +181,12 @@ class LocalMessageProviderTest {
                         ),
                     ).text
             }
-        // BEST_DAY competes with the fallback rule on equal footing - must surface, not dominate.
         assertTrue(outcomes.any { it.contains("2400") }, "expected bestDay value 2400 at least once")
     }
 
     @Test
     @DisplayName("getMessage(): specific and fallback rules both reachable when only streak rule matches")
     fun `specific and fallback mix when streak matches`() {
-        // streak=5 -> streak 2..6 rule matches; fallback `{ true }` also matches.
-        // All matching rules compete with equal priority, so both should be reachable across seeds.
         val outcomes =
             (0L until 100L).map { seed ->
                 LocalMessageProvider(Random(seed))
@@ -231,7 +219,6 @@ class LocalMessageProviderTest {
                         ),
                     ).text
             }
-        // None of the specific markers must surface
         val specificMarkers = listOf("подряд", "выше цели", "перебирает", "Лучший день", "размах")
         outcomes.forEach { text ->
             assertFalse(
@@ -247,8 +234,6 @@ class LocalMessageProviderTest {
         "getMessage(): bestDay with valueMl=0 still matches specific bucket (rule only checks non-null bestDay)",
     )
     fun `bestDay zero value still matches specific bucket`() {
-        // Predicate is `bestDay != null` (no valueMl check); ensure we land in the specific bucket.
-        // The template references bestDay!!.valueMl so it will render "0 мл".
         val text =
             provider
                 .getMessage(
@@ -263,7 +248,6 @@ class LocalMessageProviderTest {
                     ),
                 ).text
 
-        // Must be a BEST_DAY template (since it is the only matching specific rule):
         assertTrue(
             text.contains("0 мл") || text.contains("День с 0"),
             "expected BEST_DAY phrasing with 0 ml, got: $text",
@@ -286,10 +270,6 @@ class LocalMessageProviderTest {
     @Test
     @DisplayName("getMessage(): registered spec always produces non-blank text")
     fun `unregistered spec throws`() {
-        // We can't easily create a new MessageSpec subclass externally because the sealed class is closed
-        // to outside subclassing - skip this assertion. Coverage of the throwing path is exercised via
-        // the missing-fallback contract test below if it ever becomes reachable.
-        // Use the registered spec only.
         val text = provider.getMessage(MessageSpec.InsightStats, DtoGenerator.generateInsightStatsContext()).text
         assertTrue(text.isNotBlank())
     }
@@ -297,10 +277,6 @@ class LocalMessageProviderTest {
     @Test
     @DisplayName("getMessage(): no rule match falls back to fallback bucket and produces text")
     fun `no rule throws`() {
-        // Build a provider variant via subclass to inject a phrases map with no matching rule.
-        // Since LocalMessageProvider is sealed in private state, instead exercise the error path by
-        // verifying that the existing InsightStats spec ALWAYS produces output - the `{ true }` fallback
-        // bucket guarantees this. We assert on a context that would otherwise match nothing specific.
         val text =
             provider
                 .getMessage(
@@ -309,9 +285,7 @@ class LocalMessageProviderTest {
                 ).text
 
         assertTrue(text.isNotBlank(), "fallback bucket must always produce text")
-        // Sanity smoke: explicit type for the assertion below
         assertThrows(MessageTemplateException::class.java) {
-            // Reproduce the exception by directly constructing one
             throw MessageTemplateException("test")
         }
     }

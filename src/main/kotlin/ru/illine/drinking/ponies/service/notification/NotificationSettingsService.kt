@@ -1,9 +1,9 @@
 package ru.illine.drinking.ponies.service.notification
 
 import ru.illine.drinking.ponies.model.base.IntervalNotificationType
-import ru.illine.drinking.ponies.model.dto.SettingDto
 import ru.illine.drinking.ponies.model.dto.internal.NotificationSettingDto
-import ru.illine.drinking.ponies.model.dto.response.PauseStateResponse
+import ru.illine.drinking.ponies.model.dto.internal.PauseStateDto
+import ru.illine.drinking.ponies.model.dto.internal.SettingDto
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -56,7 +56,7 @@ interface NotificationSettingsService {
 
     fun cancelPause(externalUserId: Long)
 
-    fun getPauseState(externalUserId: Long): PauseStateResponse
+    fun getPauseState(externalUserId: Long): PauseStateDto
 
     fun changeDailyGoal(
         externalUserId: Long,

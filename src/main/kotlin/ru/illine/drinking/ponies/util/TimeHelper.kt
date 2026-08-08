@@ -14,15 +14,13 @@ object TimeHelper {
 
     fun timeToString(time: LocalTime): String = time.format(DEFAULT_TIME_FORMATTER)
 
-    // The scheduler fires when: timeOfLastNotification + interval <= now
-    // To make the next notification fire exactly snoozeMinutes from now:
-    //   timeOfLastNotification + interval = now + snoozeMinutes
-    //   timeOfLastNotification = now - interval + snoozeMinutes
     fun nextNotificationTimeByNow(
         clock: Clock,
         intervalMinutes: Long,
         snoozeMinutes: Long,
     ): LocalDateTime {
+        // The scheduler fires at timeOfLastNotification + interval, so firing in snoozeMinutes
+        // means storing now - interval + snoozeMinutes.
         val now = LocalDateTime.now(clock)
         return now.minusMinutes(intervalMinutes).plusMinutes(snoozeMinutes)
     }

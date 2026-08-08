@@ -5,47 +5,11 @@ import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
+import ru.illine.drinking.ponies.dao.repository.projection.AdminUserProjection
+import ru.illine.drinking.ponies.dao.repository.projection.UserCountsProjection
+import ru.illine.drinking.ponies.dao.repository.query.TelegramUserQuery.ADMIN_USER_SELECT
+import ru.illine.drinking.ponies.dao.repository.query.TelegramUserQuery.SEARCH_FILTER
 import ru.illine.drinking.ponies.model.entity.TelegramUserEntity
-
-// The admin queries below are native on purpose: @SQLRestriction(deleted = false) hides soft-deleted
-// users from every JPQL query, and the admin list is the one place that has to see them.
-private const val ADMIN_USER_SELECT = """
-    select u.id               as "id",
-           u.external_user_id as "externalUserId",
-           u.first_name       as "firstName",
-           u.last_name        as "lastName",
-           u.username         as "username",
-           u.is_admin         as "admin",
-           u.is_banned        as "banned",
-           u.deleted          as "deleted",
-           u.user_time_zone   as "timeZone",
-           u.created          as "created",
-           (
-               select max(ws.event_time)
-               from water_statistics ws
-               where ws.user_id = u.id
-                 and ws.event_type in ('YES', 'SNOOZE')
-           )                  as "lastActivity"
-    from telegram_users u
-"""
-
-// The caller passes the pattern already wrapped in wildcards and escaped, or null for "no search".
-// Casts keep Postgres from complaining that it cannot infer the type of a null parameter.
-private const val SEARCH_FILTER = """
-    (
-        cast(:search as text) is null
-        or concat_ws(' ', u.first_name, u.last_name, u.username, u.external_user_id, u.id)
-               ilike cast(:search as text) escape '\'
-    )
-"""
-
-// Nulls come from AdminUserStatusFilter and mean "this column is not constrained".
-private const val STATUS_FILTER = """
-    (
-        (cast(:deleted as boolean) is null or u.deleted = cast(:deleted as boolean))
-        and (cast(:banned as boolean) is null or u.is_banned = cast(:banned as boolean))
-    )
-"""
 
 interface TelegramUserRepository : JpaRepository<TelegramUserEntity, Long> {
     fun findByExternalUserId(externalUserId: Long): TelegramUserEntity?
@@ -54,19 +18,19 @@ interface TelegramUserRepository : JpaRepository<TelegramUserEntity, Long> {
 
     fun existsByExternalUserId(externalUserId: Long): Boolean
 
-    // Native, so that @SQLRestriction does not hide a soft-deleted user from the auth path:
-    // the entity still comes back managed, so profile refresh keeps working through dirty checking.
     @Query(value = "select * from telegram_users u where u.external_user_id = :externalUserId", nativeQuery = true)
     fun findByExternalUserIdIncludingDeleted(
         @Param("externalUserId") externalUserId: Long,
     ): TelegramUserEntity?
 
-    // No countQuery: the total for any status is already one of the columns of countForAdmin.
     @Query(
         value = """
             $ADMIN_USER_SELECT
             where $SEARCH_FILTER
-              and $STATUS_FILTER
+              and (
+                  (cast(:deleted as boolean) is null or u.deleted = cast(:deleted as boolean))
+                  and (cast(:banned as boolean) is null or u.is_banned = cast(:banned as boolean))
+              )
             order by "lastActivity" desc nulls last, u.id
         """,
         nativeQuery = true,
@@ -99,15 +63,19 @@ interface TelegramUserRepository : JpaRepository<TelegramUserEntity, Long> {
     ): UserCountsProjection
 
     @Modifying(clearAutomatically = true)
-    @Query(value = "update telegram_users set deleted = :deleted where id = :id", nativeQuery = true)
-    fun updateDeleted(
+    @Query(
+        value = """
+            update telegram_users
+            set deleted = coalesce(cast(:deleted as boolean), deleted)
+            where id = :id
+        """,
+        nativeQuery = true,
+    )
+    fun updateState(
         @Param("id") id: Long,
-        @Param("deleted") deleted: Boolean,
+        @Param("deleted") deleted: Boolean?,
     )
 
-    // Native for the same reason: a soft-deleted user is invisible to derived queries, so /start
-    // would take them for a newcomer and hit the unique index on external_user_id.
-    // Returns 0 when there was nothing to restore.
     @Modifying(clearAutomatically = true)
     @Query(
         value = """

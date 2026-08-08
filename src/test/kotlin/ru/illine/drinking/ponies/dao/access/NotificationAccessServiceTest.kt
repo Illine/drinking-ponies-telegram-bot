@@ -58,9 +58,6 @@ class NotificationAccessServiceTest
         @Test
         @DisplayName("findAllNotificationSettings(): survives a soft-deleted user instead of failing the whole batch")
         fun `findAllNotificationSettings survives a soft deleted user`() {
-            // Reading the user through the lazy association threw EntityNotFoundException here:
-            // @SQLRestriction hides the row even from a load by id, and the mailing died for
-            // everyone on every tick, not just for the deleted user.
             val settings = assertDoesNotThrow(ThrowingSupplier { accessService.findAllNotificationSettings() })
 
             assertFalse(settings.isEmpty(), "The users who are still around have to survive the deleted one")
@@ -71,8 +68,6 @@ class NotificationAccessServiceTest
         fun `findAllNotificationSettings returns the live users only`() {
             val externalUserIds = accessService.findAllNotificationSettings().map { it.telegramUser.externalUserId }
 
-            // Only the live user who still has notifications on: the deleted one is dropped by the
-            // join, the disabled one by @SQLRestriction(enabled = true) on the settings themselves.
             assertEquals(listOf(DEFAULT_EXTERNAL_USER_ID), externalUserIds)
             assertFalse(
                 externalUserIds.contains(DELETED_EXTERNAL_USER_ID),
@@ -399,7 +394,6 @@ class NotificationAccessServiceTest
         @DisplayName("updatePause(): sets pauseUntil and shifts timeOfLastNotification to pauseUntil minus interval")
         fun `successful updatePause sets pauseUntil and shifts timeOfLastNotification`() {
             val pauseUntil = LocalDateTime.of(2025, 6, 15, 14, 0)
-            // SQL fixture sets DEFAULT_EXTERNAL_USER_ID with TWO_HOURS interval (120 minutes)
             val expectedTimeOfLastNotification = pauseUntil.minusMinutes(IntervalNotificationType.TWO_HOURS.minutes)
 
             val actual =
@@ -417,7 +411,6 @@ class NotificationAccessServiceTest
         @DisplayName("updatePause(): does NOT reset notificationAttempts when pause is set")
         fun `successful updatePause keeps notificationAttempts`() {
             val pauseUntil = LocalDateTime.of(2025, 6, 15, 14, 0)
-            // SQL fixture seeds notification_attempts = 1 for DEFAULT_EXTERNAL_USER_ID
             val before = accessService.findNotificationSettingByExternalUserId(DEFAULT_EXTERNAL_USER_ID)
 
             val actual =
@@ -435,7 +428,6 @@ class NotificationAccessServiceTest
         fun `successful updatePause cancel resets to now`() {
             getMutableClock().setTime("2025-06-15T14:00:00Z")
             val expectedTime = LocalDateTime.now(clock)
-            // First put user into paused state
             accessService.updatePause(DEFAULT_EXTERNAL_USER_ID, LocalDateTime.of(2025, 6, 15, 18, 0))
 
             val actual =
@@ -574,7 +566,6 @@ class NotificationAccessServiceTest
                     accessService.updateNotificationsDisabled(DEFAULT_EXTERNAL_USER_ID)
                 },
             )
-            // While disabled the entity is filtered out by @SQLRestriction, so re-enable to read it.
             accessService.updateNotificationsEnabled(DEFAULT_EXTERNAL_USER_ID)
 
             val actual = accessService.findNotificationSettingByExternalUserId(DEFAULT_EXTERNAL_USER_ID)
@@ -611,7 +602,6 @@ class NotificationAccessServiceTest
         fun `successful updateDailyGoal does not affect other users`() {
             val newGoalForFirst = 2500
             val before = accessService.findNotificationSettingByExternalUserId(DEFAULT_EXTERNAL_USER_ID)
-            // DISABLED_EXTERNAL_USER_ID is filtered by @SQLRestriction, so re-enable to read it back.
             accessService.updateNotificationsEnabled(DISABLED_EXTERNAL_USER_ID)
             val secondBefore = accessService.findNotificationSettingByExternalUserId(DISABLED_EXTERNAL_USER_ID)
 
@@ -634,7 +624,6 @@ class NotificationAccessServiceTest
             accessService.updatePause(DEFAULT_EXTERNAL_USER_ID, pauseUntil)
             val timerWhilePaused = pauseUntil.minusMinutes(IntervalNotificationType.TWO_HOURS.minutes)
 
-            // Advance clock past pauseUntil so the pause is expired.
             getMutableClock().setTime("2025-06-15T15:00:00Z")
 
             val actual =
@@ -645,7 +634,6 @@ class NotificationAccessServiceTest
                 )
 
             assertNull(actual.pauseUntil)
-            // Cancel is idempotent for already-expired pause: timer is not bumped.
             assertEquals(timerWhilePaused, actual.timeOfLastNotification)
         }
 

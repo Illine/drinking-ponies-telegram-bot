@@ -8,7 +8,6 @@ enum class NotificationHistoryStatus(
     ;
 
     companion object {
-        // Event types without a status here are not journal entries at all: SNOOZE is such a case.
         fun of(eventType: AnswerNotificationType): NotificationHistoryStatus? =
             entries.find { it.eventType == eventType }
     }

@@ -63,8 +63,6 @@ class UserAdminControllerTest
         @MockitoBean
         private lateinit var telegramValidatorService: TelegramValidatorService
 
-        // Mirrors the stored profile of the fixture admin: authenticating refreshes the profile of the
-        // caller, and an identical one keeps the row the list assertions rely on untouched.
         private val adminUser =
             DtoGenerator.generateTelegramUserDto(
                 externalUserId = ADMIN_EXTERNAL_ID,
@@ -107,8 +105,6 @@ class UserAdminControllerTest
             return response.body!!
         }
 
-        // Goes through a URI variable so that characters like % survive instead of being read
-        // as a broken percent-encoding by the URI template handler.
         private fun searchFor(search: String): UsersResponse {
             val response =
                 restTemplate.exchange(
@@ -244,10 +240,7 @@ class UserAdminControllerTest
 
             @ParameterizedTest(name = "[{index}] search=[{0}] - ids {1}")
             @CsvSource(
-                // A literal underscore, not LIKE's single-character wildcard: aliceXp stays out.
                 "alice_p, '7'",
-                // A search made of nothing but wildcard characters matches the users who really
-                // carry them, not the whole table.
                 "_,       '7'",
                 "%,       ''",
                 """\,      ''""",
@@ -320,6 +313,15 @@ class UserAdminControllerTest
                 assertEquals("carolgone", row.path("username").asText())
                 assertFalse(row.path("isActive").asBoolean())
                 assertEquals("2026-03-06T12:00:00Z", row.path("lastActivity").asText())
+            }
+
+            @Test
+            @DisplayName("serializes a null last activity as null, not as a fallback timestamp")
+            fun `serializes a null last activity in a row`() {
+                val row = getUsers("?search=$ACTIVE_EXTERNAL_ID").users.single()
+
+                assertEquals(ACTIVE_USER_ID, row.id)
+                assertNull(row.lastActivity)
             }
         }
 

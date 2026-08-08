@@ -99,8 +99,6 @@ class NotificationAccessServiceImpl(
         val settings = requireSettings(externalUserId)
 
         if (settings.notificationInterval != notificationInterval) {
-            // Reset timer so the new interval counts from now, not from the last notification time.
-            // Also clear active pause - changing interval implicitly cancels the pause.
             settings
                 .apply {
                     this.notificationInterval = notificationInterval
@@ -229,11 +227,9 @@ class NotificationAccessServiceImpl(
         return setting
             .apply {
                 if (pauseUntil != null) {
-                    // Pause: shift timeOfLastNotification so scheduler stays silent until pauseUntil.
                     this.pauseUntil = pauseUntil
                     this.timeOfLastNotification = pauseUntil.minusMinutes(setting.notificationInterval.minutes)
                 } else {
-                    // Cancel: reset timer only if there was an active pause to cancel.
                     val hadActivePause = this.pauseUntil?.isAfter(now) == true
                     this.pauseUntil = null
                     if (hadActivePause) {

@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import ru.illine.drinking.ponies.mapper.StatisticsMapper
 import ru.illine.drinking.ponies.mapper.WaterStatisticMapper
-import ru.illine.drinking.ponies.model.dto.TelegramUserDto
+import ru.illine.drinking.ponies.model.dto.request.TelegramInitDataUser
 import ru.illine.drinking.ponies.model.dto.request.WaterEntryRequest
 import ru.illine.drinking.ponies.model.dto.response.StatisticsResponse
 import ru.illine.drinking.ponies.model.dto.response.StatisticsTodayResponse
@@ -39,7 +39,7 @@ class StatisticsController(
     @Operation(summary = "Get today's water intake events")
     fun getToday(
         @Parameter(hidden = true)
-        @RequestAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) telegramUser: TelegramUserDto,
+        @RequestAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) telegramUser: TelegramInitDataUser,
     ): StatisticsTodayResponse {
         val entries = statisticsService.getToday(telegramUser.externalUserId)
         return StatisticsTodayResponse(
@@ -51,7 +51,7 @@ class StatisticsController(
     @Operation(summary = "Get aggregated statistics for the requested period")
     fun getStatistics(
         @Parameter(hidden = true)
-        @RequestAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) telegramUser: TelegramUserDto,
+        @RequestAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) telegramUser: TelegramInitDataUser,
         @Parameter(
             description = "Range start (inclusive) in yyyy-MM-dd format",
             example = "2026-05-01",
@@ -74,7 +74,7 @@ class StatisticsController(
     @Operation(summary = "Record a manual water intake entry at an arbitrary time")
     fun recordWaterEntry(
         @Parameter(hidden = true)
-        @RequestAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) telegramUser: TelegramUserDto,
+        @RequestAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) telegramUser: TelegramInitDataUser,
         @Valid @RequestBody request: WaterEntryRequest,
     ) {
         waterStatisticService.manualRecordEvent(

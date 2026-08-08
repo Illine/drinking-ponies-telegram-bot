@@ -7,12 +7,12 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
 import ru.illine.drinking.ponies.dao.access.TelegramUserAccessService
+import ru.illine.drinking.ponies.model.dto.internal.DefaultSettingsContext
+import ru.illine.drinking.ponies.model.dto.internal.GreetingContext
 import ru.illine.drinking.ponies.model.dto.internal.NotificationSettingDto
 import ru.illine.drinking.ponies.model.dto.internal.TelegramChatDto
 import ru.illine.drinking.ponies.model.dto.internal.TelegramUserDto
 import ru.illine.drinking.ponies.model.dto.internal.TelegramUserProfile
-import ru.illine.drinking.ponies.model.dto.message.DefaultSettingsContext
-import ru.illine.drinking.ponies.model.dto.message.GreetingContext
 import ru.illine.drinking.ponies.service.message.MessageProvider
 import ru.illine.drinking.ponies.service.notification.NotificationService
 import ru.illine.drinking.ponies.util.FunctionHelper.check
@@ -37,8 +37,6 @@ class NotificationServiceImpl(
         val chatId = messageContext.chatId()
         val profile = with(messageContext.user()) { TelegramUserProfile(firstName, lastName, userName) }
 
-        // An admin may have soft deleted this user: derived queries do not see such a row, so
-        // without bringing it back /start would treat them as new and hit the unique index.
         telegramUserAccessService.restoreIfDeleted(externalUserId)
 
         val setting =

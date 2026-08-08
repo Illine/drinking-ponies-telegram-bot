@@ -8,8 +8,6 @@ import java.time.Instant
 data class ShortUserInfo(
     @Schema(description = "Internal identifier, the one admin endpoints operate on", example = "1042")
     val id: Long,
-    // Kotlin field is externalUserId across the codebase, the JSON key stays
-    // telegramUserId to match the contract the MiniApp already consumes.
     @JsonProperty("telegramUserId")
     @Schema(description = "Telegram user id", example = "482719301")
     val externalUserId: Long,

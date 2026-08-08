@@ -1,8 +1,8 @@
 package ru.illine.drinking.ponies.service.notification
 
 import ru.illine.drinking.ponies.model.base.NotificationHistoryStatus
-import ru.illine.drinking.ponies.model.dto.response.NotificationHistoryEvent
-import ru.illine.drinking.ponies.model.dto.response.NotificationHistoryResponse
+import ru.illine.drinking.ponies.model.dto.internal.NotificationHistoryDto
+import ru.illine.drinking.ponies.model.dto.internal.NotificationHistoryEventDto
 import java.time.LocalDate
 
 interface NotificationHistoryService {
@@ -10,12 +10,12 @@ interface NotificationHistoryService {
         externalUserId: Long,
         from: LocalDate,
         to: LocalDate,
-    ): NotificationHistoryResponse
+    ): NotificationHistoryDto
 
     fun updateEntry(
         externalUserId: Long,
         entryId: Long,
         status: NotificationHistoryStatus,
         amountMl: Int?,
-    ): NotificationHistoryEvent
+    ): NotificationHistoryEventDto
 }

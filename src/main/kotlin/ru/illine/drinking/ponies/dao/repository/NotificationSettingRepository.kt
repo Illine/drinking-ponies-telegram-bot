@@ -8,15 +8,9 @@ import ru.illine.drinking.ponies.model.entity.NotificationSettingEntity
 import java.time.LocalTime
 
 interface NotificationSettingRepository : JpaRepository<NotificationSettingEntity, Long> {
-    // Spring Data derived query: the underscore explicitly resolves the nested property path
-    // telegramUser.externalUserId. Renaming it would break query derivation, so the ktlint
-    // naming rule is suppressed here intentionally.
     @Suppress("ktlint:standard:function-naming")
     fun findByTelegramUser_ExternalUserId(externalUserId: Long): NotificationSettingEntity?
 
-    // The join is what keeps a soft-deleted user out of the mailing: @SQLRestriction(deleted = false)
-    // applies to the joined entity, so their settings drop out of the result entirely. Reading the
-    // association lazily instead would blow up on the hidden row and take the whole batch down.
     @Query(
         value = """
             select ns from NotificationSettingEntity ns

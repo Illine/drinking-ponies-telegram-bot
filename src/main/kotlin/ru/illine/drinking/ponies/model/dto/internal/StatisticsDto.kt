@@ -1,4 +1,4 @@
-package ru.illine.drinking.ponies.model.dto
+package ru.illine.drinking.ponies.model.dto.internal
 
 import java.time.Instant
 

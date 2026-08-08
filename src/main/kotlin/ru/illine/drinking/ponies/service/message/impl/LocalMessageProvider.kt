@@ -2,8 +2,8 @@ package ru.illine.drinking.ponies.service.message.impl
 
 import org.springframework.stereotype.Service
 import ru.illine.drinking.ponies.exception.MessageTemplateException
-import ru.illine.drinking.ponies.model.dto.message.MessageContext
-import ru.illine.drinking.ponies.model.dto.message.MessageDto
+import ru.illine.drinking.ponies.model.dto.internal.MessageContext
+import ru.illine.drinking.ponies.model.dto.internal.MessageDto
 import ru.illine.drinking.ponies.service.message.MessageProvider
 import ru.illine.drinking.ponies.util.message.MessageSpec
 import ru.illine.drinking.ponies.util.message.RuleBucket
@@ -45,8 +45,6 @@ class LocalMessageProvider(
         val buckets =
             rulesBySpec[spec] as? List<RuleBucket<C>>
                 ?: throw MessageTemplateException("No local templates registered for message spec [${spec.id}]")
-        // Guarantee comes from a `{ true }` fallback bucket placed after the specific ones.
-        // Explicit error makes a missing fallback fail loudly instead of throwing a bare NoSuchElementException.
         val candidates =
             buckets.firstNotNullOfOrNull { bucket ->
                 bucket.filter { it.predicate(context) }.takeIf { it.isNotEmpty() }

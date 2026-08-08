@@ -23,9 +23,9 @@ import org.mockito.kotlin.whenever
 import ru.illine.drinking.ponies.config.web.security.AuthErrorType
 import ru.illine.drinking.ponies.dao.access.TelegramUserAccessService
 import ru.illine.drinking.ponies.exception.InvalidAuthSignatureException
-import ru.illine.drinking.ponies.model.dto.TelegramUserDto
 import ru.illine.drinking.ponies.model.dto.internal.TelegramUserProfile
 import ru.illine.drinking.ponies.model.dto.internal.UserAccessDto
+import ru.illine.drinking.ponies.model.dto.request.TelegramInitDataUser
 import ru.illine.drinking.ponies.service.telegram.TelegramValidatorService
 import ru.illine.drinking.ponies.test.tag.UnitTest
 import ru.illine.drinking.ponies.util.telegram.TelegramGeneralConstants
@@ -131,7 +131,8 @@ class TelegramAuthInterceptorTest {
         isDeleted: Boolean,
     ) {
         val initData = "valid-init-data"
-        val telegramUser = TelegramUserDto(externalUserId = 1L, firstName = "Test", lastName = null, username = null)
+        val telegramUser =
+            TelegramInitDataUser(externalUserId = 1L, firstName = "Test", lastName = null, username = null)
         whenever(request.method).thenReturn("POST")
         whenever(request.getHeader(headerName)).thenReturn(initData)
         whenever(validatorService.verifySignature(any())).thenReturn(true)
@@ -144,8 +145,6 @@ class TelegramAuthInterceptorTest {
         assertTrue(result)
         verify(request).setAttribute(
             TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE,
-            // isActive is the opposite of the isDeleted the access service reports, and both
-            // rows of the matrix would fail if that negation were dropped.
             telegramUser.copy(isAdmin = isAdmin, isBanned = isBanned, isActive = !isDeleted),
         )
         verifyNoMoreInteractions(response)
@@ -158,11 +157,9 @@ class TelegramAuthInterceptorTest {
         isDeleted: Boolean,
         expectedIsActive: Boolean,
     ) {
-        // Spelled out on its own because the sign is easy to lose: the access service speaks in
-        // isDeleted, the request attribute speaks in isActive, and equality on the whole DTO
-        // makes for a poor failure message when only that one flag is wrong.
         val initData = "valid-init-data"
-        val telegramUser = TelegramUserDto(externalUserId = 1L, firstName = "Test", lastName = null, username = null)
+        val telegramUser =
+            TelegramInitDataUser(externalUserId = 1L, firstName = "Test", lastName = null, username = null)
         whenever(request.method).thenReturn("POST")
         whenever(request.getHeader(headerName)).thenReturn(initData)
         whenever(validatorService.verifySignature(any())).thenReturn(true)
@@ -172,7 +169,7 @@ class TelegramAuthInterceptorTest {
 
         interceptor.preHandle(request, response, Any())
 
-        val captor = argumentCaptor<TelegramUserDto>()
+        val captor = argumentCaptor<TelegramInitDataUser>()
         verify(request).setAttribute(eq(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE), captor.capture())
         assertEquals(expectedIsActive, captor.firstValue.isActive)
     }
@@ -182,7 +179,7 @@ class TelegramAuthInterceptorTest {
     fun `preHandle valid signature forwards initData profile`() {
         val initData = "valid-init-data"
         val telegramUser =
-            TelegramUserDto(
+            TelegramInitDataUser(
                 externalUserId = 42L,
                 firstName = "Alisa",
                 lastName = "Petrova",

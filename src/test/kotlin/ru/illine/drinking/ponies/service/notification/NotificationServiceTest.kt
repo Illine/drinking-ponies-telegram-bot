@@ -79,8 +79,6 @@ class NotificationServiceTest {
     @Test
     @DisplayName("start(): asks to undo a soft delete before deciding whether the user is new")
     fun `start restores a soft deleted user before the existence check`() {
-        // Order is the whole point: a soft-deleted row is invisible to the existence check, so
-        // asking afterwards would still take the user for a newcomer and hit the unique index.
         val dto = DtoGenerator.generateNotificationDto(externalUserId = externalUserId)
         doReturn(true).whenever(notificationAccessService).existsByExternalUserId(externalUserId)
         whenever(notificationAccessService.findNotificationSettingByExternalUserId(externalUserId)).thenReturn(dto)

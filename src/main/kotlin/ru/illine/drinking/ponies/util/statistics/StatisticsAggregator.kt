@@ -1,7 +1,7 @@
 package ru.illine.drinking.ponies.util.statistics
 
-import ru.illine.drinking.ponies.model.dto.BestDayDto
-import ru.illine.drinking.ponies.model.dto.StatisticsPointDto
+import ru.illine.drinking.ponies.model.dto.internal.BestDayDto
+import ru.illine.drinking.ponies.model.dto.internal.StatisticsPointDto
 import ru.illine.drinking.ponies.model.dto.internal.WaterStatisticDto
 import java.time.LocalDate
 import java.time.ZoneId
@@ -10,7 +10,6 @@ object StatisticsAggregator {
     private const val HOURS_IN_DAY = 24
     private const val HOUR_LABEL_FORMAT = "%02d:00"
 
-    // 366 (not 365) covers a leap year, so a full year of streak isn't off by one
     const val STREAK_LIMIT_DAYS = 366L
 
     fun sumByLocalDate(
@@ -71,8 +70,6 @@ object StatisticsAggregator {
         today: LocalDate,
         dailyGoalMl: Int,
     ): Int {
-        // Hanging streak: an unfinished today does NOT break the chain - we start counting from
-        // yesterday in that case. The streak only resets to 0 on a real gap (yesterday below goal too).
         var cursor = if ((byDate[today] ?: 0) >= dailyGoalMl) today else today.minusDays(1)
         val earliest = today.minusDays(STREAK_LIMIT_DAYS)
         var streak = 0

@@ -1,6 +1,4 @@
-package ru.illine.drinking.ponies.model.dto.message
-
-import ru.illine.drinking.ponies.model.dto.BestDayDto
+package ru.illine.drinking.ponies.model.dto.internal
 
 data class InsightStatsContext(
     val avgMlPerDay: Int,

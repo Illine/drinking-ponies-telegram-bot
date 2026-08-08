@@ -67,7 +67,6 @@ class UserControllerTest
 
         @ParameterizedTest(name = "[{index}] externalUserId={0} - isAdmin={1}, isBanned={2}, isActive={3}")
         @CsvSource(
-            // admin, plain, banned-but-present, soft deleted, banned and deleted, unknown caller
             "1,      true,  false, true",
             "2,      false, false, true",
             "777002, false, true,  true",
@@ -104,8 +103,6 @@ class UserControllerTest
         @Test
         @DisplayName("getMe(): a soft-deleted caller still reaches the endpoint and learns they are inactive")
         fun `stays open for a soft deleted caller`() {
-            // Access is deliberately not cut off for a deleted account: the MiniApp needs the flag
-            // to explain the state and to offer the /start that brings the account back.
             whenever(telegramValidatorService.map(any()))
                 .thenReturn(telegramUser.copy(externalUserId = DELETED_EXTERNAL_ID))
 

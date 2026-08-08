@@ -7,7 +7,7 @@ import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.illine.drinking.ponies.model.base.AnswerNotificationType
 import ru.illine.drinking.ponies.model.base.SnoozeNotificationType
-import ru.illine.drinking.ponies.model.dto.message.NotificationSuspendContext
+import ru.illine.drinking.ponies.model.dto.internal.NotificationSuspendContext
 import ru.illine.drinking.ponies.service.button.ReplyButtonStrategy
 import ru.illine.drinking.ponies.service.message.MessageProvider
 import ru.illine.drinking.ponies.service.notification.NotificationSettingsService
