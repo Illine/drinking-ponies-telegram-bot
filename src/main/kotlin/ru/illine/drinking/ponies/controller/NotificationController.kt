@@ -33,7 +33,7 @@ import java.time.LocalDate
 
 @RestController
 @RequestMapping("/notifications")
-@Tag(name = "Notifications", description = "Notification timing")
+@Tag(name = "Notifications", description = "Notification management")
 @Validated
 class NotificationController(
     private val notificationSettingsService: NotificationSettingsService,

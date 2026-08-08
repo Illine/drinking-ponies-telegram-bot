@@ -8,6 +8,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.verifyNoInteractions
@@ -64,14 +65,46 @@ class AdminAuthInterceptorTest {
     }
 
     @Test
-    @DisplayName("preHandle(): handler without @AdminOnly - returns true")
+    @DisplayName("preHandle(): handler with @AdminOnly neither on the method nor on the class - returns true")
     fun `handler without AdminOnly returns true`() {
         whenever(handlerMethod.getMethodAnnotation(AdminOnly::class.java)).thenReturn(null)
+        doReturn(OpenController::class.java).whenever(handlerMethod).beanType
 
         val result = interceptor.preHandle(request, response, handlerMethod)
 
         assertTrue(result)
         verifyNoInteractions(response)
+    }
+
+    @Test
+    @DisplayName("preHandle(): @AdminOnly on the controller class + admin user - returns true")
+    fun `class level AdminOnly lets an admin through`() {
+        whenever(handlerMethod.getMethodAnnotation(AdminOnly::class.java)).thenReturn(null)
+        doReturn(GuardedController::class.java).whenever(handlerMethod).beanType
+        whenever(request.getAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE)).thenReturn(adminUser)
+
+        val result = interceptor.preHandle(request, response, handlerMethod)
+
+        assertTrue(result)
+        verifyNoInteractions(response)
+    }
+
+    @Test
+    @DisplayName(
+        "preHandle(): @AdminOnly on the controller class + non-admin - returns false, 403, forbidden_admin",
+    )
+    fun `class level AdminOnly rejects a non admin`() {
+        // The annotation guards every handler of the controller, so an endpoint that carries
+        // none of its own is closed all the same.
+        whenever(handlerMethod.getMethodAnnotation(AdminOnly::class.java)).thenReturn(null)
+        doReturn(GuardedController::class.java).whenever(handlerMethod).beanType
+        whenever(request.getAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE)).thenReturn(nonAdminUser)
+
+        val result = interceptor.preHandle(request, response, handlerMethod)
+
+        assertFalse(result)
+        verify(response).status = HttpServletResponse.SC_FORBIDDEN
+        verify(response).setHeader(AuthErrorType.HEADER_NAME, AuthErrorType.FORBIDDEN_ADMIN.value)
     }
 
     @Test
@@ -109,4 +142,10 @@ class AdminAuthInterceptorTest {
             interceptor.preHandle(request, response, handlerMethod)
         }
     }
+
+    // Stand-ins for the two kinds of controller the interceptor has to tell apart.
+    @AdminOnly
+    private class GuardedController
+
+    private class OpenController
 }
