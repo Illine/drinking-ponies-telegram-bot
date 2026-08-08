@@ -31,6 +31,7 @@ commons-lang3 = "3.20.0"
 springdoc = "2.8.6"
 xmlunit = "2.10.0"
 caffeine = "3.1.8"
+konsist = "0.17.3"
 
 [libraries]
 spring-boot-starter-actuator = { module = "org.springframework.boot:spring-boot-starter-actuator" }
@@ -71,6 +72,7 @@ commons-lang3 = { module = "org.apache.commons:commons-lang3", version.ref = "co
 springdoc-openapi-starter-webmvc-ui = { module = "org.springdoc:springdoc-openapi-starter-webmvc-ui", version.ref = "springdoc" }
 xmlunit = { module = "org.xmlunit:xmlunit-core", version.ref = "xmlunit" }
 caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version.ref = "caffeine" }
+konsist = { module = "com.lemonappdev:konsist", version.ref = "konsist" }
 konvert = { module = "io.mcarle:konvert", version.ref = "konvert" }
 konvert-api = { module = "io.mcarle:konvert-api", version.ref = "konvert" }
 

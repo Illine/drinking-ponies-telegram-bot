@@ -91,6 +91,7 @@ dependencies {
     testImplementation(libs.testcontainers.junit.jupiter)
     testImplementation(libs.mockito.kotlin)
     testImplementation(libs.xmlunit)
+    testImplementation(libs.konsist)
 }
 
 allOpen {
@@ -163,7 +164,7 @@ tasks {
 
     test {
         useJUnitPlatform {
-            includeTags("unit", "spring-integration")
+            includeTags("unit", "spring-integration", "architecture")
         }
 
         finalizedBy(jacocoTestReport)

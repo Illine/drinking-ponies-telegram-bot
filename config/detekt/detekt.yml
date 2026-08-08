@@ -632,6 +632,26 @@ style:
     active: false
     forbiddenImports: []
     allowedImports: []
+  # Layer boundaries, see DEVELOPMENT.md. Values are simple patterns (* and ?), not regexes,
+  # and excludes are matched against './src/...', hence the leading '**/'.
+  ForbiddenImport/repositoryOutsideDao:
+    active: true
+    excludes: ['**/dao/**', '**/mapper/**']
+    forbiddenImports:
+      - reason: 'Repositories and projections stay inside the dao layer, the access layer hands out internal DTOs'
+        value: 'ru.illine.drinking.ponies.dao.repository.*'
+  ForbiddenImport/entityOutsideDao:
+    active: true
+    excludes: ['**/dao/**', '**/mapper/**', '**/model/entity/**']
+    forbiddenImports:
+      - reason: 'JPA entities stay inside the dao layer, mappers turn them into internal DTOs'
+        value: 'ru.illine.drinking.ponies.model.entity.*'
+  ForbiddenImport/responseOutsideWeb:
+    active: true
+    excludes: ['**/controller/**', '**/mapper/**', '**/config/web/**', '**/test/generator/**']
+    forbiddenImports:
+      - reason: 'A service never returns an HTTP response type, the response is assembled in the controller'
+        value: 'ru.illine.drinking.ponies.model.dto.response.*'
   ForbiddenMethodCall:
     active: false
     methods:
@@ -652,8 +672,11 @@ style:
     active: false
     markerClasses: []
   ForbiddenSuppress:
-    active: false
-    rules: []
+    active: true
+    rules:
+      - 'ForbiddenImport/repositoryOutsideDao'
+      - 'ForbiddenImport/entityOutsideDao'
+      - 'ForbiddenImport/responseOutsideWeb'
   ForbiddenVoid:
     active: true
     ignoreOverridden: false

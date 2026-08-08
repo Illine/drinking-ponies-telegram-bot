@@ -46,7 +46,9 @@ lint:
       paths:
         - .gradle
   script:
-    - gradle lintKotlin detekt
+    # check minus tests: picks up every verification task wired into `check`,
+    # so a newly added one cannot silently stay out of CI. Tests run in the `test` job.
+    - gradle check -x test
 
 test:
   extends: .default-tags
