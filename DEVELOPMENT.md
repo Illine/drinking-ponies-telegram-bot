@@ -45,6 +45,22 @@ With that, the native `Reformat Code` (Cmd/Ctrl+Alt+L) picks up `ktlint_official
 - **detekt baseline** currently freezes the existing legacy findings (`config/detekt/baseline.xml`). `MaxLineLength` overlaps with ktlint's line-length rule and is a planned follow-up to disable in detekt (ktlint owns line length).
 - Generated KSP/Konvert sources under `build/generated/**` are excluded from ktlint and are not picked up by detekt.
 
+## Database migrations
+
+One Liquibase, one version, everywhere. The CI `migration` stage runs the native CLI from the ansible image (`.ansible/Dockerfile`, `ARG LIQUIBASE_VERSION`); locally the Gradle tasks below run the official image at the version pinned in [`libs.versions.toml`](gradle/libs.versions.toml), and the integration tests apply the same changelog through Spring Boot with the same `liquibase-core`. Keep those two version pins in sync - a changelog validated by one version and applied by another is exactly the drift this project avoids.
+
+```bash
+./gradlew status                            # pending changesets
+./gradlew update                            # apply them
+./gradlew rollback -PliquibaseArgs="8.8.0"  # arguments for a command
+```
+
+Every Liquibase command is a Gradle task of the same name, grouped under `liquibase` in `./gradlew tasks`.
+
+Connection settings come from `.liquibase/liquibase.properties`, overridable by `LIQUIBASE_URL` / `LIQUIBASE_USERNAME` / `LIQUIBASE_PASSWORD` - point them at another host and the changelog is applied there, exactly as the pipeline does it. Docker is required; `localhost` in the URL is rewritten to `host.docker.internal` so the container reaches a database on the host (Docker Desktop resolves that name, `--add-host` adds it on Linux).
+
+There is no Liquibase Gradle plugin: it needed Liquibase on the buildscript classpath, blocked the configuration cache, and gave us a second Liquibase version that the pipeline never used.
+
 ## Code layout
 
 ### Packages

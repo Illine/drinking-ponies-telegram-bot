@@ -8,7 +8,6 @@ plugins {
 
     alias(libs.plugins.springframework.boot)
     alias(libs.plugins.spring.dependency.management)
-    alias(libs.plugins.liquibase)
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.kotlin.spring)
     alias(libs.plugins.kotlin.jpa)
@@ -68,12 +67,6 @@ dependencies {
     implementation(libs.springdoc.openapi.starter.webmvc.ui)
     implementation(libs.konvert.api)
 
-    liquibaseRuntime(libs.liquibase.core)
-    liquibaseRuntime(libs.liquibase.groovy.dsl)
-    liquibaseRuntime(libs.logback)
-    liquibaseRuntime(libs.postgres)
-    liquibaseRuntime(libs.snakeyaml)
-    liquibaseRuntime(libs.picocli)
 
     runtimeOnly(libs.postgres)
     runtimeOnly(libs.micrometer.exposition.formats)
@@ -114,26 +107,51 @@ detekt {
     baseline = file("$projectDir/config/detekt/baseline.xml")
 }
 
-liquibase {
-    val propertiesPath = System.getenv("LIQUIBASE_PROPERTIES_PATH") ?: "./.liquibase/liquibase.properties"
-    val file = File(propertiesPath)
-    val properties = Properties()
+// Liquibase runs through the official image, the same version the CI runner installs
+// (.ansible/Dockerfile, ARG LIQUIBASE_VERSION). Extra command arguments - a rollback tag,
+// for instance - are passed as -PliquibaseArgs="...".
+val liquibaseSettings = Properties().apply {
+    val file = File(System.getenv("LIQUIBASE_PROPERTIES_PATH") ?: "./.liquibase/liquibase.properties")
     if (file.exists()) {
-        properties.load(FileInputStream(file))
+        FileInputStream(file).use { load(it) }
     }
+}
 
-    val resourceDir = "./src/main/resources"
-    activities.register("main") {
-        this.arguments = mapOf(
-            "changeLogFile" to properties.getOrDefault("changeLogFile", "$resourceDir/liquibase/changelog.yaml"),
-            "url" to properties.getOrDefault("url", "jdbc:postgresql://localhost:5432/dptb"),
-            "username" to properties.getOrDefault("username", "liquibase"),
-            "password" to properties.getOrDefault("password", "liquibase"),
-            "contexts" to properties.getOrDefault("context", "local"),
-            "logLevel" to properties.getOrDefault("logLevel", "info")
+// Environment wins over the properties file, so credentials can stay out of it.
+fun liquibaseSetting(key: String, fallback: String): String =
+    System.getenv("LIQUIBASE_${key.uppercase()}") ?: liquibaseSettings.getProperty(key) ?: fallback
+
+// A database on the host is localhost for us and host.docker.internal for the container.
+// Docker Desktop provides that name itself; --add-host below adds it on Linux.
+val liquibaseUrl = liquibaseSetting("url", "jdbc:postgresql://localhost:5432/dptb")
+    .replace("localhost", "host.docker.internal")
+    .replace("127.0.0.1", "host.docker.internal")
+
+listOf(
+    "update", "updateSql", "status", "validate", "history", "diff",
+    "tag", "rollback", "rollbackCount", "rollbackSql", "dropAll", "listLocks", "releaseLocks"
+).forEach { command ->
+    tasks.register<Exec>(command) {
+        group = "liquibase"
+        description = "Runs liquibase $command against the configured database"
+
+        commandLine(
+            listOf(
+                "docker", "run", "--rm",
+                "--add-host=host.docker.internal:host-gateway",
+                "-v", "${layout.projectDirectory.dir("src/main/resources").asFile}:/liquibase/changelog",
+                "liquibase/liquibase:${libs.versions.liquibase.core.get()}",
+                "--search-path=/liquibase/changelog",
+                "--changelog-file=${liquibaseSetting("changeLogFile", "liquibase/changelog.yaml")}",
+                "--url=$liquibaseUrl",
+                "--username=${liquibaseSetting("username", "liquibase")}",
+                "--password=${liquibaseSetting("password", "liquibase")}",
+                "--contexts=${liquibaseSetting("context", "local")}",
+                "--log-level=${liquibaseSetting("logLevel", "info")}",
+                command
+            ) + providers.gradleProperty("liquibaseArgs").getOrElse("").split(" ").filter { it.isNotBlank() }
         )
     }
-    runList = "main"
 }
 
 tasks {

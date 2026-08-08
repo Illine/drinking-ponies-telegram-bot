@@ -101,6 +101,8 @@ docker run -d --name dptb-postgres \
 LIQUIBASE_USERNAME=dptb LIQUIBASE_PASSWORD=dptb ./gradlew update
 ```
 
+Migrations run through the official Liquibase image (Docker required), pinned to the same version the CI runner uses. `status`, `rollback`, `dropAll` and the other Liquibase commands are Gradle tasks of the same name; arguments go through `-PliquibaseArgs`, e.g. `./gradlew rollback -PliquibaseArgs="8.8.0"`.
+
 Then set `DATABASE_URL=jdbc:postgresql://localhost:5432/dptb` along with matching `DATABASE_USERNAME` and `DATABASE_PASSWORD`.
 
 ### Running

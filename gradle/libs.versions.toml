@@ -1,7 +1,6 @@
 [versions]
 spring-boot-plugin = "3.5.9"
 spring-dependency-management-plugin = "1.1.7"
-liquibase-plugin = "2.2.1"
 kotlin-plugin = "2.3.21"
 ksp-plugin = "2.3.5"
 konvert = "4.5.0"
@@ -13,12 +12,8 @@ logbook = "3.9.0"
 telegram-bot = "9.2.0"
 datasource-decorator-spring-boot = "1.10.0"
 p6spy = "3.9.1"
-liquibase-core = "4.27.0"
-liquibase-dsl = "3.0.3"
-logback = "1.5.19"
+liquibase-core = "4.33.0"  # keep in sync with ARG LIQUIBASE_VERSION in .ansible/Dockerfile
 postgres = "42.7.3"
-snakeyaml = "2.0"
-picocli = "4.6.1"
 junit-jupiter = "5.8.2"
 testcontainers = "1.21.3"
 mockito-kotlin = "5.2.1"
@@ -53,11 +48,7 @@ telegrambots-longpolling = { module = "org.telegram:telegrambots-longpolling", v
 datasource-decorator-spring-boot = { module = "com.github.gavlyukovskiy:datasource-decorator-spring-boot-autoconfigure", version.ref = "datasource-decorator-spring-boot" }
 p6spy = { module = "p6spy:p6spy", version.ref = "p6spy" }
 liquibase-core = { module = "org.liquibase:liquibase-core", version.ref = "liquibase-core" }
-liquibase-groovy-dsl = { module = "org.liquibase:liquibase-groovy-dsl", version.ref = "liquibase-dsl" }
-logback = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
 postgres = { module = "org.postgresql:postgresql", version.ref = "postgres" }
-snakeyaml = { module = "org.yaml:snakeyaml", version.ref = "snakeyaml" }
-picocli = { module = "info.picocli:picocli", version.ref = "picocli" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit-jupiter" }
 testcontainers-core = { module = "org.testcontainers:testcontainers", version.ref = "testcontainers" }
 testcontainers-postgresql = { module = "org.testcontainers:postgresql", version.ref = "testcontainers" }
@@ -79,7 +70,6 @@ konvert-api = { module = "io.mcarle:konvert-api", version.ref = "konvert" }
 [plugins]
 springframework-boot = { id = "org.springframework.boot", version.ref = "spring-boot-plugin" }
 spring-dependency-management = { id = "io.spring.dependency-management", version.ref = "spring-dependency-management-plugin" }
-liquibase = { id = "org.liquibase.gradle", version.ref = "liquibase-plugin" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin-plugin" }
 kotlin-spring = { id = "org.jetbrains.kotlin.plugin.spring", version.ref = "kotlin-plugin" }
 kotlin-jpa = { id = "org.jetbrains.kotlin.plugin.jpa", version.ref = "kotlin-plugin" }
