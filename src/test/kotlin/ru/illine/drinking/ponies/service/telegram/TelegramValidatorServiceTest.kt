@@ -13,6 +13,7 @@ import org.junit.jupiter.params.provider.ValueSource
 import ru.illine.drinking.ponies.config.property.TelegramBotProperties
 import ru.illine.drinking.ponies.exception.InvalidAuthSignatureException
 import ru.illine.drinking.ponies.service.telegram.impl.TelegramValidatorServiceImpl
+import ru.illine.drinking.ponies.test.generator.DtoGenerator
 import ru.illine.drinking.ponies.test.tag.UnitTest
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
@@ -87,6 +88,28 @@ class TelegramValidatorServiceTest {
 
         assertEquals(1L, result.externalUserId)
         assertEquals("First Name", result.firstName)
+    }
+
+    @Test
+    @DisplayName("map(): carries every telegram field into the internal DTO and leaves the access flags unset")
+    fun `map carries every telegram field`() {
+        // language_code is a real init data field we deliberately do not model - it must not break the parsing.
+        val fullUserJson =
+            """{"id":42,"first_name":"Alisa","last_name":"Petrova","username":"alisa","language_code":"ru"}"""
+        val encodedUser = URLEncoder.encode(fullUserJson, StandardCharsets.UTF_8)
+        val initData = "auth_date=1234567890&user=$encodedUser"
+
+        val result = service.map(initData)
+
+        assertEquals(
+            DtoGenerator.generateTelegramAuthUserDto(
+                externalUserId = 42L,
+                firstName = "Alisa",
+                lastName = "Petrova",
+                username = "alisa",
+            ),
+            result,
+        )
     }
 
     @Test

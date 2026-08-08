@@ -109,23 +109,23 @@ class CodeLayoutTest {
     fun `tests avoid impl packages`() {
         Konsist
             .scopeFromTest()
-            .classes(includeNested = false)
+            .classesAndInterfacesAndObjects(includeNested = false)
             .assertFalse { it.resideInPackage("..impl..") }
     }
 
     @Test
     @DisplayName("every test class carries exactly one tag, directly or through a tagged parent")
     fun `test classes are tagged`() {
+        // An untagged test is silently skipped by includeTags, so the rule looks at objects too - Konsist keeps
+        // them out of classes(), and a tag missing there would never be reported.
+        val declarations = Konsist.scopeFromTest().classesAndInterfacesAndObjects(includeNested = false)
+
         val taggedParents =
-            Konsist
-                .scopeFromTest()
-                .classes(includeNested = false)
+            declarations
                 .filter { it.countAnnotations { annotation -> annotation.name in TEST_TAGS } == 1 }
                 .map { it.name }
 
-        Konsist
-            .scopeFromTest()
-            .classes(includeNested = false)
+        declarations
             .filter { it.hasNameEndingWith("Test") && it.resideOutsidePackage("..test.tag..") }
             .assertTrue { subject ->
                 val ownTags = subject.countAnnotations { annotation -> annotation.name in TEST_TAGS }
