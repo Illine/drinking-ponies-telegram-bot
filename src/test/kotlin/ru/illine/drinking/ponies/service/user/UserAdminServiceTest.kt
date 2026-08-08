@@ -11,7 +11,6 @@ import org.junit.jupiter.params.provider.NullSource
 import org.junit.jupiter.params.provider.ValueSource
 import org.mockito.kotlin.any
 import org.mockito.kotlin.anyOrNull
-import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.times
@@ -20,10 +19,11 @@ import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import org.springframework.data.domain.PageRequest
 import ru.illine.drinking.ponies.dao.access.TelegramUserAccessService
-import ru.illine.drinking.ponies.dao.repository.AdminUserProjection
-import ru.illine.drinking.ponies.dao.repository.UserCountsProjection
 import ru.illine.drinking.ponies.exception.TelegramUserNotFoundException
 import ru.illine.drinking.ponies.model.base.AdminUserStatusFilter
+import ru.illine.drinking.ponies.model.dto.internal.AdminUserDto
+import ru.illine.drinking.ponies.model.dto.internal.UserCountsDto
+import ru.illine.drinking.ponies.model.dto.internal.UserStateDto
 import ru.illine.drinking.ponies.service.user.impl.UserAdminServiceImpl
 import ru.illine.drinking.ponies.test.tag.UnitTest
 import java.time.LocalDateTime
@@ -50,7 +50,6 @@ class UserAdminServiceTest {
         userAdminService.getUsers(search, AdminUserStatusFilter.BANNED, page = 1, size = 5)
 
         verify(telegramUserAccessService).findAllForAdmin(null, AdminUserStatusFilter.BANNED, PageRequest.of(1, 5))
-        // The counters cover every chip of the admin page, so the status must not narrow them down.
         verify(telegramUserAccessService).countForAdmin(null)
     }
 
@@ -58,10 +57,8 @@ class UserAdminServiceTest {
     @CsvSource(
         "alice,    %alice%",
         "' alice ', '% alice %'",
-        // LIKE wildcards a user may legitimately type - a Telegram username often carries "_".
         """alice_p,  '%alice\_p%'""",
         """50%,      '%50\%%'""",
-        // The escape character itself has to be escaped first, or it would swallow the next one.
         """'a\b',    '%a\\b%'""",
     )
     @DisplayName("getUsers(): wraps a real search in wildcards and escapes the ones the user typed")
@@ -89,27 +86,21 @@ class UserAdminServiceTest {
         status: AdminUserStatusFilter,
         expectedTotal: Long,
     ) {
-        val counts =
-            mock<UserCountsProjection> {
-                on { all } doReturn 11L
-                on { active } doReturn 8L
-                on { inactive } doReturn 1L
-                on { banned } doReturn 2L
-            }
+        val counts = UserCountsDto(all = 11L, active = 8L, inactive = 1L, banned = 2L)
         whenever(telegramUserAccessService.findAllForAdmin(anyOrNull(), any(), any())).thenReturn(emptyList())
         whenever(telegramUserAccessService.countForAdmin(anyOrNull())).thenReturn(counts)
 
-        val response = userAdminService.getUsers(null, status, page = 0, size = 20)
+        val result = userAdminService.getUsers(null, status, page = 0, size = 20)
 
-        assertEquals(expectedTotal, response.total)
-        assertEquals(11L, response.counts.all)
+        assertEquals(expectedTotal, result.total)
+        assertEquals(11L, result.counts.all)
     }
 
     @Test
     @DisplayName("updateState(): an empty payload is rejected before the DAO is touched at all")
     fun `updateState rejects an empty payload`() {
         assertThrows<IllegalArgumentException> {
-            userAdminService.updateState(USER_ID, isActive = null)
+            userAdminService.updateState(USER_ID, UserStateDto(isActive = null))
         }
 
         verifyNoInteractions(telegramUserAccessService)
@@ -121,35 +112,35 @@ class UserAdminServiceTest {
         whenever(telegramUserAccessService.findByIdForAdmin(USER_ID)).thenReturn(null)
 
         assertThrows<TelegramUserNotFoundException> {
-            userAdminService.updateState(USER_ID, isActive = false)
+            userAdminService.updateState(USER_ID, UserStateDto(isActive = false))
         }
 
         verify(telegramUserAccessService).findByIdForAdmin(USER_ID)
-        verify(telegramUserAccessService, never()).updateDeleted(any(), any(), any())
+        verify(telegramUserAccessService, never()).updateState(any(), any(), anyOrNull())
     }
 
     @ParameterizedTest(name = "[{index}] isActive={0}")
     @CsvSource("true", "false")
     @DisplayName("updateState(): writes the flag, answers with it and reads the row only once")
     fun `updateState answers with the freshly written flag`(isActive: Boolean) {
-        val user =
-            mock<AdminUserProjection> {
-                on { id } doReturn USER_ID
-                on { externalUserId } doReturn EXTERNAL_USER_ID
-                // Stale on purpose - the row still holds the state from before the update,
-                // so an answer built from it alone would report the opposite of the truth.
-                on { deleted } doReturn isActive
-                on { timeZone } doReturn "Europe/Moscow"
-                on { created } doReturn LocalDateTime.of(2026, 1, 1, 10, 0)
-            }
+        val user = adminUser(deleted = isActive)
         whenever(telegramUserAccessService.findByIdForAdmin(USER_ID)).thenReturn(user)
 
-        val response = userAdminService.updateState(USER_ID, isActive)
+        val result = userAdminService.updateState(USER_ID, UserStateDto(isActive = isActive))
 
-        assertEquals(isActive, response.isActive)
-        verify(telegramUserAccessService).updateDeleted(USER_ID, EXTERNAL_USER_ID, !isActive)
-        // The card comes from the row already read, so the update must not trigger a second read.
+        assertEquals(!isActive, result.deleted)
+        verify(telegramUserAccessService).updateState(USER_ID, EXTERNAL_USER_ID, !isActive)
         verify(telegramUserAccessService, times(1)).findByIdForAdmin(USER_ID)
+    }
+
+    @Test
+    @DisplayName("updateState(): the rest of the row comes back untouched")
+    fun `updateState keeps the rest of the row`() {
+        whenever(telegramUserAccessService.findByIdForAdmin(USER_ID)).thenReturn(adminUser(deleted = true))
+
+        val result = userAdminService.updateState(USER_ID, UserStateDto(isActive = true))
+
+        assertEquals(adminUser(deleted = false), result)
     }
 
     @Test
@@ -166,11 +157,28 @@ class UserAdminServiceTest {
 
     private fun stubEmptyPage() {
         whenever(telegramUserAccessService.findAllForAdmin(anyOrNull(), any(), any())).thenReturn(emptyList())
-        whenever(telegramUserAccessService.countForAdmin(anyOrNull())).thenReturn(mock<UserCountsProjection>())
+        whenever(telegramUserAccessService.countForAdmin(anyOrNull())).thenReturn(EMPTY_COUNTS)
     }
+
+    private fun adminUser(deleted: Boolean): AdminUserDto =
+        AdminUserDto(
+            id = USER_ID,
+            externalUserId = EXTERNAL_USER_ID,
+            firstName = "Alisa",
+            lastName = "Petrova",
+            username = "alisaadmin",
+            isAdmin = false,
+            isBanned = false,
+            deleted = deleted,
+            timeZone = "Europe/Moscow",
+            created = LocalDateTime.of(2026, 1, 1, 10, 0),
+            lastActivity = null,
+        )
 
     companion object {
         private const val USER_ID = 1042L
         private const val EXTERNAL_USER_ID = 482719301L
+
+        private val EMPTY_COUNTS = UserCountsDto(all = 0L, active = 0L, inactive = 0L, banned = 0L)
     }
 }

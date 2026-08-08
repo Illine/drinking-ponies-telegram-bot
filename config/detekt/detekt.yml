@@ -679,7 +679,9 @@ style:
     ignoreLocalVariableDeclaration: true
     ignoreConstantDeclaration: true
     ignoreCompanionObjectPropertyDeclaration: true
-    ignoreAnnotation: false
+    # A number inside an annotation is a declaration, not a magic value: @Max(100) already
+    # says what 100 means. Naming it costs a constant and reads worse at the call site.
+    ignoreAnnotation: true
     ignoreNamedArgument: true
     ignoreEnums: false
     ignoreRanges: false

@@ -13,8 +13,6 @@ data class NotificationHistoryEntryRequest(
         requiredMode = Schema.RequiredMode.REQUIRED,
     )
     val status: NotificationHistoryStatus,
-    // The range is checked by the service instead of bean validation: a missed entry ignores the amount,
-    // and clients do send the whole form snapshot, zero included.
     @Schema(
         description = "Water amount in milliliters, from 50 to 1000. Required when CONFIRMED, ignored when MISSED.",
         example = "300",

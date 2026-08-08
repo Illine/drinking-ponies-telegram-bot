@@ -76,8 +76,6 @@ class WaterStatisticAccessServiceTest
                     },
                 )
 
-            // The returned DTO alone cannot tell an update from an insert - a second row would silently double
-            // the drunk volume on every edit of the journal - so the table itself is read back.
             val rows =
                 jdbcTemplate.queryForList(
                     """
@@ -208,14 +206,12 @@ class WaterStatisticAccessServiceTest
         fun `successful findByUserAndEventTimeBetween excludes endExclusive`() {
             val start = LocalDateTime.of(2025, 6, 15, 10, 0)
             val end = LocalDateTime.of(2025, 6, 15, 12, 0)
-            // exactly at endExclusive - must be excluded
             accessService.save(
                 DtoGenerator.generateWaterStatisticDto(
                     externalUserId = DEFAULT_EXTERNAL_USER_ID,
                     eventTime = end,
                 ),
             )
-            // before endExclusive - must be included
             accessService.save(
                 DtoGenerator.generateWaterStatisticDto(
                     externalUserId = DEFAULT_EXTERNAL_USER_ID,
@@ -359,7 +355,6 @@ class WaterStatisticAccessServiceTest
                         source = WaterEntrySourceType.NOTIFICATION,
                     ),
                 )
-            // Right source, wrong event type.
             accessService.save(
                 DtoGenerator.generateWaterStatisticDto(
                     externalUserId = DEFAULT_EXTERNAL_USER_ID,
@@ -368,7 +363,6 @@ class WaterStatisticAccessServiceTest
                     source = WaterEntrySourceType.NOTIFICATION,
                 ),
             )
-            // Right event type, wrong source.
             accessService.save(
                 DtoGenerator.generateWaterStatisticDto(
                     externalUserId = DEFAULT_EXTERNAL_USER_ID,
@@ -406,7 +400,6 @@ class WaterStatisticAccessServiceTest
                         source = WaterEntrySourceType.NOTIFICATION,
                     ),
                 )
-            // Same window, same source and event type, another owner: the journal must never show it.
             accessService.save(
                 DtoGenerator.generateWaterStatisticDto(
                     externalUserId = SECOND_EXTERNAL_USER_ID,
@@ -434,8 +427,6 @@ class WaterStatisticAccessServiceTest
         @DisplayName("findByIdAndUser(): returns the record of the requesting user, together with its owner")
         fun `findByIdAndUser returns own record`() {
             val eventTime = LocalDateTime.of(2025, 6, 15, 10, 0)
-            // The saved DTO deliberately carries another timezone: the owner of the record comes from the
-            // database, and the notification journal measures its edit window by exactly that value.
             val saved =
                 accessService.save(
                     DtoGenerator.generateWaterStatisticDto(
@@ -540,7 +531,6 @@ class WaterStatisticAccessServiceTest
                     eventTime = mine,
                 ),
             )
-            // Earlier event for a different user must NOT be returned for DEFAULT user.
             accessService.save(
                 DtoGenerator.generateWaterStatisticDto(
                     externalUserId = SECOND_EXTERNAL_USER_ID,
@@ -566,7 +556,6 @@ class WaterStatisticAccessServiceTest
             private const val SECOND_EXTERNAL_USER_ID = 2L
             private const val THIRD_EXTERNAL_USER_ID = 3L
 
-            // The timezone the seed script stores for the third user.
             private const val THIRD_USER_TIME_ZONE = "Asia/Kolkata"
             private const val NOT_EXISTED_USER_ID = 0L
             private const val NOT_EXISTED_ENTRY_ID = 0L

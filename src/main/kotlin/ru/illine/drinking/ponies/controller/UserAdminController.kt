@@ -15,14 +15,14 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import ru.illine.drinking.ponies.config.web.security.AdminOnly
+import ru.illine.drinking.ponies.mapper.AdminUserResponseMapper
 import ru.illine.drinking.ponies.model.base.AdminUserStatusFilter
+import ru.illine.drinking.ponies.model.dto.internal.UserStateDto
 import ru.illine.drinking.ponies.model.dto.request.UserStateRequest
 import ru.illine.drinking.ponies.model.dto.response.UserDetailsResponse
 import ru.illine.drinking.ponies.model.dto.response.UsersResponse
 import ru.illine.drinking.ponies.service.user.UserAdminService
 
-// Shares the /users path with UserController on purpose: same resource, different audience.
-// @AdminOnly sits on the class so a new endpoint here is closed by default.
 @RestController
 @RequestMapping("/users")
 @Validated
@@ -44,16 +44,16 @@ class UserAdminController(
         @Parameter(description = "Page size", example = "20")
         @RequestParam(name = "size", required = false, defaultValue = "20")
         @Min(1)
-        @Max(MAX_PAGE_SIZE)
+        @Max(100)
         size: Int,
-    ): UsersResponse = userAdminService.getUsers(search, status, page, size)
+    ): UsersResponse = AdminUserResponseMapper.toResponse(userAdminService.getUsers(search, status, page, size))
 
     @GetMapping("/{id}")
     @Operation(summary = "Get a single user card")
     fun getUser(
         @Parameter(description = "Internal user id", example = "1042")
         @PathVariable(name = "id") id: Long,
-    ): UserDetailsResponse = userAdminService.getUser(id)
+    ): UserDetailsResponse = AdminUserResponseMapper.toDetails(userAdminService.getUser(id))
 
     @PatchMapping("/{id}")
     @Operation(summary = "Update user state: soft delete or restore")
@@ -61,9 +61,9 @@ class UserAdminController(
         @Parameter(description = "Internal user id", example = "1042")
         @PathVariable(name = "id") id: Long,
         @Valid @RequestBody request: UserStateRequest,
-    ): UserDetailsResponse = userAdminService.updateState(id, request.isActive)
+    ): UserDetailsResponse {
+        val state = UserStateDto(isActive = request.isActive)
 
-    companion object {
-        private const val MAX_PAGE_SIZE = 100L
+        return AdminUserResponseMapper.toDetails(userAdminService.updateState(id, state))
     }
 }

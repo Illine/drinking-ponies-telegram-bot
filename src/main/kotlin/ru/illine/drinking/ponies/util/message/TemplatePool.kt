@@ -1,6 +1,6 @@
 package ru.illine.drinking.ponies.util.message
 
-import ru.illine.drinking.ponies.model.dto.message.MessageContext
+import ru.illine.drinking.ponies.model.dto.internal.MessageContext
 
 /**
  * A pool with one always-matching phrase - the common shape for static or single-substitution

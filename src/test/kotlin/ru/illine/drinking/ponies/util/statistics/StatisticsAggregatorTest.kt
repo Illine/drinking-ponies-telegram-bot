@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.MethodSource
-import ru.illine.drinking.ponies.model.dto.StatisticsPointDto
+import ru.illine.drinking.ponies.model.dto.internal.StatisticsPointDto
 import ru.illine.drinking.ponies.test.generator.DtoGenerator
 import ru.illine.drinking.ponies.test.tag.UnitTest
 import java.time.DayOfWeek
@@ -44,7 +44,6 @@ class StatisticsAggregatorTest {
     @Test
     @DisplayName("sumByLocalDate(): event near midnight UTC shifts to next local date for +5 zone")
     fun `sumByLocalDate shifts day for positive offset zone`() {
-        // 2026-05-11T19:30Z -> 2026-05-12T00:30 in +5
         val events = listOf(DtoGenerator.generateWaterEvent(LocalDateTime.of(2026, 5, 11, 19, 30), 250))
 
         val result = StatisticsAggregator.sumByLocalDate(events, yekZone)
@@ -105,7 +104,6 @@ class StatisticsAggregatorTest {
     @Test
     @DisplayName("aggregateByHour(): TZ shift moves event into local hour, not UTC hour")
     fun `aggregateByHour respects user zone`() {
-        // 03:30 UTC -> 08:30 in +5 -> hour 08
         val events = listOf(DtoGenerator.generateWaterEvent(LocalDateTime.of(2026, 5, 12, 3, 30), 250))
 
         val result = StatisticsAggregator.aggregateByHour(events, yekZone)
@@ -202,7 +200,6 @@ class StatisticsAggregatorTest {
     @Test
     @DisplayName("bestDay(): picks max value with weekday")
     fun `bestDay picks max with weekday`() {
-        // 2026-05-06 is Wednesday
         val byDate =
             mapOf(
                 LocalDate.of(2026, 5, 4) to 1800,
@@ -255,14 +252,12 @@ class StatisticsAggregatorTest {
         @JvmStatic
         fun provideAverageCases(): Stream<Arguments> =
             Stream.of(
-                // days=1, total=750
                 Arguments.of(
                     1,
                     listOf(StatisticsPointDto("08:00", 250), StatisticsPointDto("13:00", 500)),
                     750,
                     "days=1 returns total",
                 ),
-                // days=7, floor division
                 Arguments.of(
                     7,
                     listOf(
@@ -277,14 +272,12 @@ class StatisticsAggregatorTest {
                     (1800 + 2100 + 2400 + 1500) / 7,
                     "days=7 with partial fill (floor division)",
                 ),
-                // days=28, all zeros
                 Arguments.of(
                     28,
                     (1..28).map { StatisticsPointDto("2025-02-%02d".format(it), 0) },
                     0,
                     "all zeros",
                 ),
-                // days=2, total=999 -> 999/2 = 499 (floor)
                 Arguments.of(
                     2,
                     listOf(

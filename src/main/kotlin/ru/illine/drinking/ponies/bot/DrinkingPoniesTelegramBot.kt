@@ -29,7 +29,6 @@ class DrinkingPoniesTelegramBot(
         InMemoryDBContext(),
         BareboneToggle(),
     ) {
-    // Sentinel: Privacy.CREATOR is no longer used, but creatorId() is abstract in AbilityBot
     override fun creatorId(): Long = 0L
 
     override fun onRegister() {

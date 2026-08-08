@@ -1,6 +1,6 @@
 package ru.illine.drinking.ponies.util.message.templates
 
-import ru.illine.drinking.ponies.model.dto.message.InsightStatsContext
+import ru.illine.drinking.ponies.model.dto.internal.InsightStatsContext
 import ru.illine.drinking.ponies.util.PluralizationHelper.pluralizeDays
 import ru.illine.drinking.ponies.util.message.RuleBucket
 import ru.illine.drinking.ponies.util.message.TemplateRule
@@ -8,7 +8,6 @@ import ru.illine.drinking.ponies.util.message.TemplateRule
 object LocalInsightStats {
     val PHRASES: List<RuleBucket<InsightStatsContext>> =
         listOf(
-            // Specific signals
             listOf(
                 TemplateRule(
                     predicate = { it.currentStreakDays in 2..6 },
@@ -63,7 +62,6 @@ object LocalInsightStats {
                             { "День с ${it.bestDay!!.valueMl} мл воды - вот это размах :)" },
                         ),
                 ),
-                // Generic fallback - used only if nothing specific matched
                 TemplateRule(
                     predicate = { true },
                     templates =

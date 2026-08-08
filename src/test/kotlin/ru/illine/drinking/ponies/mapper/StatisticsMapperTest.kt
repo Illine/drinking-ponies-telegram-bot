@@ -6,9 +6,9 @@ import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
-import ru.illine.drinking.ponies.model.dto.BestDayDto
-import ru.illine.drinking.ponies.model.dto.StatisticsDto
-import ru.illine.drinking.ponies.model.dto.StatisticsPointDto
+import ru.illine.drinking.ponies.model.dto.internal.BestDayDto
+import ru.illine.drinking.ponies.model.dto.internal.StatisticsDto
+import ru.illine.drinking.ponies.model.dto.internal.StatisticsPointDto
 import ru.illine.drinking.ponies.model.dto.response.StatisticsResponse
 import ru.illine.drinking.ponies.test.tag.UnitTest
 import java.time.DayOfWeek
@@ -76,11 +76,8 @@ class StatisticsMapperTest {
     }
 
     @Test
-    @DisplayName("DPTB-127 regression: StatisticsResponse and StatisticsDto no longer expose period/goalProgress")
+    @DisplayName("regression: StatisticsResponse and StatisticsDto no longer expose period/goalProgress")
     fun `removed fields are absent from response and dto`() {
-        // The MiniApp does not consume these fields - they were removed from the public contract.
-        // Restoring them silently (e.g. via a copy-paste from an older branch) would leak internal
-        // state into the API. This contract guard fails fast if either field returns.
         val responseFields = StatisticsResponse::class.memberProperties.map { it.name }.toSet()
         val dtoFields = StatisticsDto::class.memberProperties.map { it.name }.toSet()
 

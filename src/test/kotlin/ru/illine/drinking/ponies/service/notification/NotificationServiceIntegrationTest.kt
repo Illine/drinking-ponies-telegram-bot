@@ -42,7 +42,6 @@ class NotificationServiceIntegrationTest
         private val cacheManager: CacheManager,
         private val jdbcTemplate: JdbcTemplate,
     ) {
-        // The greeting would otherwise go out over the network on every /start.
         @MockitoBean
         private lateinit var sender: TelegramClient
 
@@ -57,9 +56,6 @@ class NotificationServiceIntegrationTest
             notificationService.start(messageContext())
             softDelete()
 
-            // Before the restore existed this threw DataIntegrityViolationException: the soft-deleted
-            // row is hidden from the existence check, so /start tried to insert a second row and the
-            // unique index on external_user_id refused it.
             assertDoesNotThrow { notificationService.start(messageContext()) }
 
             assertFalse(isDeleted(), "The account has to be usable again after /start")
@@ -132,7 +128,7 @@ class NotificationServiceIntegrationTest
 
         private fun softDelete() {
             val id = jdbcTemplate.queryForObject(SELECT_ID, Long::class.java, EXTERNAL_USER_ID)!!
-            telegramUserAccessService.updateDeleted(id, EXTERNAL_USER_ID, deleted = true)
+            telegramUserAccessService.updateState(id, EXTERNAL_USER_ID, deleted = true)
             assertTrue(isDeleted(), "Arrange step must really have soft deleted the user")
         }
 

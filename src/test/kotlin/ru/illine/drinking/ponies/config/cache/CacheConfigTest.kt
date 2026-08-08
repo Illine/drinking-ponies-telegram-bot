@@ -36,8 +36,6 @@ class CacheConfigTest {
     @Test
     @DisplayName("cacheManager(): returns a TransactionAwareCacheManagerProxy so evicts defer until commit")
     fun `cacheManager wraps caffeine in transaction aware proxy`() {
-        // Without this proxy, @CacheEvict happens before the @Transactional method commits,
-        // and a concurrent reader can re-cache the stale value. The proxy is load-bearing.
         val properties =
             CacheProperties(
                 default = CacheEntry(ttl = Duration.ofMinutes(7), maximumSize = 50),

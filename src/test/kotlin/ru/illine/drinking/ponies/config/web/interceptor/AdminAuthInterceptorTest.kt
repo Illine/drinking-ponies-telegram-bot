@@ -16,7 +16,7 @@ import org.mockito.kotlin.whenever
 import org.springframework.web.method.HandlerMethod
 import ru.illine.drinking.ponies.config.web.security.AdminOnly
 import ru.illine.drinking.ponies.config.web.security.AuthErrorType
-import ru.illine.drinking.ponies.model.dto.TelegramUserDto
+import ru.illine.drinking.ponies.model.dto.request.TelegramInitDataUser
 import ru.illine.drinking.ponies.test.tag.UnitTest
 import ru.illine.drinking.ponies.util.telegram.TelegramGeneralConstants
 
@@ -29,7 +29,7 @@ class AdminAuthInterceptorTest {
     private lateinit var interceptor: AdminAuthInterceptor
 
     private val adminUser =
-        TelegramUserDto(
+        TelegramInitDataUser(
             externalUserId = 1L,
             firstName = "Admin",
             lastName = null,
@@ -38,7 +38,7 @@ class AdminAuthInterceptorTest {
         )
 
     private val nonAdminUser =
-        TelegramUserDto(
+        TelegramInitDataUser(
             externalUserId = 2L,
             firstName = "User",
             lastName = null,
@@ -94,8 +94,6 @@ class AdminAuthInterceptorTest {
         "preHandle(): @AdminOnly on the controller class + non-admin - returns false, 403, forbidden_admin",
     )
     fun `class level AdminOnly rejects a non admin`() {
-        // The annotation guards every handler of the controller, so an endpoint that carries
-        // none of its own is closed all the same.
         whenever(handlerMethod.getMethodAnnotation(AdminOnly::class.java)).thenReturn(null)
         doReturn(GuardedController::class.java).whenever(handlerMethod).beanType
         whenever(request.getAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE)).thenReturn(nonAdminUser)
@@ -143,7 +141,6 @@ class AdminAuthInterceptorTest {
         }
     }
 
-    // Stand-ins for the two kinds of controller the interceptor has to tell apart.
     @AdminOnly
     private class GuardedController
 

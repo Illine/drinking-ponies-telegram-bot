@@ -1,8 +1,5 @@
-package ru.illine.drinking.ponies.model.dto
+package ru.illine.drinking.ponies.model.dto.internal
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties
-
-@JsonIgnoreProperties(ignoreUnknown = true)
 data class SettingDto(
     val interval: String? = null,
     val intervalDisplayName: String? = null,

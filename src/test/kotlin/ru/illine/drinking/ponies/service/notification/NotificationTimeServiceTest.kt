@@ -113,7 +113,6 @@ class NotificationTimeServiceTest
             @JvmStatic
             fun quietTimeScenarios(): Stream<Arguments> =
                 Stream.of(
-                    // FORMAT: CurrentTime | Zone | Start | End | Expected | Description
                     Arguments.of(
                         "2025-01-01T12:00:00Z",
                         "UTC",
@@ -279,7 +278,6 @@ class NotificationTimeServiceTest
             @JvmStatic
             fun nextNotificationAtScenarios(): Stream<Arguments> =
                 Stream.of(
-                    // FORMAT: LastNotificationTime | Interval | Zone | QuietStart | QuietEnd | Expected | Description
                     Arguments.of(
                         "2025-01-01T10:00:00Z",
                         IntervalNotificationType.HOUR,
@@ -379,10 +377,6 @@ class NotificationTimeServiceTest
                         "2025-01-01T08:00:00Z",
                         "rawNext 07:30 inside day quiet 02-08 -> Shift to 08:00 same day",
                     ),
-                    // Pause + quiet mode interaction:
-                    // simulates pauseUntil=23:30 (timeOfLastNotification = 23:30 - 60m = 22:30)
-                    // pauseUntil falls inside quiet zone 23:00-08:00, so /next is shifted to 08:00.
-                    // This documents UX nuance: getPauseState returns 23:30, but actual notification at 08:00.
                     Arguments.of(
                         "2025-01-01T22:30:00Z",
                         IntervalNotificationType.HOUR,
@@ -392,7 +386,6 @@ class NotificationTimeServiceTest
                         "2025-01-02T08:00:00Z",
                         "Pause ending in quiet mode: rawNext 23:30 inside 23-08 -> Shift to 08:00 next day",
                     ),
-                    // Covers (quietEnd == null) branch on line 69 of calculateNextNotificationAt.
                     Arguments.of(
                         "2025-01-01T10:00:00Z",
                         IntervalNotificationType.HOUR,
@@ -402,7 +395,6 @@ class NotificationTimeServiceTest
                         "2025-01-01T11:00:00Z",
                         "Partial null: Start set, End null -> Treat as no quiet mode, return rawNext",
                     ),
-                    // Covers (quietStart == null) branch on line 69 of calculateNextNotificationAt.
                     Arguments.of(
                         "2025-01-01T10:00:00Z",
                         IntervalNotificationType.HOUR,
@@ -412,8 +404,6 @@ class NotificationTimeServiceTest
                         "2025-01-01T11:00:00Z",
                         "Partial null: Start null, End set -> Treat as no quiet mode, return rawNext",
                     ),
-                    // Covers (isAtOrAfterStart=true && isAtOrBeforeEnd=false) on the day branch (line 82).
-                    // rawNext 17:00 is after end 16:00 -> NOT in quiet mode, return rawNext.
                     Arguments.of(
                         "2025-01-01T16:00:00Z",
                         IntervalNotificationType.HOUR,
@@ -423,8 +413,6 @@ class NotificationTimeServiceTest
                         "2025-01-01T17:00:00Z",
                         "Day quiet mode: rawNext 17:00 after end 16:00 -> Return rawNext",
                     ),
-                    // Covers (isAtOrAfterStart=false || isAtOrBeforeEnd=true) on the night branch (line 84).
-                    // rawNext 07:00 is before start 23:00 but at-or-before end 08:00 -> in quiet mode -> shift.
                     Arguments.of(
                         "2025-01-01T06:00:00Z",
                         IntervalNotificationType.HOUR,
@@ -439,7 +427,6 @@ class NotificationTimeServiceTest
             @JvmStatic
             fun notificationDueScenarios(): Stream<Arguments> =
                 Stream.of(
-                    // FORMAT: CurrentTime | LastNotificationTime | Delay | Expected | Description
                     Arguments.of(
                         "2025-01-01T12:00:00Z",
                         "2025-01-01T10:00:00Z",

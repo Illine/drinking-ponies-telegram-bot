@@ -219,7 +219,6 @@ class TelegramUserAccessServiceTest
                 assertTrue(all.map { it.id }.contains(BANNED_DELETED_USER_ID), "Still one of the users, though")
             }
 
-            // The caller hands in a ready pattern, wildcards included - the DAO does not add them.
             @ParameterizedTest(name = "[{index}] search={0} - ids {1}")
             @CsvSource(
                 "%bob%,        '2'",
@@ -262,11 +261,8 @@ class TelegramUserAccessServiceTest
 
             @ParameterizedTest(name = "[{index}] search={0} - ids {1}")
             @CsvSource(
-                // An escaped underscore is a literal one, so only the user who really has it matches.
                 """%alice\_p%, '7'""",
-                // Left unescaped it is LIKE's single-character wildcard and catches the twin as well.
                 "%alice_p%,   '7,8'",
-                // A lone escaped wildcard finds the rows that truly contain that character.
                 """%\_%,       '7'""",
                 """%\%%,       ''""",
             )
@@ -317,8 +313,8 @@ class TelegramUserAccessServiceTest
                 assertEquals("Carol", row.firstName)
                 assertEquals("Ivanova", row.lastName)
                 assertEquals("carolgone", row.username)
-                assertFalse(row.admin)
-                assertFalse(row.banned)
+                assertFalse(row.isAdmin)
+                assertFalse(row.isBanned)
                 assertTrue(row.deleted)
                 assertEquals("Asia/Kolkata", row.timeZone)
                 assertEquals(LocalDateTime.of(2026, 1, 3, 12, 0), row.created)
@@ -344,8 +340,6 @@ class TelegramUserAccessServiceTest
 
                 assertEquals(8L, counts.all)
                 assertEquals(5L, counts.active)
-                // The banned-and-deleted user is counted once, under banned - otherwise the sum
-                // below would overshoot all by exactly that one row.
                 assertEquals(1L, counts.inactive)
                 assertEquals(2L, counts.banned)
                 assertEquals(counts.all, counts.active + counts.inactive + counts.banned)
@@ -385,7 +379,7 @@ class TelegramUserAccessServiceTest
 
                 assertNotNull(user)
                 assertEquals(ADMIN_EXTERNAL_ID, user!!.externalUserId)
-                assertTrue(user.admin)
+                assertTrue(user.isAdmin)
                 assertFalse(user.deleted)
                 assertEquals(LocalDateTime.of(2026, 1, 1, 10, 0), user.created)
                 assertEquals(LocalDateTime.of(2026, 3, 4, 9, 0), user.lastActivity)
@@ -408,8 +402,8 @@ class TelegramUserAccessServiceTest
         }
 
         @Nested
-        @DisplayName("updateDeleted()")
-        inner class UpdateDeleted {
+        @DisplayName("updateState()")
+        inner class UpdateState {
             @ParameterizedTest(name = "[{index}] id={0} - deleted={2}")
             @CsvSource(
                 "5, 777003, true",
@@ -421,16 +415,33 @@ class TelegramUserAccessServiceTest
                 externalUserId: Long,
                 deleted: Boolean,
             ) {
-                accessService.updateDeleted(id, externalUserId, deleted)
+                accessService.updateState(id, externalUserId, deleted)
 
                 assertEquals(deleted, accessService.findByIdForAdmin(id)!!.deleted)
+            }
+
+            @ParameterizedTest(name = "[{index}] id={0}")
+            @CsvSource(
+                "5, 777003",
+                "3, 777001",
+            )
+            @DisplayName("a null field leaves its column as it is, so an untouched toggle keeps its value")
+            fun `a null field changes nothing`(
+                id: Long,
+                externalUserId: Long,
+            ) {
+                val before = accessService.findByIdForAdmin(id)!!.deleted
+
+                accessService.updateState(id, externalUserId, deleted = null)
+
+                assertEquals(before, accessService.findByIdForAdmin(id)!!.deleted)
             }
 
             @Test
             @DisplayName("repeating the same update leaves the flag as it is")
             fun `repeating the same update is idempotent`() {
-                accessService.updateDeleted(ACTIVE_USER_ID, ACTIVE_EXTERNAL_ID, deleted = true)
-                accessService.updateDeleted(ACTIVE_USER_ID, ACTIVE_EXTERNAL_ID, deleted = true)
+                accessService.updateState(ACTIVE_USER_ID, ACTIVE_EXTERNAL_ID, deleted = true)
+                accessService.updateState(ACTIVE_USER_ID, ACTIVE_EXTERNAL_ID, deleted = true)
 
                 assertTrue(accessService.findByIdForAdmin(ACTIVE_USER_ID)!!.deleted)
                 assertEquals(2L, accessService.countForAdmin(null).inactive)
@@ -439,7 +450,7 @@ class TelegramUserAccessServiceTest
             @Test
             @DisplayName("an unknown id changes nothing")
             fun `unknown id changes nothing`() {
-                accessService.updateDeleted(MISSING_USER_ID, MISSING_EXTERNAL_ID, deleted = true)
+                accessService.updateState(MISSING_USER_ID, MISSING_EXTERNAL_ID, deleted = true)
 
                 val counts = accessService.countForAdmin(null)
                 assertEquals(8L, counts.all)
@@ -453,7 +464,19 @@ class TelegramUserAccessServiceTest
                 accessService.resolveAccessFlags(ACTIVE_EXTERNAL_ID, TelegramUserProfile())
                 assertNotNull(cache.get(ACTIVE_EXTERNAL_ID))
 
-                accessService.updateDeleted(ACTIVE_USER_ID, ACTIVE_EXTERNAL_ID, deleted = true)
+                accessService.updateState(ACTIVE_USER_ID, ACTIVE_EXTERNAL_ID, deleted = true)
+
+                assertNull(cache.get(ACTIVE_EXTERNAL_ID))
+            }
+
+            @Test
+            @DisplayName("evicts the flags even when every field is null and nothing is written")
+            fun `evicts the cached access flags on a no-op update`() {
+                val cache = cacheManager.getCache(CacheConfig.USER_ACCESS_FLAGS)!!
+                accessService.resolveAccessFlags(ACTIVE_EXTERNAL_ID, TelegramUserProfile())
+                assertNotNull(cache.get(ACTIVE_EXTERNAL_ID))
+
+                accessService.updateState(ACTIVE_USER_ID, ACTIVE_EXTERNAL_ID, deleted = null)
 
                 assertNull(cache.get(ACTIVE_EXTERNAL_ID))
             }

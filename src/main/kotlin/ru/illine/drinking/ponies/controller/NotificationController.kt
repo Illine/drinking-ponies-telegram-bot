@@ -20,8 +20,10 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
-import ru.illine.drinking.ponies.model.dto.TelegramUserDto
+import ru.illine.drinking.ponies.mapper.NotificationHistoryResponseMapper
+import ru.illine.drinking.ponies.mapper.PauseStateResponseMapper
 import ru.illine.drinking.ponies.model.dto.request.NotificationHistoryEntryRequest
+import ru.illine.drinking.ponies.model.dto.request.TelegramInitDataUser
 import ru.illine.drinking.ponies.model.dto.response.NotificationHistoryEvent
 import ru.illine.drinking.ponies.model.dto.response.NotificationHistoryResponse
 import ru.illine.drinking.ponies.model.dto.response.NotificationNextResponse
@@ -43,7 +45,7 @@ class NotificationController(
     @Operation(summary = "Get next notification time")
     fun getNextNotification(
         @Parameter(hidden = true)
-        @RequestAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) telegramUser: TelegramUserDto,
+        @RequestAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) telegramUser: TelegramInitDataUser,
     ): NotificationNextResponse {
         val nextAt = notificationSettingsService.getNextNotificationAt(telegramUser.externalUserId)
         return NotificationNextResponse(nextNotificationAt = nextAt)
@@ -53,15 +55,16 @@ class NotificationController(
     @Operation(summary = "Get notification pause state")
     fun getPauseState(
         @Parameter(hidden = true)
-        @RequestAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) telegramUser: TelegramUserDto,
-    ): PauseStateResponse = notificationSettingsService.getPauseState(telegramUser.externalUserId)
+        @RequestAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) telegramUser: TelegramInitDataUser,
+    ): PauseStateResponse =
+        PauseStateResponseMapper.toResponse(notificationSettingsService.getPauseState(telegramUser.externalUserId))
 
     @PutMapping("/pause")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(summary = "Pause or cancel pause for notifications")
     fun changePause(
         @Parameter(hidden = true)
-        @RequestAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) telegramUser: TelegramUserDto,
+        @RequestAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) telegramUser: TelegramInitDataUser,
         @Parameter(description = "Pause duration in minutes (0 = cancel pause, max 300 = 5 hours)", example = "60")
         @RequestParam(name = "minutes", required = true)
         @Min(0)
@@ -78,7 +81,7 @@ class NotificationController(
     @Operation(summary = "Get the notification journal for the requested period")
     fun getHistory(
         @Parameter(hidden = true)
-        @RequestAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) telegramUser: TelegramUserDto,
+        @RequestAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) telegramUser: TelegramInitDataUser,
         @Parameter(
             description = "Range start (inclusive) in yyyy-MM-dd format, in the user's timezone",
             example = "2026-05-01",
@@ -93,21 +96,26 @@ class NotificationController(
         )
         @RequestParam(name = "to", required = true)
         @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) to: LocalDate,
-    ): NotificationHistoryResponse = notificationHistoryService.getHistory(telegramUser.externalUserId, from, to)
+    ): NotificationHistoryResponse =
+        NotificationHistoryResponseMapper.toResponse(
+            notificationHistoryService.getHistory(telegramUser.externalUserId, from, to),
+        )
 
     @PatchMapping("/history/{id}")
     @Operation(summary = "Update a notification journal entry")
     fun updateHistoryEntry(
         @Parameter(hidden = true)
-        @RequestAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) telegramUser: TelegramUserDto,
+        @RequestAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) telegramUser: TelegramInitDataUser,
         @Parameter(description = "Journal entry identifier", example = "1042")
         @PathVariable(name = "id") id: Long,
         @Valid @RequestBody request: NotificationHistoryEntryRequest,
     ): NotificationHistoryEvent =
-        notificationHistoryService.updateEntry(
-            externalUserId = telegramUser.externalUserId,
-            entryId = id,
-            status = request.status,
-            amountMl = request.amountMl,
+        NotificationHistoryResponseMapper.toEvent(
+            notificationHistoryService.updateEntry(
+                externalUserId = telegramUser.externalUserId,
+                entryId = id,
+                status = request.status,
+                amountMl = request.amountMl,
+            ),
         )
 }

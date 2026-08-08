@@ -8,12 +8,13 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import ru.illine.drinking.ponies.config.cache.CacheConfig
 import ru.illine.drinking.ponies.dao.access.TelegramUserAccessService
-import ru.illine.drinking.ponies.dao.repository.AdminUserProjection
 import ru.illine.drinking.ponies.dao.repository.TelegramUserRepository
-import ru.illine.drinking.ponies.dao.repository.UserCountsProjection
+import ru.illine.drinking.ponies.mapper.AdminUserMapper
 import ru.illine.drinking.ponies.model.base.AdminUserStatusFilter
+import ru.illine.drinking.ponies.model.dto.internal.AdminUserDto
 import ru.illine.drinking.ponies.model.dto.internal.TelegramUserProfile
 import ru.illine.drinking.ponies.model.dto.internal.UserAccessDto
+import ru.illine.drinking.ponies.model.dto.internal.UserCountsDto
 import ru.illine.drinking.ponies.model.entity.TelegramUserEntity
 
 @Service
@@ -22,8 +23,6 @@ class TelegramUserAccessServiceImpl(
 ) : TelegramUserAccessService {
     private val logger = LoggerFactory.getLogger("ACCESS-SERVICE")
 
-    // Whatever changes these flags has to evict this cache by externalUserId,
-    // otherwise the change only takes effect once the entry expires - see updateDeleted below.
     @Transactional
     @Cacheable(CacheConfig.USER_ACCESS_FLAGS, key = "#externalUserId")
     override fun resolveAccessFlags(
@@ -44,36 +43,38 @@ class TelegramUserAccessServiceImpl(
         search: String?,
         status: AdminUserStatusFilter,
         pageable: Pageable,
-    ): List<AdminUserProjection> {
+    ): List<AdminUserDto> {
         logger.debug("Listing users for admin: search={}, status={}, page={}", search, status, pageable.pageNumber)
 
-        return telegramUserRepository.findAllForAdmin(search, status.deleted, status.banned, pageable)
+        return telegramUserRepository
+            .findAllForAdmin(search, status.deleted, status.banned, pageable)
+            .map { AdminUserMapper.toDto(it) }
     }
 
     @Transactional(readOnly = true)
-    override fun findByIdForAdmin(id: Long): AdminUserProjection? {
+    override fun findByIdForAdmin(id: Long): AdminUserDto? {
         logger.debug("Loading user [{}] for admin", id)
 
-        return telegramUserRepository.findByIdForAdmin(id)
+        return telegramUserRepository.findByIdForAdmin(id)?.let { AdminUserMapper.toDto(it) }
     }
 
     @Transactional(readOnly = true)
-    override fun countForAdmin(search: String?): UserCountsProjection {
+    override fun countForAdmin(search: String?): UserCountsDto {
         logger.debug("Counting users for admin: search={}", search)
 
-        return telegramUserRepository.countForAdmin(search)
+        return AdminUserMapper.toCounts(telegramUserRepository.countForAdmin(search))
     }
 
     @Transactional
     @CacheEvict(CacheConfig.USER_ACCESS_FLAGS, key = "#externalUserId")
-    override fun updateDeleted(
+    override fun updateState(
         id: Long,
         externalUserId: Long,
-        deleted: Boolean,
+        deleted: Boolean?,
     ) {
         logger.debug("Setting deleted={} for user [{}]", deleted, id)
 
-        telegramUserRepository.updateDeleted(id, deleted)
+        telegramUserRepository.updateState(id, deleted)
     }
 
     @Transactional
@@ -87,14 +88,10 @@ class TelegramUserAccessServiceImpl(
         return restored
     }
 
-    // Called on a cache miss only, so the profile is refreshed at most once per cache TTL
-    // instead of on every request. Dirty checking flushes the change on commit.
     private fun refreshProfile(
         user: TelegramUserEntity,
         profile: TelegramUserProfile,
     ) {
-        // Telegram always sends firstName for a real user; an empty profile means the caller has
-        // nothing to offer, and overwriting the stored one with nulls would lose data.
         if (profile.firstName == null) return
 
         if (user.matches(profile)) return

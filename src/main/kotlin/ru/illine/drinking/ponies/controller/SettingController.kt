@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import ru.illine.drinking.ponies.mapper.SettingResponseMapper
 import ru.illine.drinking.ponies.model.base.IntervalNotificationType
-import ru.illine.drinking.ponies.model.dto.TelegramUserDto
+import ru.illine.drinking.ponies.model.dto.request.TelegramInitDataUser
 import ru.illine.drinking.ponies.model.dto.response.SettingResponse
 import ru.illine.drinking.ponies.service.notification.NotificationSettingsService
 import ru.illine.drinking.ponies.util.telegram.TelegramGeneralConstants
@@ -31,7 +31,7 @@ class SettingController(
     @Operation(summary = "Get all notification settings")
     fun getSettings(
         @Parameter(hidden = true)
-        @RequestAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) telegramUser: TelegramUserDto,
+        @RequestAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) telegramUser: TelegramInitDataUser,
     ): SettingResponse {
         val settings = notificationSettingsService.getAllSettings(telegramUser.externalUserId)
         return SettingResponseMapper.toResponse(settings)
@@ -42,7 +42,7 @@ class SettingController(
     @Operation(summary = "Change quiet mode schedule")
     fun changeQuietMode(
         @Parameter(hidden = true)
-        @RequestAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) telegramUser: TelegramUserDto,
+        @RequestAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) telegramUser: TelegramInitDataUser,
         @Parameter(
             description = "Start time in HH:mm format",
             example = "23:00",
@@ -66,7 +66,7 @@ class SettingController(
     @Operation(summary = "Change user timezone")
     fun changeTimezone(
         @Parameter(hidden = true)
-        @RequestAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) telegramUser: TelegramUserDto,
+        @RequestAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) telegramUser: TelegramInitDataUser,
         @Parameter(description = "IANA timezone identifier", example = "Europe/Moscow")
         @RequestParam(name = "timezone", required = true) timezone: String,
     ) {
@@ -78,7 +78,7 @@ class SettingController(
     @Operation(summary = "Change notification interval")
     fun changeInterval(
         @Parameter(hidden = true)
-        @RequestAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) telegramUser: TelegramUserDto,
+        @RequestAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) telegramUser: TelegramInitDataUser,
         @Parameter(description = "Notification interval enum value", example = "HOUR")
         @RequestParam(name = "interval", required = true) interval: IntervalNotificationType,
     ) {
@@ -90,7 +90,7 @@ class SettingController(
     @Operation(summary = "Change notification enabled status")
     fun changeNotificationStatus(
         @Parameter(hidden = true)
-        @RequestAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) telegramUser: TelegramUserDto,
+        @RequestAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) telegramUser: TelegramInitDataUser,
         @Parameter(description = "Enable or disable notifications", example = "true")
         @RequestParam(name = "active", required = true) active: Boolean,
     ) {
@@ -102,7 +102,7 @@ class SettingController(
     @Operation(summary = "Change daily water intake goal")
     fun changeDailyGoal(
         @Parameter(hidden = true)
-        @RequestAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) telegramUser: TelegramUserDto,
+        @RequestAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) telegramUser: TelegramInitDataUser,
         @Parameter(
             description = "Daily goal in milliliters. Allowed values: 2000, 2250, 2500, 2750, 3000",
             example = "2000",

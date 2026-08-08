@@ -1,4 +1,4 @@
-package ru.illine.drinking.ponies.model.dto
+package ru.illine.drinking.ponies.model.dto.internal
 
 data class StatisticsPointDto(
     val label: String,

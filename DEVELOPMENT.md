@@ -45,6 +45,53 @@ With that, the native `Reformat Code` (Cmd/Ctrl+Alt+L) picks up `ktlint_official
 - **detekt baseline** currently freezes the existing legacy findings (`config/detekt/baseline.xml`). `MaxLineLength` overlaps with ktlint's line-length rule and is a planned follow-up to disable in detekt (ktlint owns line length).
 - Generated KSP/Konvert sources under `build/generated/**` are excluded from ktlint and are not picked up by detekt.
 
+## Code layout
+
+### Packages
+
+| Package | What lives there |
+|---|---|
+| `bot` | Telegram bot entry point |
+| `config` | Spring configuration: caching, properties, web (interceptors, security, exception handler) |
+| `controller` | REST controllers - the only place that knows about the HTTP wire format |
+| `dao/repository` | Spring Data repositories, plus `projection/` (interface projections of native queries) and `query/` (reusable native SQL fragments) |
+| `dao/access` | Persistence-facing services over repositories: mechanics, no business rules |
+| `service` | Business logic, one sub-package per feature (`notification`, `statistic`, `user`, ...) |
+| `mapper` | Konvert mappers, the only place where one model shape is turned into another |
+| `model/entity` | JPA entities |
+| `model/base` | Enums and other shared value types |
+| `model/dto` | Data carriers, see below |
+| `scheduler` | Scheduled jobs |
+| `util` | Helpers and constant holders, grouped by domain (`util/telegram`, `util/water`, ...) |
+| `exception` | Application exceptions |
+
+### Layer boundaries
+
+Every shape stops at its layer:
+
+- `dao/repository` types (entities, projections) do not leave `dao` - the access layer hands out internal DTOs instead.
+- Services take and return DTOs. A service never returns an HTTP response type.
+- The response is assembled in the controller: a Konvert mapper when the shape is non-trivial, the constructor when it is two or three fields copied as is.
+- A request DTO is unpacked in the controller as well - services take named parameters or an internal DTO, never the request type itself.
+
+### DTO packages
+
+Exactly three packages under `model/dto`, no nesting, nothing in the root:
+
+| Package | Contents | Marker |
+|---|---|---|
+| `request` | What the API accepts | `@Schema` + Jackson annotations |
+| `response` | What the API returns | `@Schema` |
+| `internal` | Everything else: dao ↔ service ↔ controller | no serialization annotations at all |
+
+The question to ask is binary: **is the type visible outside over HTTP?** Yes - `request`/`response`. No - `internal`. There is no other place to put it.
+
+Naming: what an endpoint returns carries the `*Response` suffix; a shape nested inside a response has no suffix (`WaterEntry`, `ShortUserInfo`, `UserCounts`). Internal carriers end with `*Dto`, except message contexts, which end with `*Context`.
+
+### Constants
+
+Hardcoded values do not live in services or controllers. Domain constants go to `util/<domain>/<Feature>Constants.kt`; a value that only makes sense inside a single annotation (`@Max(100)`) stays inline.
+
 ## Tests
 
 Test layout, tags and coverage live in [`TESTING.md`](TESTING.md).

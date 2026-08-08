@@ -1,11 +1,11 @@
 package ru.illine.drinking.ponies.dao.access
 
 import org.springframework.data.domain.Pageable
-import ru.illine.drinking.ponies.dao.repository.AdminUserProjection
-import ru.illine.drinking.ponies.dao.repository.UserCountsProjection
 import ru.illine.drinking.ponies.model.base.AdminUserStatusFilter
+import ru.illine.drinking.ponies.model.dto.internal.AdminUserDto
 import ru.illine.drinking.ponies.model.dto.internal.TelegramUserProfile
 import ru.illine.drinking.ponies.model.dto.internal.UserAccessDto
+import ru.illine.drinking.ponies.model.dto.internal.UserCountsDto
 
 interface TelegramUserAccessService {
     fun resolveAccessFlags(
@@ -17,18 +17,17 @@ interface TelegramUserAccessService {
         search: String?,
         status: AdminUserStatusFilter,
         pageable: Pageable,
-    ): List<AdminUserProjection>
+    ): List<AdminUserDto>
 
-    fun findByIdForAdmin(id: Long): AdminUserProjection?
+    fun findByIdForAdmin(id: Long): AdminUserDto?
 
-    fun countForAdmin(search: String?): UserCountsProjection
+    fun countForAdmin(search: String?): UserCountsDto
 
-    fun updateDeleted(
+    fun updateState(
         id: Long,
         externalUserId: Long,
-        deleted: Boolean,
+        deleted: Boolean?,
     )
 
-    // Returns true when the user was soft-deleted and has just been brought back.
     fun restoreIfDeleted(externalUserId: Long): Boolean
 }
