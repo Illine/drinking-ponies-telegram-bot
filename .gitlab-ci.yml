@@ -38,7 +38,7 @@ default:
 lint:
   extends: .default-tags
   stage: test
-  image: gradle:8.4-jdk17
+  image: gradle:9.6.1-jdk17
   variables:
     GRADLE_USER_HOME: ".gradle"
   cache:
@@ -55,7 +55,7 @@ test:
   stage: test
   needs:
     - lint
-  image: gradle:8.4-jdk17
+  image: gradle:9.6.1-jdk17
   variables:
     GRADLE_USER_HOME: ".gradle"
     TELEGRAM_BOT_TOKEN: ${DPTB_TEST_TELEGRAM_BOT_TOKEN}
@@ -92,7 +92,7 @@ test:
 build-jar:
   extends: .default-tags
   stage: build
-  image: gradle:8.4-jdk17
+  image: gradle:9.6.1-jdk17
   needs:
     - test
     - job: validate-bump-marker
