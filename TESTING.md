@@ -131,10 +131,14 @@ packages, `*Dto`/`*Context` suffixes for internal carriers, `@Konverter` mappers
 only in `mapper`, no test inside an `impl` package, and exactly one tag per test
 class.
 
-`ToolingConsistencyTest` checks that the Liquibase version in
-`gradle/libs.versions.toml` matches `ARG LIQUIBASE_VERSION` in
-`.ansible/Dockerfile` - the tests validate the changelog with one of them and the
-pipeline applies it with the other.
+`ToolingConsistencyTest` compares pins that live in different files and would
+otherwise drift silently: the Liquibase version in `gradle/libs.versions.toml`
+against `ARG LIQUIBASE_VERSION` in `.ansible/Dockerfile`, the Gradle version in
+the wrapper against the `gradle:<version>-jdk17` images in `.gitlab-ci.yml`, and
+the tags declared in `test/tag` against `includeTags` in `build.gradle.kts`.
+Those files sit outside the test source set, so they are registered as inputs of
+the `test` task - otherwise editing one of them alone would leave the task
+UP-TO-DATE and the drift unseen.
 
 Two rules for working with it:
 
@@ -148,7 +152,8 @@ Two rules for working with it:
 `rules can fail` is a guard, not a convention: it asserts that a deliberately
 false rule still throws. Konsist parses sources with its own bundled Kotlin
 compiler, so a future language bump could leave it silently blind - this test
-goes red the day that happens.
+goes red the day that happens. It covers the production scope only; the rules
+reading the test scope rely on Konsist raising on an empty selection.
 
 ## What we do NOT test
 

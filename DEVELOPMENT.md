@@ -17,15 +17,16 @@ Formatting is owned exclusively by ktlint; detekt runs with its formatting rules
 
 ```bash
 ./gradlew formatKotlin        # auto-fix formatting (run this before committing)
-./gradlew lintKotlin detekt   # the exact checks CI runs (formatting + static analysis)
+./gradlew lintKotlin detekt   # formatting + static analysis
+./gradlew check -x test       # exactly what the CI lint job runs
 ./gradlew check               # full local verify: lint + detekt + tests + coverage
 ```
 
-CI runs `gradle check -x test` as the `lint` job, which the `test` job depends on (`needs`), so formatting/smell regressions fail fast before tests. The `lint` job deliberately runs `check` rather than a list of task names: a verification task added later is wired into `check` by its plugin and reaches CI on its own.
+CI runs `gradle check -x test` as the `lint` job, which the `test` job depends on (`needs`), so formatting/smell regressions fail fast before tests. The `lint` job deliberately runs `check` rather than a list of task names: a verification task that its plugin wires into `check` reaches CI on its own. Tasks that merely sit in the `verification` group without being attached to `check` - `detektMain`/`detektTest`, for instance - still need to be named explicitly.
 
 ### Configuration cache
 
-[`gradle.properties`](gradle.properties) turns the configuration cache on for every build; CI reuses the entry across jobs through the cached `.gradle` directory. Build logic must therefore read the environment and files through `providers` - a plain `System.getenv` or `File(...)` is invisible to the cache, and the build silently replays stale values. When a plugin upgrade breaks the cache the build fails rather than degrades; `--no-configuration-cache` unblocks a single invocation.
+[`gradle.properties`](gradle.properties) turns the configuration cache on for every build. Locally that pays off on every repeated command. In CI it currently does not: a cache entry is keyed by the set of requested tasks, and only the `lint` job pushes the cache - `test` and `build-jar` request different tasks and run with `policy: pull`, so they recompute their configuration each pipeline. Build logic must therefore read the environment and files through `providers` - a plain `System.getenv` or `File(...)` is invisible to the cache, and the build silently replays stale values. When a plugin upgrade breaks the cache the build fails rather than degrades; `--no-configuration-cache` unblocks a single invocation.
 
 ### detekt baseline
 
@@ -59,9 +60,9 @@ One Liquibase, one version, everywhere. The CI `migration` stage runs the native
 ./gradlew rollback -PliquibaseArgs="8.8.0"  # arguments for a command
 ```
 
-Every Liquibase command is a Gradle task of the same name, grouped under `liquibase` in `./gradlew tasks`.
+The Liquibase commands used day to day are Gradle tasks of the same name, grouped under `liquibase` in `./gradlew tasks`. The list in [`build.gradle.kts`](build.gradle.kts) is not the full Liquibase surface - add the command there when a new one is needed.
 
-Connection settings come from `.liquibase/liquibase.properties`, overridable by `LIQUIBASE_URL` / `LIQUIBASE_USERNAME` / `LIQUIBASE_PASSWORD` - point them at another host and the changelog is applied there, exactly as the pipeline does it. Docker is required; `localhost` in the URL is rewritten to `host.docker.internal` so the container reaches a database on the host (Docker Desktop resolves that name, `--add-host` adds it on Linux).
+Connection settings come from `.liquibase/liquibase.properties` (`changeLogFile` is now relative to `src/main/resources`, not to the repository root), overridable by `LIQUIBASE_<KEY>` for any of them - `LIQUIBASE_URL`, `LIQUIBASE_USERNAME`, `LIQUIBASE_PASSWORD`, `LIQUIBASE_CONTEXT` - point them at another host and the changelog is applied there, exactly as the pipeline does it. Docker is required; `localhost` in the URL is rewritten to `host.docker.internal` so the container reaches a database on the host (Docker Desktop resolves that name, `--add-host` adds it on Linux).
 
 There is no Liquibase Gradle plugin: it needed Liquibase on the buildscript classpath, blocked the configuration cache, and gave us a second Liquibase version that the pipeline never used.
 
@@ -82,7 +83,7 @@ There is no Liquibase Gradle plugin: it needed Liquibase on the buildscript clas
 | `model/base` | Enums and other shared value types |
 | `model/dto` | Data carriers, see below |
 | `scheduler` | Scheduled jobs |
-| `util` | Helpers and constant holders, grouped by domain (`util/telegram`, `util/water`, ...) |
+| `util` | Helpers, constant holders and foreign wire schemas, grouped by domain (`util/telegram`, `util/water`, ...) |
 | `exception` | Application exceptions |
 
 ### Layer boundaries
@@ -140,10 +141,13 @@ hand-written mapper when the conversion carries logic (`SettingMapper` formats
 times and reaches into a nested property). What must not happen is a `@Konverter`
 appearing outside the package - that is what the rule checks.
 
-Three packages cross a boundary by design and are excluded from the import rules:
-`mapper` (turning one shape into another is what it exists for), `config/web`
-(interceptors and the exception handler are part of the web layer despite the
-package they live in) and the test fixture factory `test/generator`.
+Some packages cross a boundary by design, and each rule carries its own exclusion
+list: `mapper` is excluded everywhere (turning one shape into another is what it
+exists for), `dao` and `model/entity` from the dao-facing rules, and `controller`,
+`config/web` (interceptors and the exception handler are part of the web layer
+despite the package they live in) plus the test fixture factory `test/generator`
+from the HTTP-type rule. The lists live in
+[`config/detekt/detekt.yml`](config/detekt/detekt.yml) next to each rule.
 
 What stays on review: whether a mapper or a constructor fits a given shape, and
 whether a comment earns its place. Neither is expressible as a rule.

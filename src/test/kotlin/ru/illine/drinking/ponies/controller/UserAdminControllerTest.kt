@@ -64,7 +64,7 @@ class UserAdminControllerTest
         private lateinit var telegramValidatorService: TelegramValidatorService
 
         private val adminUser =
-            DtoGenerator.generateTelegramUserDto(
+            DtoGenerator.generateTelegramAuthUserDto(
                 externalUserId = ADMIN_EXTERNAL_ID,
                 firstName = "Alisa",
                 lastName = "Petrova",
@@ -72,7 +72,7 @@ class UserAdminControllerTest
             )
 
         private val nonAdminUser =
-            DtoGenerator.generateTelegramUserDto(
+            DtoGenerator.generateTelegramAuthUserDto(
                 externalUserId = PLAIN_EXTERNAL_ID,
                 firstName = "Bob",
                 lastName = "Smith",

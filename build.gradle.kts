@@ -1,7 +1,6 @@
 import org.jmailen.gradle.kotlinter.tasks.FormatTask
 import org.jmailen.gradle.kotlinter.tasks.LintTask
-import java.io.FileInputStream
-import java.util.*
+import java.util.Properties
 
 plugins {
     jacoco
@@ -112,7 +111,9 @@ detekt {
 // for instance - are passed as -PliquibaseArgs="...".
 // Read through providers, not File/System.getenv directly: only then does the configuration
 // cache notice that the settings changed and reconfigure instead of replaying stale values.
-val liquibaseSettings: Map<String, String> =
+// Lazily: a build that never materializes a liquibase task must not read the settings file,
+// otherwise its content and the LIQUIBASE_* variables become inputs of every other task.
+val liquibaseSettings: Map<String, String> by lazy {
     providers
         .fileContents(
             layout.projectDirectory.file(
@@ -123,6 +124,7 @@ val liquibaseSettings: Map<String, String> =
         .getOrElse(Properties())
         .entries
         .associate { it.key.toString() to it.value.toString() }
+}
 
 // Environment wins over the properties file, so credentials can stay out of it.
 fun liquibaseSetting(key: String, fallback: String): String =
@@ -132,9 +134,11 @@ fun liquibaseSetting(key: String, fallback: String): String =
 
 // A database on the host is localhost for us and host.docker.internal for the container.
 // Docker Desktop provides that name itself; --add-host below adds it on Linux.
-val liquibaseUrl = liquibaseSetting("url", "jdbc:postgresql://localhost:5432/dptb")
-    .replace("localhost", "host.docker.internal")
-    .replace("127.0.0.1", "host.docker.internal")
+// Only the host part is rewritten - a database or parameter named "localhost" stays intact.
+val liquibaseUrl: String by lazy {
+    liquibaseSetting("url", "jdbc:postgresql://localhost:5432/dptb")
+        .replace(Regex("""(?<=//)(localhost|127\.0\.0\.1)(?=[:/])"""), "host.docker.internal")
+}
 
 listOf(
     "update", "updateSql", "status", "validate", "history", "diff",
@@ -193,6 +197,12 @@ tasks {
         useJUnitPlatform {
             includeTags("unit", "spring-integration", "architecture")
         }
+
+        // ToolingConsistencyTest compares pins that live outside the source set; without these
+        // inputs a change to one of the files alone leaves the task UP-TO-DATE and the drift unseen.
+        inputs.file(".ansible/Dockerfile").withPropertyName("ansibleDockerfile")
+        inputs.file(".gitlab-ci.yml").withPropertyName("gitlabCi")
+        inputs.file("gradle/wrapper/gradle-wrapper.properties").withPropertyName("gradleWrapper")
 
         finalizedBy(jacocoTestReport)
     }

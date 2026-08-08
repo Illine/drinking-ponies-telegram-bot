@@ -26,17 +26,25 @@ private val TEST_TAGS = listOf("UnitTest", "SpringIntegrationTest", "Architectur
 @DisplayName("Code Layout Architecture Test")
 class CodeLayoutTest {
     @Test
-    @DisplayName("model/dto holds exactly three packages and an empty root")
+    @DisplayName("model/dto holds exactly three packages, an empty root and no nesting")
     fun `dto packages`() {
-        val buckets =
+        val relativePaths =
             Konsist
                 .scopeFromProduction()
                 .files
                 .filter { it.path.contains(DTO_PATH) }
-                .map { it.path.substringAfter(DTO_PATH).substringBefore("/") }
-                .toSet()
+                .map { it.path.substringAfter(DTO_PATH) }
 
-        assertEquals(DTO_PACKAGES, buckets, "model/dto must hold exactly $DTO_PACKAGES and no file in the root")
+        assertEquals(
+            DTO_PACKAGES,
+            relativePaths.map { it.substringBefore("/") }.toSet(),
+            "model/dto must hold exactly $DTO_PACKAGES and no file in the root",
+        )
+        assertEquals(
+            emptyList<String>(),
+            relativePaths.filter { it.count { char -> char == '/' } != 1 },
+            "model/dto allows no nesting: a file sits directly in one of $DTO_PACKAGES",
+        )
     }
 
     @Test
@@ -106,14 +114,24 @@ class CodeLayoutTest {
     }
 
     @Test
-    @DisplayName("every test class carries exactly one tag, directly or through its parent")
+    @DisplayName("every test class carries exactly one tag, directly or through a tagged parent")
     fun `test classes are tagged`() {
+        val taggedParents =
+            Konsist
+                .scopeFromTest()
+                .classes(includeNested = false)
+                .filter { it.countAnnotations { annotation -> annotation.name in TEST_TAGS } == 1 }
+                .map { it.name }
+
         Konsist
             .scopeFromTest()
             .classes(includeNested = false)
             .filter { it.hasNameEndingWith("Test") && it.resideOutsidePackage("..test.tag..") }
-            .assertTrue {
-                it.countAnnotations { annotation -> annotation.name in TEST_TAGS } == 1 || it.hasParents()
+            .assertTrue { subject ->
+                val ownTags = subject.countAnnotations { annotation -> annotation.name in TEST_TAGS }
+                // A parent name arrives with its type arguments: EnumTypeOfTest<WaterAmountType>.
+                val inheritsTag = subject.parents().any { it.name.substringBefore("<") in taggedParents }
+                ownTags == 1 || (ownTags == 0 && inheritsTag)
             }
     }
 

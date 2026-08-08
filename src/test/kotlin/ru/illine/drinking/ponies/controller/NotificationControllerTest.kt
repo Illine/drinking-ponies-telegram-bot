@@ -65,7 +65,7 @@ class NotificationControllerTest
         @MockitoBean
         private lateinit var notificationHistoryService: NotificationHistoryService
 
-        private val telegramUser = DtoGenerator.generateTelegramUserDto()
+        private val telegramUser = DtoGenerator.generateTelegramAuthUserDto()
 
         @BeforeEach
         fun setUp() {

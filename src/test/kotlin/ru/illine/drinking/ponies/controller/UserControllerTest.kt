@@ -51,7 +51,7 @@ class UserControllerTest
         @MockitoBean
         private lateinit var telegramValidatorService: TelegramValidatorService
 
-        private val telegramUser = DtoGenerator.generateTelegramUserDto(externalUserId = ADMIN_EXTERNAL_ID)
+        private val telegramUser = DtoGenerator.generateTelegramAuthUserDto(externalUserId = ADMIN_EXTERNAL_ID)
 
         @BeforeEach
         fun setUp() {

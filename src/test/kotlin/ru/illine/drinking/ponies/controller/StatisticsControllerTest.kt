@@ -60,7 +60,7 @@ class StatisticsControllerTest
         @MockitoBean
         private lateinit var waterStatisticService: WaterStatisticService
 
-        private val telegramUser = DtoGenerator.generateTelegramUserDto()
+        private val telegramUser = DtoGenerator.generateTelegramAuthUserDto()
 
         @BeforeEach
         fun setUp() {

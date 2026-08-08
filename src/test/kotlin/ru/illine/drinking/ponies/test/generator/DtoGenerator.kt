@@ -131,7 +131,7 @@ class DtoGenerator {
                 amountMl = amountMl,
             )
 
-        fun generateTelegramUserDto(
+        fun generateTelegramAuthUserDto(
             externalUserId: Long = 1L,
             firstName: String? = "First Name",
             lastName: String? = null,

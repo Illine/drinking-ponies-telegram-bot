@@ -675,10 +675,16 @@ style:
     markerClasses: []
   ForbiddenSuppress:
     active: true
+    # Only literal strings are matched, so the blanket forms that would silence a boundary
+    # (@Suppress("all"), @Suppress("style")) have to be listed next to the rule ids themselves.
     rules:
       - 'ForbiddenImport/repositoryOutsideDao'
       - 'ForbiddenImport/entityOutsideDao'
       - 'ForbiddenImport/httpTypesOutsideWeb'
+      - 'all'
+      - 'ALL'
+      - 'All'
+      - 'style'
   ForbiddenVoid:
     active: true
     ignoreOverridden: false
