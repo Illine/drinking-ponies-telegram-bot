@@ -124,7 +124,7 @@ The rules above are not left to review attention - most of them fail the build.
 | Repositories and projections stay inside `dao` | detekt `ForbiddenImport/repositoryOutsideDao` |
 | Entities stay inside `dao` and `mapper` | detekt `ForbiddenImport/entityOutsideDao` |
 | HTTP types (`request` and `response`) stay in the web layer | detekt `ForbiddenImport/httpTypesOutsideWeb` |
-| A boundary cannot be silenced with `@Suppress` | detekt `ForbiddenSuppress` |
+| Silencing a boundary with `@Suppress` is itself reported | detekt `ForbiddenSuppress` |
 | Three packages under `model/dto`, empty root | `architecture/CodeLayoutTest` |
 | No serialization annotations in `internal` | `architecture/CodeLayoutTest` |
 | `@Schema` on every request and response DTO | `architecture/CodeLayoutTest` |
@@ -135,6 +135,11 @@ The rules above are not left to review attention - most of them fail the build.
 | One Liquibase version for tests and for the CI runner | `architecture/ToolingConsistencyTest` |
 | `package` matches the directory | detekt `InvalidPackageDeclaration` |
 | Naming, formatting, import order | ktlint |
+
+`ForbiddenSuppress` matches literal strings, so every spelling that would silence
+a boundary is listed next to the rule ids - the blanket `all`/`style` forms and
+the same values with detekt's `detekt.` / `detekt:` prefix. A new rule id needs
+its prefixed spellings added too, otherwise the boundary stays suppressible.
 
 The reverse of the mapper rule is deliberately not enforced: `mapper` may hold a
 hand-written mapper when the conversion carries logic (`SettingMapper` formats

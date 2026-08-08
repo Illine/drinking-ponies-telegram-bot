@@ -685,6 +685,16 @@ style:
       - 'ALL'
       - 'All'
       - 'style'
+      - 'detekt.all'
+      - 'detekt:all'
+      - 'detekt.style'
+      - 'detekt:style'
+      - 'detekt.ForbiddenImport/repositoryOutsideDao'
+      - 'detekt:ForbiddenImport/repositoryOutsideDao'
+      - 'detekt.ForbiddenImport/entityOutsideDao'
+      - 'detekt:ForbiddenImport/entityOutsideDao'
+      - 'detekt.ForbiddenImport/httpTypesOutsideWeb'
+      - 'detekt:ForbiddenImport/httpTypesOutsideWeb'
   ForbiddenVoid:
     active: true
     ignoreOverridden: false

@@ -42,7 +42,12 @@ lint:
   variables:
     GRADLE_USER_HOME: ".gradle"
   cache:
-    - key: gradle-cache-${CI_PROJECT_ID}
+    # Keyed by the wrapper: a Gradle bump starts from a clean cache instead of
+    # dragging the previous version's caches and distributions along forever.
+    - key:
+        files:
+          - gradle/wrapper/gradle-wrapper.properties
+        prefix: gradle-cache-${CI_PROJECT_ID}
       paths:
         - .gradle
   script:
@@ -60,7 +65,12 @@ test:
     GRADLE_USER_HOME: ".gradle"
     TELEGRAM_BOT_TOKEN: ${DPTB_TEST_TELEGRAM_BOT_TOKEN}
   cache:
-    - key: gradle-cache-${CI_PROJECT_ID}
+    # Keyed by the wrapper: a Gradle bump starts from a clean cache instead of
+    # dragging the previous version's caches and distributions along forever.
+    - key:
+        files:
+          - gradle/wrapper/gradle-wrapper.properties
+        prefix: gradle-cache-${CI_PROJECT_ID}
       paths:
         - .gradle
       policy: pull
@@ -100,7 +110,12 @@ build-jar:
   variables:
     GRADLE_USER_HOME: ".gradle"
   cache:
-    - key: gradle-cache-${CI_PROJECT_ID}
+    # Keyed by the wrapper: a Gradle bump starts from a clean cache instead of
+    # dragging the previous version's caches and distributions along forever.
+    - key:
+        files:
+          - gradle/wrapper/gradle-wrapper.properties
+        prefix: gradle-cache-${CI_PROJECT_ID}
       paths:
         - .gradle
       policy: pull

@@ -203,6 +203,7 @@ tasks {
         inputs.file(".ansible/Dockerfile").withPropertyName("ansibleDockerfile")
         inputs.file(".gitlab-ci.yml").withPropertyName("gitlabCi")
         inputs.file("gradle/wrapper/gradle-wrapper.properties").withPropertyName("gradleWrapper")
+        inputs.file("gradle/libs.versions.toml").withPropertyName("versionCatalog")
 
         finalizedBy(jacocoTestReport)
     }
