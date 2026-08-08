@@ -110,16 +110,25 @@ detekt {
 // Liquibase runs through the official image, the same version the CI runner installs
 // (.ansible/Dockerfile, ARG LIQUIBASE_VERSION). Extra command arguments - a rollback tag,
 // for instance - are passed as -PliquibaseArgs="...".
-val liquibaseSettings = Properties().apply {
-    val file = File(System.getenv("LIQUIBASE_PROPERTIES_PATH") ?: "./.liquibase/liquibase.properties")
-    if (file.exists()) {
-        FileInputStream(file).use { load(it) }
-    }
-}
+// Read through providers, not File/System.getenv directly: only then does the configuration
+// cache notice that the settings changed and reconfigure instead of replaying stale values.
+val liquibaseSettings: Map<String, String> =
+    providers
+        .fileContents(
+            layout.projectDirectory.file(
+                providers.environmentVariable("LIQUIBASE_PROPERTIES_PATH").getOrElse(".liquibase/liquibase.properties")
+            )
+        ).asText
+        .map { text -> Properties().apply { load(text.reader()) } }
+        .getOrElse(Properties())
+        .entries
+        .associate { it.key.toString() to it.value.toString() }
 
 // Environment wins over the properties file, so credentials can stay out of it.
 fun liquibaseSetting(key: String, fallback: String): String =
-    System.getenv("LIQUIBASE_${key.uppercase()}") ?: liquibaseSettings.getProperty(key) ?: fallback
+    providers.environmentVariable("LIQUIBASE_${key.uppercase()}").orNull
+        ?: liquibaseSettings[key]
+        ?: fallback
 
 // A database on the host is localhost for us and host.docker.internal for the container.
 // Docker Desktop provides that name itself; --add-host below adds it on Linux.

@@ -21,7 +21,11 @@ Formatting is owned exclusively by ktlint; detekt runs with its formatting rules
 ./gradlew check               # full local verify: lint + detekt + tests + coverage
 ```
 
-CI runs `gradle lintKotlin detekt` as the `lint` job, which the `test` job depends on (`needs`), so formatting/smell regressions fail fast before tests.
+CI runs `gradle check -x test` as the `lint` job, which the `test` job depends on (`needs`), so formatting/smell regressions fail fast before tests. The `lint` job deliberately runs `check` rather than a list of task names: a verification task added later is wired into `check` by its plugin and reaches CI on its own.
+
+### Configuration cache
+
+[`gradle.properties`](gradle.properties) turns the configuration cache on for every build; CI reuses the entry across jobs through the cached `.gradle` directory. Build logic must therefore read the environment and files through `providers` - a plain `System.getenv` or `File(...)` is invisible to the cache, and the build silently replays stale values. When a plugin upgrade breaks the cache the build fails rather than degrades; `--no-configuration-cache` unblocks a single invocation.
 
 ### detekt baseline
 
