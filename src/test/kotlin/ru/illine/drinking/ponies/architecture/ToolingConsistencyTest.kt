@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.fail
 import ru.illine.drinking.ponies.test.tag.ArchitectureTest
 import java.io.File
 
@@ -27,11 +28,17 @@ class ToolingConsistencyTest {
 
     private fun read(path: String): String = root.resolve(path).readText()
 
+    // Two misses compare equal as null, which would silently switch the rule off.
+    private fun pin(
+        pattern: Regex,
+        path: String,
+    ): String = pattern.find(read(path))?.groupValues?.get(1) ?: fail("Found no $pattern in $path")
+
     @Test
     @DisplayName("the same Liquibase version validates and applies the changelog")
     fun `liquibase version is pinned once`() {
-        val catalog = CATALOG_LIQUIBASE.find(read("gradle/libs.versions.toml"))?.groupValues?.get(1)
-        val runner = DOCKERFILE_LIQUIBASE.find(read(".ansible/Dockerfile"))?.groupValues?.get(1)
+        val catalog = pin(CATALOG_LIQUIBASE, "gradle/libs.versions.toml")
+        val runner = pin(DOCKERFILE_LIQUIBASE, ".ansible/Dockerfile")
 
         assertEquals(
             runner,
@@ -43,7 +50,7 @@ class ToolingConsistencyTest {
     @Test
     @DisplayName("the wrapper and the CI image agree on the Gradle version")
     fun `gradle version is pinned once`() {
-        val wrapper = WRAPPER_GRADLE.find(read("gradle/wrapper/gradle-wrapper.properties"))?.groupValues?.get(1)
+        val wrapper = pin(WRAPPER_GRADLE, "gradle/wrapper/gradle-wrapper.properties")
         val images = CI_GRADLE_IMAGE.findAll(read(".gitlab-ci.yml")).map { it.groupValues[1] }.toSet()
 
         assertEquals(setOf(wrapper), images, "The wrapper builds with Gradle $wrapper, CI jobs use $images")
@@ -60,11 +67,7 @@ class ToolingConsistencyTest {
                 .mapNotNull { DECLARED_TAG.find(it.readText())?.groupValues?.get(1) }
                 .toSet()
         val included =
-            INCLUDED_TAGS
-                .find(read("build.gradle.kts"))
-                ?.groupValues
-                ?.get(1)
-                .orEmpty()
+            pin(INCLUDED_TAGS, "build.gradle.kts")
                 .split(",")
                 .map { it.trim().trim('"') }
                 .filter { it.isNotBlank() }

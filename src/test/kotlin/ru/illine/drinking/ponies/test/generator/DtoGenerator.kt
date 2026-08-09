@@ -136,12 +136,18 @@ class DtoGenerator {
             firstName: String? = "First Name",
             lastName: String? = null,
             username: String? = "username",
+            isAdmin: Boolean = false,
+            isBanned: Boolean = false,
+            isActive: Boolean = false,
         ): TelegramAuthUserDto =
             TelegramAuthUserDto(
                 externalUserId = externalUserId,
                 firstName = firstName,
                 lastName = lastName,
                 username = username,
+                isAdmin = isAdmin,
+                isBanned = isBanned,
+                isActive = isActive,
             )
 
         fun generateTelegramUserProfileDto(

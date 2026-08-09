@@ -35,44 +35,41 @@ variables:
 default:
   interruptible: true
 
-lint:
+# Every Gradle job shares the image, the home and the cache; only `lint` writes that cache,
+# the others pull it. The Gradle version here is checked against the wrapper by an architecture test.
+.gradle-job:
   extends: .default-tags
-  stage: test
   image: gradle:9.6.1-jdk17
   variables:
     GRADLE_USER_HOME: ".gradle"
   cache:
     # Keyed by the wrapper: a Gradle bump starts from a clean cache instead of
     # dragging the previous version's caches and distributions along forever.
-    - key:
+    - &gradle-cache
+      key:
         files:
           - gradle/wrapper/gradle-wrapper.properties
         prefix: gradle-cache-${CI_PROJECT_ID}
       paths:
         - .gradle
+
+lint:
+  extends: .gradle-job
+  stage: test
   script:
     # check minus tests: picks up every verification task wired into `check`,
     # so a newly added one cannot silently stay out of CI. Tests run in the `test` job.
     - gradle check -x test
 
 test:
-  extends: .default-tags
+  extends: .gradle-job
   stage: test
   needs:
     - lint
-  image: gradle:9.6.1-jdk17
   variables:
-    GRADLE_USER_HOME: ".gradle"
     TELEGRAM_BOT_TOKEN: ${DPTB_TEST_TELEGRAM_BOT_TOKEN}
   cache:
-    # Keyed by the wrapper: a Gradle bump starts from a clean cache instead of
-    # dragging the previous version's caches and distributions along forever.
-    - key:
-        files:
-          - gradle/wrapper/gradle-wrapper.properties
-        prefix: gradle-cache-${CI_PROJECT_ID}
-      paths:
-        - .gradle
+    - <<: *gradle-cache
       policy: pull
   before_script:
     - |
@@ -102,24 +99,14 @@ test:
         path: "build/jacoco/coverage.xml"
 
 build-jar:
-  extends: .default-tags
+  extends: .gradle-job
   stage: build
-  image: gradle:9.6.1-jdk17
   needs:
     - test
     - job: validate-bump-marker
       optional: true
-  variables:
-    GRADLE_USER_HOME: ".gradle"
   cache:
-    # Keyed by the wrapper: a Gradle bump starts from a clean cache instead of
-    # dragging the previous version's caches and distributions along forever.
-    - key:
-        files:
-          - gradle/wrapper/gradle-wrapper.properties
-        prefix: gradle-cache-${CI_PROJECT_ID}
-      paths:
-        - .gradle
+    - <<: *gradle-cache
       policy: pull
   script:
     # Same reason as in the `test` job: the entry this job would write is never reused.

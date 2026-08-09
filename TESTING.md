@@ -152,8 +152,14 @@ Two rules for working with it:
 `rules can fail` is a guard, not a convention: it asserts that a deliberately
 false rule still throws. Konsist parses sources with its own bundled Kotlin
 compiler, so a future language bump could leave it silently blind - this test
-goes red the day that happens. It covers the production scope only; the rules
-reading the test scope rely on Konsist raising on an empty selection.
+goes red the day that happens.
+
+Konsist passes an assertion on an *empty* list, so a rule whose selection
+quietly narrows to nothing reads as a guarantee while checking nothing. Every
+rule that filters or picks a package therefore calls `orFailIfEmpty` first and
+names what it expected to find. The same trap in `ToolingConsistencyTest`: a
+regex that stops matching yields `null`, and two nulls compare equal - the pins
+are read through `pin()`, which fails when a pattern finds nothing.
 
 ## What we do NOT test
 

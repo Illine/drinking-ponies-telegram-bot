@@ -3,6 +3,7 @@ package ru.illine.drinking.ponies.service.telegram
 import org.apache.commons.codec.digest.HmacUtils
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
@@ -88,14 +89,20 @@ class TelegramValidatorServiceTest {
 
         assertEquals(1L, result.externalUserId)
         assertEquals("First Name", result.firstName)
+        assertNull(result.lastName, "an absent optional field stays null instead of getting a default")
+        assertNull(result.username, "an absent optional field stays null instead of getting a default")
     }
 
     @Test
     @DisplayName("map(): carries every telegram field into the internal DTO and leaves the access flags unset")
     fun `map carries every telegram field`() {
         // language_code is a real init data field we deliberately do not model - it must not break the parsing.
+        // The access flags are sent by a hostile client on purpose: they must not survive into the internal DTO.
         val fullUserJson =
-            """{"id":42,"first_name":"Alisa","last_name":"Petrova","username":"alisa","language_code":"ru"}"""
+            """
+            {"id":42,"first_name":"Alisa","last_name":"Petrova","username":"alisa","language_code":"ru",
+             "is_admin":true,"is_banned":true,"is_active":true}
+            """.trimIndent()
         val encodedUser = URLEncoder.encode(fullUserJson, StandardCharsets.UTF_8)
         val initData = "auth_date=1234567890&user=$encodedUser"
 

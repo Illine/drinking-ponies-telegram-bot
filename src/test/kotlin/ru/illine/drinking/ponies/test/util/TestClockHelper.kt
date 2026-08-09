@@ -13,10 +13,6 @@ object TestClockHelper {
         private var instant: Instant,
         private val zone: ZoneId,
     ) : Clock() {
-        fun setTime(newInstant: Instant) {
-            this.instant = newInstant
-        }
-
         fun setTime(dateTime: String) {
             this.instant = Instant.parse(dateTime)
         }
