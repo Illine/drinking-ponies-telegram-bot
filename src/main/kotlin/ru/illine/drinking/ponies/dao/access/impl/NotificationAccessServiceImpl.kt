@@ -34,7 +34,7 @@ class NotificationAccessServiceImpl(
         logger.debug("Finding all notification setting records")
 
         return settingRepository
-            .findAllWithUserAndChat()
+            .findAllNotBannedWithUserAndChat()
             .map {
                 val user = TelegramUserMapper.toDto(it.telegramUser)
                 val chat = TelegramChatMapper.toDto(it.telegramChat, user)
@@ -73,15 +73,15 @@ class NotificationAccessServiceImpl(
         val userEntity =
             userRepository.findByExternalUserId(
                 externalUserId,
-            ) ?: TelegramUserMapper.toEntity(user)
+            ) ?: TelegramUserMapper.toNewEntity(user)
 
         val chatEntity =
-            chatRepository.findByExternalChatId(externalChatId) ?: TelegramChatMapper.toEntity(chat, userEntity)
+            chatRepository.findByExternalChatId(externalChatId) ?: TelegramChatMapper.toNewEntity(chat, userEntity)
 
         val settingEntity =
             settingRepository.findByTelegramUser_ExternalUserId(
                 externalUserId,
-            ) ?: NotificationSettingMapper.toEntity(setting, userEntity, chatEntity)
+            ) ?: NotificationSettingMapper.toNewEntity(setting, userEntity, chatEntity)
 
         userEntity.addTelegramChat(chatEntity)
         userEntity.notificationSettings = settingEntity
@@ -118,34 +118,39 @@ class NotificationAccessServiceImpl(
     @Transactional
     override fun updateNotificationsEnabled(externalUserId: Long) {
         logger.debug("A notification settings will be enabled (enabled = true) by externalUserId [$externalUserId]")
+        settingRepository.clearPause(externalUserId, LocalDateTime.now(clock))
         settingRepository.switchEnabled(externalUserId, true)
     }
 
     @Transactional
     override fun updateNotificationsDisabled(externalUserId: Long) {
         logger.debug("A notification settings will be disabled (enabled = false) by externalUserId [$externalUserId]")
-        settingRepository.clearPause(externalUserId)
+        settingRepository.clearPause(externalUserId, LocalDateTime.now(clock))
         settingRepository.switchEnabled(externalUserId, false)
     }
 
     @Transactional
-    override fun updateNotificationSettings(settings: Collection<NotificationSettingDto>): Set<NotificationSettingDto> {
-        logger.debug("Updating of notification settings...")
+    override fun recordMailingResults(settings: Collection<NotificationSettingDto>) {
+        if (settings.isEmpty()) return
 
-        return settings
-            .map {
-                val user = TelegramUserMapper.toEntity(it.telegramUser)
-                val chat = TelegramChatMapper.toEntity(it.telegramChat, user)
-                NotificationSettingMapper.toEntity(it, user, chat).also { setting ->
-                    user.notificationSettings = setting
-                    user.telegramChats += chat
-                }
-            }.apply { settingRepository.saveAll(this) }
-            .map {
-                val user = TelegramUserMapper.toDto(it.telegramUser)
-                val chat = TelegramChatMapper.toDto(it.telegramChat, user)
-                NotificationSettingMapper.toDto(it, user, chat)
-            }.toSet()
+        logger.debug("Recording the results of a mailing round for [{}] users", settings.size)
+
+        val byExternalUserId =
+            settingRepository
+                .findAllWithUserAndChatByExternalUserIdIn(settings.map { it.telegramUser.externalUserId })
+                .associateBy { it.telegramUser.externalUserId }
+
+        settings.forEach { dto ->
+            val stored = byExternalUserId[dto.telegramUser.externalUserId]
+            if (stored == null) {
+                logger.warn("Nothing to record: settings of [{}] are gone", dto.telegramUser.externalUserId)
+                return@forEach
+            }
+
+            stored.timeOfLastNotification = dto.timeOfLastNotification
+            stored.notificationAttempts = dto.notificationAttempts
+            stored.telegramChat.previousNotificationMessageId = dto.telegramChat.previousNotificationMessageId
+        }
     }
 
     @Transactional
@@ -188,14 +193,14 @@ class NotificationAccessServiceImpl(
             start,
             end,
         )
-        settingRepository.clearPause(externalUserId)
+        settingRepository.clearPause(externalUserId, LocalDateTime.now(clock))
         settingRepository.updateQuietMode(externalUserId, start, end)
     }
 
     @Transactional
     override fun updateQuietModeDisabled(externalUserId: Long) {
         logger.debug("The quiet mod will be disabled for a user [$externalUserId]")
-        settingRepository.clearPause(externalUserId)
+        settingRepository.clearPause(externalUserId, LocalDateTime.now(clock))
         settingRepository.updateQuietMode(externalUserId)
     }
 

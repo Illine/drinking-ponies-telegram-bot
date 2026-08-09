@@ -42,6 +42,7 @@ class NotificationServiceImpl(
         val setting =
             notificationAccessService.existsByExternalUserId(externalUserId).check(
                 ifTrue = {
+                    notificationAccessService.updateNotificationsEnabled(externalUserId)
                     notificationAccessService.findNotificationSettingByExternalUserId(externalUserId)
                 },
                 ifFalse = {

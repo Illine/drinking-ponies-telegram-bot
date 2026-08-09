@@ -23,8 +23,10 @@ import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.illine.drinking.ponies.config.cache.CacheConfig
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
 import ru.illine.drinking.ponies.dao.access.TelegramUserAccessService
-import ru.illine.drinking.ponies.model.dto.internal.TelegramUserProfileDto
+import ru.illine.drinking.ponies.model.dto.internal.UserStateChangeDto
 import ru.illine.drinking.ponies.test.tag.SpringIntegrationTest
+import java.time.Clock
+import java.time.LocalDateTime
 
 @SpringIntegrationTest
 @DisplayName("NotificationService Spring Integration Test")
@@ -41,6 +43,7 @@ class NotificationServiceIntegrationTest
         private val telegramUserAccessService: TelegramUserAccessService,
         private val cacheManager: CacheManager,
         private val jdbcTemplate: JdbcTemplate,
+        private val clock: Clock,
     ) {
         @MockitoBean
         private lateinit var sender: TelegramClient
@@ -80,7 +83,7 @@ class NotificationServiceIntegrationTest
             notificationService.start(messageContext())
             softDelete()
             val cache = cacheManager.getCache(CacheConfig.USER_ACCESS_FLAGS)!!
-            telegramUserAccessService.resolveAccessFlags(EXTERNAL_USER_ID, TelegramUserProfileDto())
+            telegramUserAccessService.resolveAccessFlags(EXTERNAL_USER_ID)
             assertNotNull(cache.get(EXTERNAL_USER_ID))
 
             notificationService.start(messageContext())
@@ -123,13 +126,99 @@ class NotificationServiceIntegrationTest
             assertFalse(isDeleted())
         }
 
+        @Test
+        @DisplayName("start(): a user who switched notifications off says /start - it works and turns them back on")
+        fun `start revives a user with notifications switched off`() {
+            notificationService.start(messageContext())
+            notificationAccessService.updateNotificationsDisabled(EXTERNAL_USER_ID)
+
+            assertDoesNotThrow { notificationService.start(messageContext()) }
+
+            assertTrue(notificationAccessService.findIsEnabledNotificationsByExternalUserId(EXTERNAL_USER_ID))
+        }
+
+        @Test
+        @DisplayName("start(): an active pause does not outlive the /start that turns notifications back on")
+        fun `start clears an active pause`() {
+            notificationService.start(messageContext())
+            val now = LocalDateTime.now(clock)
+            notificationAccessService.updatePause(EXTERNAL_USER_ID, now.plusHours(8))
+
+            notificationService.start(messageContext())
+
+            val settings = notificationAccessService.findNotificationSettingByExternalUserId(EXTERNAL_USER_ID)
+            assertNull(settings.pauseUntil)
+            assertFalse(
+                settings.timeOfLastNotification.isAfter(now),
+                "the bot answers that notifications are on, so they have to actually arrive",
+            )
+        }
+
+        @Test
+        @DisplayName("start(): the ban survives a /start, unlike a deletion")
+        fun `start does not lift a ban`() {
+            notificationService.start(messageContext())
+            ban()
+
+            notificationService.start(messageContext())
+
+            assertTrue(telegramUserAccessService.resolveAccessFlags(EXTERNAL_USER_ID).isBanned)
+        }
+
+        @Test
+        @DisplayName("a banned user is dropped from the mailing selection")
+        fun `a banned user is not reminded to drink`() {
+            notificationService.start(messageContext())
+            assertEquals(listOf(EXTERNAL_USER_ID), mailingRecipients())
+
+            ban()
+
+            assertTrue(mailingRecipients().isEmpty(), "A banned user gets no notifications")
+        }
+
+        @Test
+        @DisplayName("start(): the restore is recorded with the returning user as their own actor")
+        fun `start records the restore as the deed of the user themselves`() {
+            notificationService.start(messageContext())
+            softDelete()
+
+            notificationService.start(messageContext())
+
+            val id = userId()
+            assertEquals(listOf("RESTORED by $id on $id"), stateEvents().filter { it.startsWith("RESTORED") })
+        }
+
+        @Test
+        @DisplayName("start(): a live user says /start - the audit history stays empty, nothing changed")
+        fun `start records nothing for a live user`() {
+            notificationService.start(messageContext())
+
+            notificationService.start(messageContext())
+
+            assertTrue(stateEvents().isEmpty(), "An unchanged state is not a state event")
+        }
+
         private fun mailingRecipients(): List<Long> =
             notificationAccessService.findAllNotificationSettings().map { it.telegramUser.externalUserId }
 
+        private fun stateEvents(): List<String> =
+            jdbcTemplate.query(SELECT_EVENTS) { rs, _ ->
+                "${rs.getString("event_type")} by ${rs.getLong("actor_user_id")} on ${rs.getLong("user_id")}"
+            }
+
+        private fun userId(): Long = jdbcTemplate.queryForObject(SELECT_ID, Long::class.java, EXTERNAL_USER_ID)!!
+
+        // The admin API refuses to change one's own state, so an arrange step doing it describes a world
+        // that cannot happen - both fixtures act as somebody else.
+        private fun adminId(): Long = jdbcTemplate.queryForObject(UPSERT_ADMIN, Long::class.java, ADMIN_EXTERNAL_ID)!!
+
         private fun softDelete() {
-            val id = jdbcTemplate.queryForObject(SELECT_ID, Long::class.java, EXTERNAL_USER_ID)!!
-            telegramUserAccessService.updateState(id, EXTERNAL_USER_ID, deleted = true)
+            telegramUserAccessService.updateState(userId(), adminId(), UserStateChangeDto(deleted = true))
             assertTrue(isDeleted(), "Arrange step must really have soft deleted the user")
+        }
+
+        private fun ban() {
+            telegramUserAccessService.updateState(userId(), adminId(), UserStateChangeDto(banned = true))
         }
 
         private fun isDeleted(): Boolean =
@@ -157,9 +246,19 @@ class NotificationServiceIntegrationTest
 
         companion object {
             private const val EXTERNAL_USER_ID = 777001L
+            private const val ADMIN_EXTERNAL_ID = 777099L
             private const val CHAT_ID = 424242L
 
+            private const val UPSERT_ADMIN = """
+                insert into telegram_users (external_user_id, user_time_zone, is_admin)
+                values (?, 'Europe/Moscow', true)
+                on conflict (external_user_id) do update set is_admin = true
+                returning id
+            """
+
             private const val SELECT_ID = "select id from telegram_users where external_user_id = ?"
+            private const val SELECT_EVENTS =
+                "select event_type, user_id, actor_user_id from user_state_events order by id"
             private const val SELECT_DELETED = "select deleted from telegram_users where external_user_id = ?"
             private const val COUNT_USERS = "select count(*) from telegram_users where external_user_id = ?"
             private const val COUNT_CHATS = """

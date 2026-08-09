@@ -63,7 +63,7 @@ class NotificationSenderServiceImpl(
                 }
             }
 
-        notificationAccessService.updateNotificationSettings(sent)
+        notificationAccessService.recordMailingResults(sent)
     }
 
     override fun suspendNotifications(notifications: Collection<NotificationSettingDto>) {
@@ -94,7 +94,7 @@ class NotificationSenderServiceImpl(
                 }
             }
 
-        notificationAccessService.updateNotificationSettings(sent)
+        notificationAccessService.recordMailingResults(sent)
         waterStatisticService.recordEvents(
             sent.map { it.telegramUser },
             AnswerNotificationType.CANCEL,
