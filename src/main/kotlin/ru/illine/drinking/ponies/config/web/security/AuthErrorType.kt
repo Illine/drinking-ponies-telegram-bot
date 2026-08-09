@@ -7,6 +7,8 @@ enum class AuthErrorType(
     INVALID_AUTH_SIGNATURE("invalid_auth_signature"),
     SESSION_EXPIRED("session_expired"),
     FORBIDDEN_ADMIN("forbidden_admin"),
+    BANNED("banned"),
+    DELETED("deleted"),
     ;
 
     companion object {

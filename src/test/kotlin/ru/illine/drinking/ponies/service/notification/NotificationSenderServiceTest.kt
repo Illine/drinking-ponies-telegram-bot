@@ -115,7 +115,7 @@ class NotificationSenderServiceTest {
 
         verify(messageEditorService).deleteMessages(any())
         verify(sender).execute(any<SendMessage>())
-        verify(notificationAccessService).updateNotificationSettings(any())
+        verify(notificationAccessService).recordMailingResults(any())
         assertEquals(1, dto.notificationAttempts)
         assertEquals(2, dto.telegramChat.previousNotificationMessageId)
         assertEquals(expectedTimeOfLastNotification, dto.timeOfLastNotification)
@@ -132,7 +132,7 @@ class NotificationSenderServiceTest {
         service.sendNotifications(listOf(dto))
 
         verify(notificationAccessService).updateNotificationsDisabled(externalUserId)
-        verify(notificationAccessService).updateNotificationSettings(any())
+        verify(notificationAccessService).recordMailingResults(any())
     }
 
     @Test
@@ -147,7 +147,7 @@ class NotificationSenderServiceTest {
 
         val captor = argumentCaptor<Collection<NotificationSettingDto>>()
         verify(notificationAccessService, never()).updateNotificationsDisabled(any())
-        verify(notificationAccessService).updateNotificationSettings(captor.capture())
+        verify(notificationAccessService).recordMailingResults(captor.capture())
         assertEquals(emptyList<NotificationSettingDto>(), captor.firstValue.toList())
     }
 
@@ -182,7 +182,7 @@ class NotificationSenderServiceTest {
         val captor = argumentCaptor<Collection<NotificationSettingDto>>()
         verify(sender, times(3)).execute(any<SendMessage>())
         verify(notificationAccessService, never()).updateNotificationsDisabled(any())
-        verify(notificationAccessService).updateNotificationSettings(captor.capture())
+        verify(notificationAccessService).recordMailingResults(captor.capture())
         assertEquals(listOf(first, last), captor.firstValue.toList())
     }
 
@@ -211,7 +211,7 @@ class NotificationSenderServiceTest {
 
         verify(messageEditorService).deleteMessages(any())
         verify(sender).execute(any<SendMessage>())
-        verify(notificationAccessService).updateNotificationSettings(any())
+        verify(notificationAccessService).recordMailingResults(any())
         assertEquals(0, dto.notificationAttempts)
         assertNull(dto.telegramChat.previousNotificationMessageId)
     }
@@ -237,7 +237,7 @@ class NotificationSenderServiceTest {
         service.suspendNotifications(listOf(dto))
 
         verify(notificationAccessService).updateNotificationsDisabled(externalUserId)
-        verify(notificationAccessService).updateNotificationSettings(any())
+        verify(notificationAccessService).recordMailingResults(any())
     }
 
     @Test
@@ -252,7 +252,7 @@ class NotificationSenderServiceTest {
 
         val captor = argumentCaptor<Collection<NotificationSettingDto>>()
         verify(notificationAccessService, never()).updateNotificationsDisabled(any())
-        verify(notificationAccessService).updateNotificationSettings(captor.capture())
+        verify(notificationAccessService).recordMailingResults(captor.capture())
         assertEquals(emptyList<NotificationSettingDto>(), captor.firstValue.toList())
     }
 

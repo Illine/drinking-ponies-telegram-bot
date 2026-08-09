@@ -27,10 +27,12 @@ class CacheConfigTest {
         val manager = CacheConfig(properties).cacheManager()
 
         assertTrue(manager.cacheNames.contains(CacheConfig.USER_ACCESS_FLAGS))
+        assertTrue(manager.cacheNames.contains(CacheConfig.USER_PROFILE_SYNC))
         assertTrue(manager.cacheNames.contains(CacheConfig.WATER_FIRST_ENTRY))
         assertNotNull(manager.getCache(CacheConfig.USER_ACCESS_FLAGS))
+        assertNotNull(manager.getCache(CacheConfig.USER_PROFILE_SYNC))
         assertNotNull(manager.getCache(CacheConfig.WATER_FIRST_ENTRY))
-        assertEquals(2, manager.cacheNames.size)
+        assertEquals(3, manager.cacheNames.size)
     }
 
     @Test
@@ -69,8 +71,9 @@ class CacheConfigTest {
         val manager = CacheConfig(properties).cacheManager()
 
         assertNotNull(manager.getCache(CacheConfig.USER_ACCESS_FLAGS))
+        assertNotNull(manager.getCache(CacheConfig.USER_PROFILE_SYNC))
         assertNotNull(manager.getCache(CacheConfig.WATER_FIRST_ENTRY))
-        assertEquals(2, manager.cacheNames.size)
+        assertEquals(3, manager.cacheNames.size)
     }
 
     @Test
@@ -92,7 +95,8 @@ class CacheConfigTest {
         val manager = CacheConfig(properties).cacheManager()
 
         assertNotNull(manager.getCache(CacheConfig.USER_ACCESS_FLAGS))
+        assertNotNull(manager.getCache(CacheConfig.USER_PROFILE_SYNC))
         assertNotNull(manager.getCache(CacheConfig.WATER_FIRST_ENTRY))
-        assertEquals(2, manager.cacheNames.size)
+        assertEquals(3, manager.cacheNames.size)
     }
 }

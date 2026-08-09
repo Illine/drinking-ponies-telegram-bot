@@ -6,11 +6,13 @@ import org.springframework.data.jpa.repository.query.EscapeCharacter
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import ru.illine.drinking.ponies.dao.access.TelegramUserAccessService
+import ru.illine.drinking.ponies.exception.SelfStateChangeException
 import ru.illine.drinking.ponies.exception.TelegramUserNotFoundException
 import ru.illine.drinking.ponies.model.base.AdminUserStatusFilter
 import ru.illine.drinking.ponies.model.dto.internal.AdminUserDto
 import ru.illine.drinking.ponies.model.dto.internal.AdminUserPageDto
 import ru.illine.drinking.ponies.model.dto.internal.UserCountsDto
+import ru.illine.drinking.ponies.model.dto.internal.UserStateChangeDto
 import ru.illine.drinking.ponies.model.dto.internal.UserStateDto
 import ru.illine.drinking.ponies.service.user.UserAdminService
 
@@ -45,16 +47,27 @@ class UserAdminServiceImpl(
     @Transactional
     override fun updateState(
         id: Long,
+        actorId: Long,
         state: UserStateDto,
     ): AdminUserDto {
-        val isActive = requireNotNull(state.isActive) { "At least one state field is required, got an empty payload" }
+        require(state.isActive != null || state.isBanned != null) {
+            "At least one state field is required, got an empty payload"
+        }
+        if (id == actorId) {
+            throw SelfStateChangeException("Admin [$actorId] tried to change their own state")
+        }
 
         val user = requireUser(id)
 
-        logger.info("Setting isActive={} for user [{}]", isActive, id)
-        telegramUserAccessService.updateState(id, user.externalUserId, deleted = !isActive)
+        logger.info("Setting isActive={}, isBanned={} for user [{}]", state.isActive, state.isBanned, id)
+        val applied =
+            telegramUserAccessService.updateState(
+                id = id,
+                actorId = actorId,
+                change = UserStateChangeDto(deleted = state.isActive?.not(), banned = state.isBanned),
+            )
 
-        return user.copy(deleted = !isActive)
+        return user.copy(deleted = applied.isDeleted, isBanned = applied.isBanned)
     }
 
     private fun String.toSearchPattern(): String = "%${EscapeCharacter.DEFAULT.escape(this)}%"

@@ -17,3 +17,9 @@ databaseChangeLog:
   - include:
       file: ddl/03_telegram_users_created_without_time_zone.sql
       relativeToChangelogFile: true
+  - include:
+      file: ddl/04_user_state_events.sql
+      relativeToChangelogFile: true
+  - include:
+      file: ddl/05_grants.sql
+      relativeToChangelogFile: true

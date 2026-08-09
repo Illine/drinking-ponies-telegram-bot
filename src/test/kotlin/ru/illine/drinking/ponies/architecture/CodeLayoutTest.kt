@@ -1,11 +1,13 @@
 package ru.illine.drinking.ponies.architecture
 
 import com.lemonappdev.konsist.api.Konsist
+import com.lemonappdev.konsist.api.declaration.KoFileDeclaration
 import com.lemonappdev.konsist.api.ext.list.withPackage
 import com.lemonappdev.konsist.api.verify.assertFalse
 import com.lemonappdev.konsist.api.verify.assertTrue
 import com.lemonappdev.konsist.core.exception.KoAssertionFailedException
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -25,6 +27,21 @@ private val TEST_TAGS = listOf("UnitTest", "SpringIntegrationTest", "Architectur
 private val SUPPRESS_CALL = Regex("""@(?:file:)?Suppress\(([^)]*)\)""")
 
 private val STRING_LITERAL = Regex(""""([^"]*)"""")
+
+private const val STATE_DOOR = "TelegramUserAccessServiceImpl"
+
+private val STATE_FLAGS = listOf("deleted", "isBanned")
+
+// Both spellings of a write: qualified (user.deleted = ...) and bare inside an apply/with block. The
+// lookbehind drops a named argument, which reads exactly like a bare write once the call wraps over lines.
+private fun stateFlagWrite(flag: String) =
+    Regex("""(?<![(,]\s{0,64})(?:^|\.)\s*$flag\s*=(?!=)""", RegexOption.MULTILINE)
+
+private val STATE_UPDATE_STATEMENT =
+    Regex("""update\s+(telegram_users|TelegramUserEntity)""", RegexOption.IGNORE_CASE)
+
+// Queries live in string literals, where `u.deleted = false` is a condition and not a write.
+private val STRING_LITERAL_CONTENT = Regex(""""{3}[\s\S]*?"{3}|"(?:\\.|[^"\\])*"""")
 
 // detekt accepts its own prefix in any case and honours the ruleset id, so the forms that switch a
 // boundary off are matched by shape instead of being listed one by one.
@@ -183,6 +200,53 @@ class CodeLayoutTest {
             "A boundary is fixed in the code, not silenced with @Suppress",
         )
     }
+
+    @Test
+    @DisplayName("the account state flags are written through a single door")
+    fun `account state has a single door`() {
+        val (door, rest) = Konsist.scopeFromProduction().files.partition { it.name == STATE_DOOR }
+
+        STATE_FLAGS.forEach { flag ->
+            val write = stateFlagWrite(flag)
+
+            assertEquals(
+                emptyList<String>(),
+                rest.filter { write.containsMatchIn(it.code()) }.map { it.name },
+                "'$flag' is written in $STATE_DOOR only, so no write escapes its audit record and cache eviction",
+            )
+            // Per flag, because the rule would otherwise stay green on a rename as long as one flag still matches.
+            assertTrue(
+                write.containsMatchIn(door.single().code()),
+                "$STATE_DOOR must still hold the '$flag' write this rule guards",
+            )
+        }
+        assertEquals(
+            emptyList<String>(),
+            rest.filter { STATE_UPDATE_STATEMENT.containsMatchIn(it.text) }.map { it.name },
+            "An update statement over the users table bypasses the same door",
+        )
+    }
+
+    @Test
+    @DisplayName("guard: the single door rule tells a write from a named argument")
+    fun `a named argument is no state flag write`() {
+        val write = stateFlagWrite("isBanned")
+        val samples =
+            mapOf(
+                "entity.isBanned = true" to true,
+                "entity.apply {\n    isBanned = true\n}" to true,
+                "user.copy(isBanned = applied.isBanned)" to false,
+                "user.copy(\n    deleted = applied.isDeleted,\n    isBanned = applied.isBanned,\n)" to false,
+            )
+
+        assertEquals(
+            samples,
+            samples.mapValues { (code, _) -> write.containsMatchIn(code) },
+            "a named argument stays a read however the call is wrapped, or the rule guards formatting",
+        )
+    }
+
+    private fun KoFileDeclaration.code(): String = text.replace(STRING_LITERAL_CONTENT, "")
 
     @Test
     @DisplayName("guard: a rule broken on purpose still fails")

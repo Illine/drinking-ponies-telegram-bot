@@ -12,11 +12,14 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.function.ThrowingSupplier
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.context.jdbc.SqlConfig
 import ru.illine.drinking.ponies.exception.NotificationSettingsNotFoundException
 import ru.illine.drinking.ponies.model.base.IntervalNotificationType
+import ru.illine.drinking.ponies.model.dto.internal.UserStateChangeDto
 import ru.illine.drinking.ponies.test.generator.DtoGenerator
 import ru.illine.drinking.ponies.test.tag.SpringIntegrationTest
 import ru.illine.drinking.ponies.test.util.TestClockHelper
@@ -40,6 +43,7 @@ class NotificationAccessServiceTest
     @Autowired
     constructor(
         private val accessService: NotificationAccessService,
+        private val telegramUserAccessService: TelegramUserAccessService,
         private val clock: Clock,
     ) {
         private fun getMutableClock() = clock as TestClockHelper.MutableClock
@@ -170,19 +174,65 @@ class NotificationAccessServiceTest
         }
 
         @Test
-        @DisplayName("updateNotificationSettings(): returns an updated set of records")
-        fun `successful updateNotificationSettings`() {
+        @DisplayName("recordMailingResults(): an untouched snapshot goes back in without complaint")
+        fun `successful recordMailingResults`() {
             val existed = accessService.findNotificationSettingByExternalUserId(DEFAULT_EXTERNAL_USER_ID)
 
-            val actual =
-                assertDoesNotThrow(
-                    ThrowingSupplier {
-                        accessService.updateNotificationSettings(setOf(existed))
-                    },
-                )
+            assertDoesNotThrow {
+                accessService.recordMailingResults(setOf(existed))
+            }
+        }
 
-            assertFalse(actual.isEmpty())
-            assertEquals(existed.id, actual.first().id)
+        @Test
+        @DisplayName("recordMailingResults(): writes back what a mailing round produces")
+        fun `recordMailingResults writes the mailing result`() {
+            val snapshot =
+                accessService.findNotificationSettingByExternalUserId(DEFAULT_EXTERNAL_USER_ID).apply {
+                    notificationAttempts = 3
+                    timeOfLastNotification = LocalDateTime.of(2025, 1, 1, 9, 0)
+                    telegramChat.previousNotificationMessageId = 4242
+                }
+
+            accessService.recordMailingResults(setOf(snapshot))
+
+            val stored = accessService.findNotificationSettingByExternalUserId(DEFAULT_EXTERNAL_USER_ID)
+            assertEquals(3, stored.notificationAttempts)
+            assertEquals(LocalDateTime.of(2025, 1, 1, 9, 0), stored.timeOfLastNotification)
+            assertEquals(4242, stored.telegramChat.previousNotificationMessageId)
+        }
+
+        @Test
+        @DisplayName("recordMailingResults(): a ban applied mid-round is not reverted by the stale snapshot")
+        fun `recordMailingResults does not revert a ban`() {
+            val snapshot = accessService.findNotificationSettingByExternalUserId(DEFAULT_EXTERNAL_USER_ID)
+            telegramUserAccessService.updateState(
+                id = DEFAULT_USER_ID,
+                actorId = DISABLED_USER_ID,
+                change = UserStateChangeDto(banned = true),
+            )
+
+            accessService.recordMailingResults(setOf(snapshot))
+
+            assertTrue(telegramUserAccessService.resolveAccessFlags(DEFAULT_EXTERNAL_USER_ID).isBanned)
+        }
+
+        @ParameterizedTest(name = "[{index}] externalUserId={0}")
+        @ValueSource(longs = [NOT_EXISTED_USER_ID, DELETED_EXTERNAL_USER_ID])
+        @DisplayName("recordMailingResults(): a user whose settings are gone is skipped, the rest of the round lands")
+        fun `recordMailingResults survives a vanished user`(vanished: Long) {
+            val alive =
+                accessService.findNotificationSettingByExternalUserId(DEFAULT_EXTERNAL_USER_ID).apply {
+                    notificationAttempts = 7
+                }
+            val gone = DtoGenerator.generateNotificationDto(externalUserId = vanished)
+
+            assertDoesNotThrow { accessService.recordMailingResults(listOf(gone, alive)) }
+
+            assertEquals(
+                7,
+                accessService.findNotificationSettingByExternalUserId(DEFAULT_EXTERNAL_USER_ID).notificationAttempts,
+                "One missing row must not cost the whole round",
+            )
         }
 
         @Test
@@ -532,6 +582,7 @@ class NotificationAccessServiceTest
 
             val actual = accessService.findNotificationSettingByExternalUserId(DEFAULT_EXTERNAL_USER_ID)
             assertNull(actual.pauseUntil)
+            assertFalse(actual.timeOfLastNotification.isAfter(LocalDateTime.now(clock)))
             assertEquals(LocalTime.of(22, 0), actual.quietModeStart)
             assertEquals(LocalTime.of(8, 0), actual.quietModeEnd)
         }
@@ -551,6 +602,7 @@ class NotificationAccessServiceTest
 
             val actual = accessService.findNotificationSettingByExternalUserId(DEFAULT_EXTERNAL_USER_ID)
             assertNull(actual.pauseUntil)
+            assertFalse(actual.timeOfLastNotification.isAfter(LocalDateTime.now(clock)))
             assertNull(actual.quietModeStart)
             assertNull(actual.quietModeEnd)
         }
@@ -570,6 +622,38 @@ class NotificationAccessServiceTest
 
             val actual = accessService.findNotificationSettingByExternalUserId(DEFAULT_EXTERNAL_USER_ID)
             assertNull(actual.pauseUntil)
+        }
+
+        @Test
+        @DisplayName("updateNotificationsEnabled(): clears an active pause so the countdown starts over")
+        fun `updateNotificationsEnabled clears active pause`() {
+            val now = LocalDateTime.now(clock)
+            accessService.updatePause(DEFAULT_EXTERNAL_USER_ID, now.plusHours(8))
+
+            accessService.updateNotificationsEnabled(DEFAULT_EXTERNAL_USER_ID)
+
+            val actual = accessService.findNotificationSettingByExternalUserId(DEFAULT_EXTERNAL_USER_ID)
+            assertNull(actual.pauseUntil)
+            assertFalse(
+                actual.timeOfLastNotification.isAfter(now),
+                "a pause shifts timeOfLastNotification forward, and the shift outlives the pause mark",
+            )
+        }
+
+        @Test
+        @DisplayName("updateNotificationsEnabled(): a countdown that is not shifted stays where it was")
+        fun `updateNotificationsEnabled keeps an unshifted countdown`() {
+            val lastNotification = LocalDateTime.now(clock).minusMinutes(30)
+            accessService.updateTimeOfLastNotification(DEFAULT_EXTERNAL_USER_ID, lastNotification)
+
+            accessService.updateNotificationsEnabled(DEFAULT_EXTERNAL_USER_ID)
+
+            val actual = accessService.findNotificationSettingByExternalUserId(DEFAULT_EXTERNAL_USER_ID)
+            assertEquals(
+                lastNotification,
+                actual.timeOfLastNotification,
+                "Without a pause to undo there is nothing to move, and moving it would delay the reminder",
+            )
         }
 
         @Test
@@ -640,6 +724,8 @@ class NotificationAccessServiceTest
         companion object {
             private const val DEFAULT_ID = 1L
             private const val NOT_EXISTED_USER_ID = 0L
+            private const val DEFAULT_USER_ID = 1L
+            private const val DISABLED_USER_ID = 2L
             private const val DEFAULT_EXTERNAL_USER_ID = 1L
             private const val DISABLED_EXTERNAL_USER_ID = 2L
             private const val DELETED_EXTERNAL_USER_ID = 3L

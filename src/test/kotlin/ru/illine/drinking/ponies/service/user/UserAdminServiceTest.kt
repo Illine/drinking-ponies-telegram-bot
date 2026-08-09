@@ -1,6 +1,7 @@
 package ru.illine.drinking.ponies.service.user
 
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
@@ -19,10 +20,13 @@ import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import org.springframework.data.domain.PageRequest
 import ru.illine.drinking.ponies.dao.access.TelegramUserAccessService
+import ru.illine.drinking.ponies.exception.SelfStateChangeException
 import ru.illine.drinking.ponies.exception.TelegramUserNotFoundException
 import ru.illine.drinking.ponies.model.base.AdminUserStatusFilter
 import ru.illine.drinking.ponies.model.dto.internal.AdminUserDto
+import ru.illine.drinking.ponies.model.dto.internal.UserAccessDto
 import ru.illine.drinking.ponies.model.dto.internal.UserCountsDto
+import ru.illine.drinking.ponies.model.dto.internal.UserStateChangeDto
 import ru.illine.drinking.ponies.model.dto.internal.UserStateDto
 import ru.illine.drinking.ponies.service.user.impl.UserAdminServiceImpl
 import ru.illine.drinking.ponies.test.tag.UnitTest
@@ -100,7 +104,7 @@ class UserAdminServiceTest {
     @DisplayName("updateState(): an empty payload is rejected before the DAO is touched at all")
     fun `updateState rejects an empty payload`() {
         assertThrows<IllegalArgumentException> {
-            userAdminService.updateState(USER_ID, UserStateDto(isActive = null))
+            userAdminService.updateState(USER_ID, ACTOR_ID, UserStateDto())
         }
 
         verifyNoInteractions(telegramUserAccessService)
@@ -112,35 +116,76 @@ class UserAdminServiceTest {
         whenever(telegramUserAccessService.findByIdForAdmin(USER_ID)).thenReturn(null)
 
         assertThrows<TelegramUserNotFoundException> {
-            userAdminService.updateState(USER_ID, UserStateDto(isActive = false))
+            userAdminService.updateState(USER_ID, ACTOR_ID, UserStateDto(isActive = false))
         }
 
         verify(telegramUserAccessService).findByIdForAdmin(USER_ID)
-        verify(telegramUserAccessService, never()).updateState(any(), any(), anyOrNull())
+        verify(telegramUserAccessService, never()).updateState(any(), any(), any())
+    }
+
+    @Test
+    @DisplayName("updateState(): an admin changing their own state is rejected before the row is even read")
+    fun `updateState rejects a self change`() {
+        assertThrows<SelfStateChangeException> {
+            userAdminService.updateState(USER_ID, USER_ID, UserStateDto(isBanned = true))
+        }
+
+        verifyNoInteractions(telegramUserAccessService)
     }
 
     @ParameterizedTest(name = "[{index}] isActive={0}")
     @CsvSource("true", "false")
-    @DisplayName("updateState(): writes the flag, answers with it and reads the row only once")
+    @DisplayName("updateState(): writes the flag, answers with what the DAO applied and reads the row only once")
     fun `updateState answers with the freshly written flag`(isActive: Boolean) {
-        val user = adminUser(deleted = isActive)
-        whenever(telegramUserAccessService.findByIdForAdmin(USER_ID)).thenReturn(user)
+        whenever(telegramUserAccessService.findByIdForAdmin(USER_ID)).thenReturn(adminUser(deleted = isActive))
+        stubApplied(deleted = !isActive)
 
-        val result = userAdminService.updateState(USER_ID, UserStateDto(isActive = isActive))
+        val result = userAdminService.updateState(USER_ID, ACTOR_ID, UserStateDto(isActive = isActive))
 
         assertEquals(!isActive, result.deleted)
-        verify(telegramUserAccessService).updateState(USER_ID, EXTERNAL_USER_ID, !isActive)
+        verify(telegramUserAccessService).updateState(
+            USER_ID,
+            ACTOR_ID,
+            UserStateChangeDto(deleted = !isActive),
+        )
         verify(telegramUserAccessService, times(1)).findByIdForAdmin(USER_ID)
+    }
+
+    @ParameterizedTest(name = "[{index}] isBanned={0}")
+    @CsvSource("true", "false")
+    @DisplayName("updateState(): writes the ban flag and answers with it, leaving activity alone")
+    fun `updateState answers with the freshly written ban flag`(isBanned: Boolean) {
+        whenever(telegramUserAccessService.findByIdForAdmin(USER_ID)).thenReturn(adminUser(deleted = true))
+        stubApplied(deleted = true, banned = isBanned)
+
+        val result = userAdminService.updateState(USER_ID, ACTOR_ID, UserStateDto(isBanned = isBanned))
+
+        assertEquals(isBanned, result.isBanned)
+        assertTrue(result.deleted, "An untouched field keeps its value")
+        verify(telegramUserAccessService).updateState(
+            USER_ID,
+            ACTOR_ID,
+            UserStateChangeDto(banned = isBanned),
+        )
     }
 
     @Test
     @DisplayName("updateState(): the rest of the row comes back untouched")
     fun `updateState keeps the rest of the row`() {
         whenever(telegramUserAccessService.findByIdForAdmin(USER_ID)).thenReturn(adminUser(deleted = true))
+        stubApplied(deleted = false)
 
-        val result = userAdminService.updateState(USER_ID, UserStateDto(isActive = true))
+        val result = userAdminService.updateState(USER_ID, ACTOR_ID, UserStateDto(isActive = true))
 
         assertEquals(adminUser(deleted = false), result)
+    }
+
+    private fun stubApplied(
+        deleted: Boolean,
+        banned: Boolean = false,
+    ) {
+        whenever(telegramUserAccessService.updateState(any(), any(), any()))
+            .thenReturn(UserAccessDto(USER_ID, EXTERNAL_USER_ID, isBanned = banned, isDeleted = deleted))
     }
 
     @Test
@@ -178,6 +223,7 @@ class UserAdminServiceTest {
     companion object {
         private const val USER_ID = 1042L
         private const val EXTERNAL_USER_ID = 482719301L
+        private const val ACTOR_ID = 1L
 
         private val EMPTY_COUNTS = UserCountsDto(all = 0L, active = 0L, inactive = 0L, banned = 0L)
     }

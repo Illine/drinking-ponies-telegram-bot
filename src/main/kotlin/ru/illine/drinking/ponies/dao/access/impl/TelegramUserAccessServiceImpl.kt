@@ -9,33 +9,67 @@ import org.springframework.transaction.annotation.Transactional
 import ru.illine.drinking.ponies.config.cache.CacheConfig
 import ru.illine.drinking.ponies.dao.access.TelegramUserAccessService
 import ru.illine.drinking.ponies.dao.repository.TelegramUserRepository
+import ru.illine.drinking.ponies.dao.repository.UserStateEventRepository
+import ru.illine.drinking.ponies.exception.TelegramUserNotFoundException
 import ru.illine.drinking.ponies.mapper.AdminUserMapper
 import ru.illine.drinking.ponies.model.base.AdminUserStatusFilter
+import ru.illine.drinking.ponies.model.base.UserStateEventType
 import ru.illine.drinking.ponies.model.dto.internal.AdminUserDto
 import ru.illine.drinking.ponies.model.dto.internal.TelegramUserProfileDto
 import ru.illine.drinking.ponies.model.dto.internal.UserAccessDto
 import ru.illine.drinking.ponies.model.dto.internal.UserCountsDto
+import ru.illine.drinking.ponies.model.dto.internal.UserStateChangeDto
 import ru.illine.drinking.ponies.model.entity.TelegramUserEntity
+import ru.illine.drinking.ponies.model.entity.UserStateEventEntity
+import java.time.Clock
+import java.time.LocalDateTime
 
 @Service
 class TelegramUserAccessServiceImpl(
     private val telegramUserRepository: TelegramUserRepository,
+    private val userStateEventRepository: UserStateEventRepository,
+    private val clock: Clock,
 ) : TelegramUserAccessService {
     private val logger = LoggerFactory.getLogger("ACCESS-SERVICE")
 
-    @Transactional
     @Cacheable(CacheConfig.USER_ACCESS_FLAGS, key = "#externalUserId")
-    override fun resolveAccessFlags(
-        externalUserId: Long,
-        profile: TelegramUserProfileDto,
-    ): UserAccessDto {
+    override fun resolveAccessFlags(externalUserId: Long): UserAccessDto {
         logger.debug("Resolving access flags for externalUserId={}", externalUserId)
 
         val user =
-            telegramUserRepository.findByExternalUserIdIncludingDeleted(externalUserId) ?: return UserAccessDto()
-        refreshProfile(user, profile)
+            telegramUserRepository.findByExternalUserIdIncludingDeleted(externalUserId)
+                ?: return UserAccessDto(externalUserId = externalUserId)
 
-        return UserAccessDto(isAdmin = user.isAdmin, isBanned = user.isBanned, isDeleted = user.deleted)
+        return user.toAccessDto()
+    }
+
+    // The cache is a throttle rather than a store: a miss means the profile is due for a re-read, once per its TTL.
+    // A call without a profile returns null and is not cached, so it does not eat the window of a real rename.
+    @Transactional
+    @Cacheable(CacheConfig.USER_PROFILE_SYNC, key = "#externalUserId", unless = "#result == null")
+    override fun syncProfile(
+        externalUserId: Long,
+        profile: TelegramUserProfileDto,
+    ): Boolean? {
+        // Telegram guarantees a first name and nothing else, so its absence means no profile was handed over at all.
+        if (profile.firstName == null) {
+            logger.info("Nothing to sync for externalUserId={}: the caller carries no profile", externalUserId)
+            return null
+        }
+
+        val user =
+            telegramUserRepository
+                .findByExternalUserIdIncludingDeleted(externalUserId)
+                ?.takeUnless { it.matches(profile) }
+
+        user?.apply {
+            logger.debug("Refreshing profile for externalUserId={}", externalUserId)
+            firstName = profile.firstName
+            lastName = profile.lastName
+            username = profile.username
+        }
+
+        return user != null
     }
 
     @Transactional(readOnly = true)
@@ -66,41 +100,80 @@ class TelegramUserAccessServiceImpl(
     }
 
     @Transactional
-    @CacheEvict(CacheConfig.USER_ACCESS_FLAGS, key = "#externalUserId")
+    @CacheEvict(CacheConfig.USER_ACCESS_FLAGS, key = "#result.externalUserId")
     override fun updateState(
         id: Long,
-        externalUserId: Long,
-        deleted: Boolean?,
-    ) {
-        logger.debug("Setting deleted={} for user [{}]", deleted, id)
+        actorId: Long,
+        change: UserStateChangeDto,
+    ): UserAccessDto {
+        val user =
+            telegramUserRepository.findByIdIncludingDeleted(id)
+                ?: throw TelegramUserNotFoundException("No user with id: [$id]")
 
-        telegramUserRepository.updateState(id, deleted)
+        val events =
+            buildList {
+                change.deleted?.takeIf { it != user.deleted }?.let {
+                    user.deleted = it
+                    add(if (it) UserStateEventType.DEACTIVATED else UserStateEventType.RESTORED)
+                }
+                change.banned?.takeIf { it != user.isBanned }?.let {
+                    user.isBanned = it
+                    add(if (it) UserStateEventType.BANNED else UserStateEventType.UNBANNED)
+                }
+            }
+
+        if (events.isNotEmpty()) {
+            logger.info("Applying {} to user [{}]", events, id)
+            recordEvents(id, actorId, events)
+        }
+
+        return user.toAccessDto()
     }
 
     @Transactional
-    @CacheEvict(CacheConfig.USER_ACCESS_FLAGS, key = "#externalUserId")
+    @CacheEvict(CacheConfig.USER_ACCESS_FLAGS, key = "#externalUserId", condition = "#result")
     override fun restoreIfDeleted(externalUserId: Long): Boolean {
-        val restored = telegramUserRepository.restoreByExternalUserId(externalUserId) > 0
-        if (restored) {
-            logger.info("Restoring soft deleted user [{}]", externalUserId)
-        }
+        val user =
+            telegramUserRepository
+                .findByExternalUserIdIncludingDeleted(externalUserId)
+                ?.takeIf { it.deleted }
+                ?: return false
 
-        return restored
+        val id = requireNotNull(user.id)
+        logger.info("Restoring soft deleted user [{}]", externalUserId)
+        user.deleted = false
+        recordEvents(id, id, listOf(UserStateEventType.RESTORED))
+
+        return true
     }
 
-    private fun refreshProfile(
-        user: TelegramUserEntity,
-        profile: TelegramUserProfileDto,
+    private fun recordEvents(
+        userId: Long,
+        actorId: Long,
+        types: List<UserStateEventType>,
     ) {
-        if (profile.firstName == null) return
+        val eventTime = LocalDateTime.now(clock)
 
-        if (user.matches(profile)) return
-
-        logger.debug("Refreshing profile for externalUserId={}", user.externalUserId)
-        user.firstName = profile.firstName
-        user.lastName = profile.lastName
-        user.username = profile.username
+        userStateEventRepository.saveAll(
+            types.map {
+                UserStateEventEntity(
+                    userId = userId,
+                    actorUserId = actorId,
+                    eventType = it,
+                    eventTime = eventTime,
+                )
+            },
+        )
     }
+
+    private fun TelegramUserEntity.toAccessDto(): UserAccessDto =
+        UserAccessDto(
+            id = id,
+            externalUserId = externalUserId,
+            isAdmin = isAdmin,
+            isBanned = isBanned,
+            isDeleted = deleted,
+        )
 
     private fun TelegramUserEntity.matches(profile: TelegramUserProfileDto): Boolean =
         firstName == profile.firstName &&

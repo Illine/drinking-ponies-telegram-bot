@@ -31,7 +31,6 @@ import org.springframework.test.context.jdbc.SqlConfig
 import ru.illine.drinking.ponies.config.cache.CacheConfig
 import ru.illine.drinking.ponies.config.web.security.AuthErrorType
 import ru.illine.drinking.ponies.dao.access.TelegramUserAccessService
-import ru.illine.drinking.ponies.model.dto.internal.TelegramUserProfileDto
 import ru.illine.drinking.ponies.model.dto.response.UserDetailsResponse
 import ru.illine.drinking.ponies.model.dto.response.UsersResponse
 import ru.illine.drinking.ponies.service.telegram.TelegramValidatorService
@@ -428,6 +427,51 @@ class UserAdminControllerTest
             }
 
             @Test
+            @DisplayName("isBanned=true - returns 200 with the banned card and moves the user to BANNED")
+            fun `bans the user`() {
+                val response = patchState(ACTIVE_USER_ID, """{"isBanned": true}""")
+
+                assertEquals(HttpStatus.OK, response.statusCode)
+                assertTrue(objectMapper.readTree(response.body).path("isBanned").asBoolean())
+                assertTrue(getUser(ACTIVE_USER_ID).isBanned)
+                assertEquals(3L, getUsers("?status=BANNED").total)
+            }
+
+            @Test
+            @DisplayName("isBanned=false - lifts the ban and the user leaves the BANNED chip")
+            fun `unbans the user`() {
+                val response = patchState(BANNED_DELETED_USER_ID, """{"isBanned": false}""")
+
+                assertEquals(HttpStatus.OK, response.statusCode)
+                assertFalse(objectMapper.readTree(response.body).path("isBanned").asBoolean())
+                assertFalse(getUser(BANNED_DELETED_USER_ID).isBanned)
+            }
+
+            @Test
+            @DisplayName("both toggles at once - activity and ban are applied in a single call")
+            fun `applies both toggles at once`() {
+                val response = patchState(ACTIVE_USER_ID, """{"isActive": false, "isBanned": true}""")
+
+                assertEquals(HttpStatus.OK, response.statusCode)
+                val card = getUser(ACTIVE_USER_ID)
+                assertFalse(card.isActive)
+                assertTrue(card.isBanned)
+            }
+
+            @Test
+            @DisplayName("own account - returns 409 with a readable message and leaves the account alone")
+            fun `refuses to change own state`() {
+                val response = patchState(ADMIN_USER_ID, """{"isBanned": true}""")
+
+                assertEquals(HttpStatus.CONFLICT, response.statusCode)
+                assertEquals(
+                    "you cannot change the state of your own account",
+                    objectMapper.readTree(response.body).path("message").asText(),
+                )
+                assertFalse(getUser(ADMIN_USER_ID).isBanned)
+            }
+
+            @Test
             @DisplayName("empty payload - returns 400 and leaves the user alone")
             fun `returns 400 for an empty payload`() {
                 val response = patchState(ACTIVE_USER_ID, "{}")
@@ -448,7 +492,7 @@ class UserAdminControllerTest
             @DisplayName("evicts the cached access flags, so the next request of that user is resolved afresh")
             fun `evicts the cached access flags of the updated user`() {
                 val cache = cacheManager.getCache(CacheConfig.USER_ACCESS_FLAGS)!!
-                telegramUserAccessService.resolveAccessFlags(ACTIVE_EXTERNAL_ID, TelegramUserProfileDto())
+                telegramUserAccessService.resolveAccessFlags(ACTIVE_EXTERNAL_ID)
                 assertNotNull(cache.get(ACTIVE_EXTERNAL_ID))
 
                 patchState(ACTIVE_USER_ID, """{"isActive": false}""")

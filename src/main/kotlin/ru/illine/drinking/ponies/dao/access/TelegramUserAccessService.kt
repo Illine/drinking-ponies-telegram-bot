@@ -6,12 +6,16 @@ import ru.illine.drinking.ponies.model.dto.internal.AdminUserDto
 import ru.illine.drinking.ponies.model.dto.internal.TelegramUserProfileDto
 import ru.illine.drinking.ponies.model.dto.internal.UserAccessDto
 import ru.illine.drinking.ponies.model.dto.internal.UserCountsDto
+import ru.illine.drinking.ponies.model.dto.internal.UserStateChangeDto
 
 interface TelegramUserAccessService {
-    fun resolveAccessFlags(
+    fun resolveAccessFlags(externalUserId: Long): UserAccessDto
+
+    /** Returns null when the caller carries no profile, true when the stored one was refreshed. */
+    fun syncProfile(
         externalUserId: Long,
         profile: TelegramUserProfileDto,
-    ): UserAccessDto
+    ): Boolean?
 
     fun findAllForAdmin(
         search: String?,
@@ -25,9 +29,9 @@ interface TelegramUserAccessService {
 
     fun updateState(
         id: Long,
-        externalUserId: Long,
-        deleted: Boolean?,
-    )
+        actorId: Long,
+        change: UserStateChangeDto,
+    ): UserAccessDto
 
     fun restoreIfDeleted(externalUserId: Long): Boolean
 }

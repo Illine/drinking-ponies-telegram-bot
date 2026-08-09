@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import ru.illine.drinking.ponies.model.entity.NotificationSettingEntity
+import java.time.LocalDateTime
 import java.time.LocalTime
 
 interface NotificationSettingRepository : JpaRepository<NotificationSettingEntity, Long> {
@@ -15,11 +16,24 @@ interface NotificationSettingRepository : JpaRepository<NotificationSettingEntit
     @Query(
         value = """
             select ns from NotificationSettingEntity ns
-            join fetch ns.telegramUser
+            join fetch ns.telegramUser u
             join fetch ns.telegramChat
+            where u.isBanned = false
         """,
     )
-    fun findAllWithUserAndChat(): List<NotificationSettingEntity>
+    fun findAllNotBannedWithUserAndChat(): List<NotificationSettingEntity>
+
+    @Query(
+        value = """
+            select ns from NotificationSettingEntity ns
+            join fetch ns.telegramUser u
+            join fetch ns.telegramChat
+            where u.externalUserId in :externalUserIds
+        """,
+    )
+    fun findAllWithUserAndChatByExternalUserIdIn(
+        @Param("externalUserIds") externalUserIds: Collection<Long>,
+    ): List<NotificationSettingEntity>
 
     @Query(
         value = """
@@ -67,11 +81,14 @@ interface NotificationSettingRepository : JpaRepository<NotificationSettingEntit
         @Param("end") end: LocalTime? = null,
     )
 
+    // A pause is a forward shift of time_of_last_notification, so dropping the mark alone would leave
+    // the user silent until the shift runs out.
     @Modifying
     @Query(
         value = """
         update notification_settings ns
-        set pause_until = null
+        set pause_until = null,
+            time_of_last_notification = least(ns.time_of_last_notification, :now)
         from telegram_users u
         where ns.telegram_user_id = u.id
           and u.external_user_id = :externalUserId
@@ -80,6 +97,7 @@ interface NotificationSettingRepository : JpaRepository<NotificationSettingEntit
     )
     fun clearPause(
         @Param("externalUserId") externalUserId: Long,
+        @Param("now") now: LocalDateTime,
     )
 
     @Modifying

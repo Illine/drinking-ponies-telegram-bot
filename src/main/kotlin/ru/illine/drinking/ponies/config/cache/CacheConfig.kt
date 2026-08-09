@@ -16,9 +16,10 @@ class CacheConfig(
 ) {
     companion object {
         const val USER_ACCESS_FLAGS = "user-access-flags"
+        const val USER_PROFILE_SYNC = "user-profile-sync"
         const val WATER_FIRST_ENTRY = "water-first-entry"
 
-        private val ALL_CACHES = listOf(USER_ACCESS_FLAGS, WATER_FIRST_ENTRY)
+        private val ALL_CACHES = listOf(USER_ACCESS_FLAGS, USER_PROFILE_SYNC, WATER_FIRST_ENTRY)
     }
 
     @Bean

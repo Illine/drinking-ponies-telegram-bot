@@ -15,6 +15,7 @@ import ru.illine.drinking.ponies.model.dto.internal.StatisticsPointDto
 import ru.illine.drinking.ponies.model.dto.internal.TelegramAuthUserDto
 import ru.illine.drinking.ponies.model.dto.internal.TelegramChatDto
 import ru.illine.drinking.ponies.model.dto.internal.TelegramUserProfileDto
+import ru.illine.drinking.ponies.model.dto.internal.UserAccessDto
 import ru.illine.drinking.ponies.model.dto.internal.WaterStatisticDto
 import ru.illine.drinking.ponies.model.dto.request.WaterEntryRequest
 import ru.illine.drinking.ponies.model.dto.response.NotificationHistoryEvent
@@ -132,22 +133,35 @@ class DtoGenerator {
             )
 
         fun generateTelegramAuthUserDto(
+            id: Long? = null,
             externalUserId: Long = 1L,
             firstName: String? = "First Name",
             lastName: String? = null,
             username: String? = "username",
             isAdmin: Boolean = false,
-            isBanned: Boolean = false,
-            isActive: Boolean = false,
         ): TelegramAuthUserDto =
             TelegramAuthUserDto(
+                id = id,
                 externalUserId = externalUserId,
                 firstName = firstName,
                 lastName = lastName,
                 username = username,
                 isAdmin = isAdmin,
+            )
+
+        fun generateUserAccessDto(
+            id: Long? = null,
+            externalUserId: Long = 1L,
+            isAdmin: Boolean = false,
+            isBanned: Boolean = false,
+            isDeleted: Boolean = false,
+        ): UserAccessDto =
+            UserAccessDto(
+                id = id,
+                externalUserId = externalUserId,
+                isAdmin = isAdmin,
                 isBanned = isBanned,
-                isActive = isActive,
+                isDeleted = isDeleted,
             )
 
         fun generateTelegramUserProfileDto(

@@ -30,7 +30,7 @@ interface NotificationAccessService {
         time: LocalDateTime,
     ): NotificationSettingDto
 
-    fun updateNotificationSettings(settings: Collection<NotificationSettingDto>): Set<NotificationSettingDto>
+    fun recordMailingResults(settings: Collection<NotificationSettingDto>)
 
     fun findIsEnabledNotificationsByExternalUserId(externalUserId: Long): Boolean
 
