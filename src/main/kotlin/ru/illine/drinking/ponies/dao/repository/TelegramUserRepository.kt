@@ -2,7 +2,6 @@ package ru.illine.drinking.ponies.dao.repository
 
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
-import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import ru.illine.drinking.ponies.dao.repository.projection.AdminUserProjection
@@ -21,6 +20,11 @@ interface TelegramUserRepository : JpaRepository<TelegramUserEntity, Long> {
     @Query(value = "select * from telegram_users u where u.external_user_id = :externalUserId", nativeQuery = true)
     fun findByExternalUserIdIncludingDeleted(
         @Param("externalUserId") externalUserId: Long,
+    ): TelegramUserEntity?
+
+    @Query(value = "select * from telegram_users u where u.id = :id", nativeQuery = true)
+    fun findByIdIncludingDeleted(
+        @Param("id") id: Long,
     ): TelegramUserEntity?
 
     @Query(
@@ -61,32 +65,4 @@ interface TelegramUserRepository : JpaRepository<TelegramUserEntity, Long> {
     fun countForAdmin(
         @Param("search") search: String?,
     ): UserCountsProjection
-
-    @Modifying(clearAutomatically = true)
-    @Query(
-        value = """
-            update telegram_users
-            set deleted = coalesce(cast(:deleted as boolean), deleted)
-            where id = :id
-        """,
-        nativeQuery = true,
-    )
-    fun updateState(
-        @Param("id") id: Long,
-        @Param("deleted") deleted: Boolean?,
-    )
-
-    @Modifying(clearAutomatically = true)
-    @Query(
-        value = """
-            update telegram_users
-            set deleted = false
-            where external_user_id = :externalUserId
-              and deleted = true
-        """,
-        nativeQuery = true,
-    )
-    fun restoreByExternalUserId(
-        @Param("externalUserId") externalUserId: Long,
-    ): Int
 }

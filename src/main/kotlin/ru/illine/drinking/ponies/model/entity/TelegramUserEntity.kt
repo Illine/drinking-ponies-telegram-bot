@@ -11,10 +11,8 @@ import jakarta.persistence.Id
 import jakarta.persistence.Index
 import jakarta.persistence.OneToMany
 import jakarta.persistence.OneToOne
-import jakarta.persistence.PreRemove
 import jakarta.persistence.SequenceGenerator
 import jakarta.persistence.Table
-import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.SQLRestriction
 import java.time.LocalDateTime
 import java.time.ZoneOffset
@@ -30,7 +28,6 @@ import java.time.ZoneOffset
         ),
     ],
 )
-@SQLDelete(sql = "update telegram_users set deleted = true where id = ?")
 @SQLRestriction(value = "deleted = false")
 class TelegramUserEntity(
     @Id
@@ -75,11 +72,6 @@ class TelegramUserEntity(
     )
     var notificationSettings: NotificationSettingEntity? = null,
 ) {
-    @PreRemove
-    private fun onDelete() {
-        deleted = true
-    }
-
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
