@@ -13,4 +13,11 @@ data class UserStateRequest(
         requiredMode = Schema.RequiredMode.NOT_REQUIRED,
     )
     val isActive: Boolean?,
+    @Schema(
+        description = "True bans the user, false lifts the ban",
+        example = "false",
+        nullable = true,
+        requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+    )
+    val isBanned: Boolean?,
 )

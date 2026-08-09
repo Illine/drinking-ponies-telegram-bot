@@ -17,6 +17,7 @@ interface UserAdminService {
 
     fun updateState(
         id: Long,
+        actorId: Long,
         state: UserStateDto,
     ): AdminUserDto
 }

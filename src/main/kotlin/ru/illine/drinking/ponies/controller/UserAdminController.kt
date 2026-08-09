@@ -10,6 +10,7 @@ import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PatchMapping
 import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.RequestAttribute
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
@@ -17,11 +18,13 @@ import org.springframework.web.bind.annotation.RestController
 import ru.illine.drinking.ponies.config.web.security.AdminOnly
 import ru.illine.drinking.ponies.mapper.AdminUserResponseMapper
 import ru.illine.drinking.ponies.model.base.AdminUserStatusFilter
+import ru.illine.drinking.ponies.model.dto.internal.TelegramAuthUserDto
 import ru.illine.drinking.ponies.model.dto.internal.UserStateDto
 import ru.illine.drinking.ponies.model.dto.request.UserStateRequest
 import ru.illine.drinking.ponies.model.dto.response.UserDetailsResponse
 import ru.illine.drinking.ponies.model.dto.response.UsersResponse
 import ru.illine.drinking.ponies.service.user.UserAdminService
+import ru.illine.drinking.ponies.util.telegram.TelegramGeneralConstants
 
 @RestController
 @RequestMapping("/users")
@@ -56,14 +59,17 @@ class UserAdminController(
     ): UserDetailsResponse = AdminUserResponseMapper.toDetails(userAdminService.getUser(id))
 
     @PatchMapping("/{id}")
-    @Operation(summary = "Update user state: soft delete or restore")
+    @Operation(summary = "Update user state: soft delete, restore, ban or unban")
     fun updateUserState(
         @Parameter(description = "Internal user id", example = "1042")
         @PathVariable(name = "id") id: Long,
+        @Parameter(hidden = true)
+        @RequestAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) actor: TelegramAuthUserDto,
         @Valid @RequestBody request: UserStateRequest,
     ): UserDetailsResponse {
-        val state = UserStateDto(isActive = request.isActive)
+        val state = UserStateDto(isActive = request.isActive, isBanned = request.isBanned)
+        val actorId = requireNotNull(actor.id) { "An admin without a stored account cannot reach this endpoint" }
 
-        return AdminUserResponseMapper.toDetails(userAdminService.updateState(id, state))
+        return AdminUserResponseMapper.toDetails(userAdminService.updateState(id, actorId, state))
     }
 }
