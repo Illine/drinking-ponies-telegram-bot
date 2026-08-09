@@ -19,7 +19,7 @@ import ru.illine.drinking.ponies.exception.NotificationSettingsNotFoundException
 import ru.illine.drinking.ponies.model.base.IntervalNotificationType
 import ru.illine.drinking.ponies.test.generator.DtoGenerator
 import ru.illine.drinking.ponies.test.tag.SpringIntegrationTest
-import ru.illine.drinking.ponies.test.util.ClockHelperTest
+import ru.illine.drinking.ponies.test.util.TestClockHelper
 import java.time.Clock
 import java.time.LocalDateTime
 import java.time.LocalTime
@@ -42,11 +42,11 @@ class NotificationAccessServiceTest
         private val accessService: NotificationAccessService,
         private val clock: Clock,
     ) {
-        private fun getMutableClock() = clock as ClockHelperTest.MutableClock
+        private fun getMutableClock() = clock as TestClockHelper.MutableClock
 
         @BeforeEach
         fun resetClock() {
-            getMutableClock().setTime(ClockHelperTest.DEFAULT_TIME)
+            getMutableClock().setTime(TestClockHelper.DEFAULT_TIME)
         }
 
         @Test

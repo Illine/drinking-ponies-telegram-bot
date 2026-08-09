@@ -31,7 +31,7 @@ class SystemControllerTest
         @MockitoBean
         private lateinit var telegramValidatorService: TelegramValidatorService
 
-        private val telegramUser = DtoGenerator.generateTelegramUserDto()
+        private val telegramUser = DtoGenerator.generateTelegramAuthUserDto()
 
         @BeforeEach
         fun setUp() {

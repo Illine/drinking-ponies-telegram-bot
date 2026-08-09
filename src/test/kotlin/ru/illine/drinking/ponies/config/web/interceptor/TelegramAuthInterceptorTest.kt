@@ -23,10 +23,10 @@ import org.mockito.kotlin.whenever
 import ru.illine.drinking.ponies.config.web.security.AuthErrorType
 import ru.illine.drinking.ponies.dao.access.TelegramUserAccessService
 import ru.illine.drinking.ponies.exception.InvalidAuthSignatureException
-import ru.illine.drinking.ponies.model.dto.internal.TelegramUserProfile
+import ru.illine.drinking.ponies.model.dto.internal.TelegramAuthUserDto
 import ru.illine.drinking.ponies.model.dto.internal.UserAccessDto
-import ru.illine.drinking.ponies.model.dto.request.TelegramInitDataUser
 import ru.illine.drinking.ponies.service.telegram.TelegramValidatorService
+import ru.illine.drinking.ponies.test.generator.DtoGenerator
 import ru.illine.drinking.ponies.test.tag.UnitTest
 import ru.illine.drinking.ponies.util.telegram.TelegramGeneralConstants
 import java.util.stream.Stream
@@ -130,24 +130,42 @@ class TelegramAuthInterceptorTest {
         isBanned: Boolean,
         isDeleted: Boolean,
     ) {
-        val initData = "valid-init-data"
-        val telegramUser =
-            TelegramInitDataUser(externalUserId = 1L, firstName = "Test", lastName = null, username = null)
-        whenever(request.method).thenReturn("POST")
-        whenever(request.getHeader(headerName)).thenReturn(initData)
-        whenever(validatorService.verifySignature(any())).thenReturn(true)
-        whenever(validatorService.map(initData)).thenReturn(telegramUser)
-        whenever(telegramUserAccessService.resolveAccessFlags(any(), any()))
-            .thenReturn(UserAccessDto(isAdmin = isAdmin, isBanned = isBanned, isDeleted = isDeleted))
+        val initData =
+            stubValidRequest(
+                user = DtoGenerator.generateTelegramAuthUserDto(lastName = "Petrova"),
+                access = UserAccessDto(isAdmin = isAdmin, isBanned = isBanned, isDeleted = isDeleted),
+            )
 
         val result = interceptor.preHandle(request, response, Any())
 
         assertTrue(result)
+        verify(validatorService).map(initData)
         verify(request).setAttribute(
             TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE,
-            telegramUser.copy(isAdmin = isAdmin, isBanned = isBanned, isActive = !isDeleted),
+            DtoGenerator.generateTelegramAuthUserDto(
+                lastName = "Petrova",
+                isAdmin = isAdmin,
+                isBanned = isBanned,
+                isActive = !isDeleted,
+            ),
         )
         verifyNoMoreInteractions(response)
+    }
+
+    @Test
+    @DisplayName("preHandle(): the access flags come from the access service, never from initData")
+    fun `preHandle overrides the access flags carried by initData`() {
+        stubValidRequest(
+            user = DtoGenerator.generateTelegramAuthUserDto(isAdmin = true, isBanned = true, isActive = true),
+            access = UserAccessDto(isAdmin = false, isBanned = false, isDeleted = true),
+        )
+
+        interceptor.preHandle(request, response, Any())
+
+        verify(request).setAttribute(
+            TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE,
+            DtoGenerator.generateTelegramAuthUserDto(isAdmin = false, isBanned = false, isActive = false),
+        )
     }
 
     @ParameterizedTest(name = "[{index}] isDeleted={0} - isActive={1}")
@@ -157,19 +175,14 @@ class TelegramAuthInterceptorTest {
         isDeleted: Boolean,
         expectedIsActive: Boolean,
     ) {
-        val initData = "valid-init-data"
-        val telegramUser =
-            TelegramInitDataUser(externalUserId = 1L, firstName = "Test", lastName = null, username = null)
-        whenever(request.method).thenReturn("POST")
-        whenever(request.getHeader(headerName)).thenReturn(initData)
-        whenever(validatorService.verifySignature(any())).thenReturn(true)
-        whenever(validatorService.map(initData)).thenReturn(telegramUser)
-        whenever(telegramUserAccessService.resolveAccessFlags(any(), any()))
-            .thenReturn(UserAccessDto(isDeleted = isDeleted))
+        stubValidRequest(
+            user = DtoGenerator.generateTelegramAuthUserDto(),
+            access = UserAccessDto(isDeleted = isDeleted),
+        )
 
         interceptor.preHandle(request, response, Any())
 
-        val captor = argumentCaptor<TelegramInitDataUser>()
+        val captor = argumentCaptor<TelegramAuthUserDto>()
         verify(request).setAttribute(eq(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE), captor.capture())
         assertEquals(expectedIsActive, captor.firstValue.isActive)
     }
@@ -177,26 +190,22 @@ class TelegramAuthInterceptorTest {
     @Test
     @DisplayName("preHandle(): valid signature - forwards the initData profile to the access service")
     fun `preHandle valid signature forwards initData profile`() {
-        val initData = "valid-init-data"
-        val telegramUser =
-            TelegramInitDataUser(
-                externalUserId = 42L,
-                firstName = "Alisa",
-                lastName = "Petrova",
-                username = "alisaadmin",
-            )
-        whenever(request.method).thenReturn("POST")
-        whenever(request.getHeader(headerName)).thenReturn(initData)
-        whenever(validatorService.verifySignature(any())).thenReturn(true)
-        whenever(validatorService.map(initData)).thenReturn(telegramUser)
-        whenever(telegramUserAccessService.resolveAccessFlags(any(), any())).thenReturn(UserAccessDto())
+        stubValidRequest(
+            user =
+                DtoGenerator.generateTelegramAuthUserDto(
+                    externalUserId = 42L,
+                    firstName = "Alisa",
+                    lastName = "Petrova",
+                    username = "alisaadmin",
+                ),
+        )
 
         interceptor.preHandle(request, response, Any())
 
         verify(telegramUserAccessService).resolveAccessFlags(
             eq(42L),
             eq(
-                TelegramUserProfile(
+                DtoGenerator.generateTelegramUserProfileDto(
                     firstName = "Alisa",
                     lastName = "Petrova",
                     username = "alisaadmin",
@@ -220,6 +229,21 @@ class TelegramAuthInterceptorTest {
         verify(response).status = HttpServletResponse.SC_FORBIDDEN
         verify(response).setHeader(AuthErrorType.HEADER_NAME, AuthErrorType.SESSION_EXPIRED.value)
         verifyNoInteractions(telegramUserAccessService)
+    }
+
+    private fun stubValidRequest(
+        user: TelegramAuthUserDto,
+        access: UserAccessDto = UserAccessDto(),
+    ): String {
+        val initData = "valid-init-data"
+
+        whenever(request.method).thenReturn("POST")
+        whenever(request.getHeader(headerName)).thenReturn(initData)
+        whenever(validatorService.verifySignature(any())).thenReturn(true)
+        whenever(validatorService.map(initData)).thenReturn(user)
+        whenever(telegramUserAccessService.resolveAccessFlags(any(), any())).thenReturn(access)
+
+        return initData
     }
 
     companion object {

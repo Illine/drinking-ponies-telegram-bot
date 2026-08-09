@@ -1,4 +1,4 @@
-package ru.illine.drinking.ponies.util
+package ru.illine.drinking.ponies.util.telegram
 
 import org.junit.jupiter.api.Assertions.assertDoesNotThrow
 import org.junit.jupiter.api.Assertions.assertEquals

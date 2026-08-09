@@ -8,6 +8,7 @@ import ru.illine.drinking.ponies.model.entity.NotificationSettingEntity
 import java.time.LocalTime
 
 interface NotificationSettingRepository : JpaRepository<NotificationSettingEntity, Long> {
+    // Spring Data resolves the nested property by the underscore, so the rule cannot apply here.
     @Suppress("ktlint:standard:function-naming")
     fun findByTelegramUser_ExternalUserId(externalUserId: Long): NotificationSettingEntity?
 

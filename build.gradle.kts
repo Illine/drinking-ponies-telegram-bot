@@ -1,14 +1,12 @@
 import org.jmailen.gradle.kotlinter.tasks.FormatTask
 import org.jmailen.gradle.kotlinter.tasks.LintTask
-import java.io.FileInputStream
-import java.util.*
+import java.util.Properties
 
 plugins {
     jacoco
 
     alias(libs.plugins.springframework.boot)
     alias(libs.plugins.spring.dependency.management)
-    alias(libs.plugins.liquibase)
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.kotlin.spring)
     alias(libs.plugins.kotlin.jpa)
@@ -68,13 +66,6 @@ dependencies {
     implementation(libs.springdoc.openapi.starter.webmvc.ui)
     implementation(libs.konvert.api)
 
-    liquibaseRuntime(libs.liquibase.core)
-    liquibaseRuntime(libs.liquibase.groovy.dsl)
-    liquibaseRuntime(libs.logback)
-    liquibaseRuntime(libs.postgres)
-    liquibaseRuntime(libs.snakeyaml)
-    liquibaseRuntime(libs.picocli)
-
     runtimeOnly(libs.postgres)
     runtimeOnly(libs.micrometer.exposition.formats)
 
@@ -91,6 +82,7 @@ dependencies {
     testImplementation(libs.testcontainers.junit.jupiter)
     testImplementation(libs.mockito.kotlin)
     testImplementation(libs.xmlunit)
+    testImplementation(libs.konsist)
 }
 
 allOpen {
@@ -100,7 +92,7 @@ allOpen {
 }
 
 ksp {
-    // Konvert: make the build fail on incomplete or invalid mappings - the core goal of DPTB-136.
+    // Konvert: make the build fail on incomplete or invalid mappings.
     arg("konvert.invalid-mapping-strategy", "fail")
     arg("konvert.non-constructor-properties-mapping", "all")
     arg("konvert.enforce-not-null", "true")
@@ -113,26 +105,98 @@ detekt {
     baseline = file("$projectDir/config/detekt/baseline.xml")
 }
 
-liquibase {
-    val propertiesPath = System.getenv("LIQUIBASE_PROPERTIES_PATH") ?: "./.liquibase/liquibase.properties"
-    val file = File(propertiesPath)
-    val properties = Properties()
-    if (file.exists()) {
-        properties.load(FileInputStream(file))
-    }
+// Liquibase runs through the official image, the same version the CI runner installs
+// (.ansible/Dockerfile, ARG LIQUIBASE_VERSION). Extra command arguments - a rollback tag,
+// for instance - are passed as -PliquibaseArgs="...".
+// Read through providers, not File/System.getenv directly: only then does the configuration
+// cache notice that the settings changed and reconfigure instead of replaying stale values.
+// Lazily: a build that never materializes a liquibase task must not read the settings file,
+// otherwise its content and the LIQUIBASE_* variables become inputs of every other task.
+val liquibaseSettings: Properties by lazy {
+    providers
+        .fileContents(
+            layout.projectDirectory.file(
+                providers.environmentVariable("LIQUIBASE_PROPERTIES_PATH").getOrElse(".liquibase/liquibase.properties")
+            )
+        ).asText
+        .map { text -> Properties().apply { load(text.reader()) } }
+        .getOrElse(Properties())
+}
 
-    val resourceDir = "./src/main/resources"
-    activities.register("main") {
-        this.arguments = mapOf(
-            "changeLogFile" to properties.getOrDefault("changeLogFile", "$resourceDir/liquibase/changelog.yaml"),
-            "url" to properties.getOrDefault("url", "jdbc:postgresql://localhost:5432/dptb"),
-            "username" to properties.getOrDefault("username", "liquibase"),
-            "password" to properties.getOrDefault("password", "liquibase"),
-            "contexts" to properties.getOrDefault("context", "local"),
-            "logLevel" to properties.getOrDefault("logLevel", "info")
+// Environment wins over the properties file, so credentials can stay out of it.
+fun liquibaseSetting(key: String, fallback: String): String =
+    providers.environmentVariable("LIQUIBASE_${key.uppercase()}").orNull
+        ?: liquibaseSettings.getProperty(key)
+        ?: fallback
+
+// A database on the host is localhost for us and host.docker.internal for the container.
+// Docker Desktop provides that name itself; --add-host below adds it on Linux.
+// Only the host part is rewritten - a database or parameter named "localhost" stays intact.
+val liquibaseUrl: String by lazy {
+    liquibaseSetting("url", "jdbc:postgresql://localhost:5432/dptb")
+        .replace(Regex("""(?<=//)(localhost|127\.0\.0\.1)(?=[:/])"""), "host.docker.internal")
+}
+
+// Quoted chunks survive as one argument: -PliquibaseArgs="--labels='a b'".
+fun splitArguments(raw: String): List<String> {
+    val arguments = mutableListOf<String>()
+    val current = StringBuilder()
+    var quote: Char? = null
+
+    raw.forEach { char ->
+        when {
+            char == quote -> quote = null
+            quote == null && (char == '"' || char == '\'') -> quote = char
+            quote == null && char.isWhitespace() -> {
+                if (current.isNotEmpty()) arguments += current.toString().also { current.clear() }
+            }
+
+            else -> current.append(char)
+        }
+    }
+    if (current.isNotEmpty()) arguments += current.toString()
+
+    return arguments
+}
+
+val executablePath: Provider<String> = providers.environmentVariable("PATH")
+
+listOf(
+    "update", "status", "validate", "tag", "rollback", "rollbackCount", "dropAll", "listLocks", "releaseLocks"
+).forEach { command ->
+    tasks.register<Exec>(command) {
+        group = "liquibase"
+        description = "Runs liquibase $command against the configured database"
+
+        // The password travels as an environment variable of the container: a command-line argument
+        // would be visible in `ps` and printed by --info.
+        environment("LIQUIBASE_COMMAND_PASSWORD", liquibaseSetting("password", "liquibase"))
+
+        // Without docker Exec fails with a bare "error=2, No such file or directory".
+        val dockerInstalled =
+            executablePath.getOrElse("").split(File.pathSeparator).any { File(it, "docker").canExecute() }
+
+        doFirst {
+            check(dockerInstalled) { "Liquibase tasks run through docker - install it or start Docker Desktop" }
+        }
+
+        commandLine(
+            listOf(
+                "docker", "run", "--rm",
+                "--add-host=host.docker.internal:host-gateway",
+                "-e", "LIQUIBASE_COMMAND_PASSWORD",
+                "-v", "${layout.projectDirectory.dir("src/main/resources").asFile}:/liquibase/changelog:ro",
+                "liquibase/liquibase:${libs.versions.liquibase.core.get()}",
+                "--search-path=/liquibase/changelog",
+                "--changelog-file=${liquibaseSetting("changeLogFile", "liquibase/changelog.yaml")}",
+                "--url=$liquibaseUrl",
+                "--username=${liquibaseSetting("username", "liquibase")}",
+                "--contexts=${liquibaseSetting("context", "local")}",
+                "--log-level=${liquibaseSetting("logLevel", "info")}",
+                command
+            ) + splitArguments(providers.gradleProperty("liquibaseArgs").getOrElse(""))
         )
     }
-    runList = "main"
 }
 
 tasks {
@@ -163,8 +227,18 @@ tasks {
 
     test {
         useJUnitPlatform {
-            includeTags("unit", "spring-integration")
+            includeTags("unit", "spring-integration", "architecture")
         }
+
+        // ToolingConsistencyTest compares pins that live outside the source set; without these
+        // inputs a change to one of the files alone leaves the task UP-TO-DATE and the drift unseen.
+        inputs
+            .files(
+                ".ansible/Dockerfile",
+                ".gitlab-ci.yml",
+                "gradle/wrapper/gradle-wrapper.properties",
+                "gradle/libs.versions.toml",
+            ).withPropertyName("toolingPins")
 
         finalizedBy(jacocoTestReport)
     }

@@ -40,6 +40,9 @@ update-database:
   extends:
     - .run-ansible
   stage: migration
+  # Cancelling a running migration leaves the Liquibase changelog lock taken, and every later
+  # migration fails until it is released by hand.
+  interruptible: false
   variables:
     ANSIBLE_PLAYBOOK: .ansible/playbooks/migration.yml
     LIQUIBASE_COMMAND: update
@@ -60,6 +63,7 @@ rollback-database:
   extends:
     - .run-ansible
   stage: migration
+  interruptible: false
   variables:
     ANSIBLE_PLAYBOOK: ".ansible/playbooks/migration.yml"
     LIQUIBASE_COMMAND: "rollback"
@@ -76,6 +80,8 @@ rollback-database:
 deploy-app:
   extends:
     - .run-ansible
+  # A cancelled deploy leaves the host halfway through the playbook.
+  interruptible: false
   dependencies:
     - generate-version
   rules:

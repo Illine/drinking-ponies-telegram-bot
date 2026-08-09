@@ -12,7 +12,7 @@ import ru.illine.drinking.ponies.dao.repository.TelegramUserRepository
 import ru.illine.drinking.ponies.mapper.AdminUserMapper
 import ru.illine.drinking.ponies.model.base.AdminUserStatusFilter
 import ru.illine.drinking.ponies.model.dto.internal.AdminUserDto
-import ru.illine.drinking.ponies.model.dto.internal.TelegramUserProfile
+import ru.illine.drinking.ponies.model.dto.internal.TelegramUserProfileDto
 import ru.illine.drinking.ponies.model.dto.internal.UserAccessDto
 import ru.illine.drinking.ponies.model.dto.internal.UserCountsDto
 import ru.illine.drinking.ponies.model.entity.TelegramUserEntity
@@ -27,7 +27,7 @@ class TelegramUserAccessServiceImpl(
     @Cacheable(CacheConfig.USER_ACCESS_FLAGS, key = "#externalUserId")
     override fun resolveAccessFlags(
         externalUserId: Long,
-        profile: TelegramUserProfile,
+        profile: TelegramUserProfileDto,
     ): UserAccessDto {
         logger.debug("Resolving access flags for externalUserId={}", externalUserId)
 
@@ -90,7 +90,7 @@ class TelegramUserAccessServiceImpl(
 
     private fun refreshProfile(
         user: TelegramUserEntity,
-        profile: TelegramUserProfile,
+        profile: TelegramUserProfileDto,
     ) {
         if (profile.firstName == null) return
 
@@ -102,7 +102,7 @@ class TelegramUserAccessServiceImpl(
         user.username = profile.username
     }
 
-    private fun TelegramUserEntity.matches(profile: TelegramUserProfile): Boolean =
+    private fun TelegramUserEntity.matches(profile: TelegramUserProfileDto): Boolean =
         firstName == profile.firstName &&
             lastName == profile.lastName &&
             username == profile.username

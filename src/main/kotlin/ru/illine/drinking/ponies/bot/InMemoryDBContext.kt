@@ -8,6 +8,8 @@ import java.util.concurrent.ConcurrentHashMap
 /**
  * Heap-backed [DBContext] for [AbilityBot]. The bot keeps its state in PostgreSQL and never reads the
  * ability db, so this stub replaces the default MapDB-based context.
+ *
+ * The method count is dictated by the [DBContext] interface, not by this class, hence the suppression.
  */
 @Suppress("TooManyFunctions")
 class InMemoryDBContext : DBContext {

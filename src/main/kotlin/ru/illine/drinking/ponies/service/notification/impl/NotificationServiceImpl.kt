@@ -12,7 +12,7 @@ import ru.illine.drinking.ponies.model.dto.internal.GreetingContext
 import ru.illine.drinking.ponies.model.dto.internal.NotificationSettingDto
 import ru.illine.drinking.ponies.model.dto.internal.TelegramChatDto
 import ru.illine.drinking.ponies.model.dto.internal.TelegramUserDto
-import ru.illine.drinking.ponies.model.dto.internal.TelegramUserProfile
+import ru.illine.drinking.ponies.model.dto.internal.TelegramUserProfileDto
 import ru.illine.drinking.ponies.service.message.MessageProvider
 import ru.illine.drinking.ponies.service.notification.NotificationService
 import ru.illine.drinking.ponies.util.FunctionHelper.check
@@ -35,7 +35,7 @@ class NotificationServiceImpl(
 
         val externalUserId = messageContext.user().id
         val chatId = messageContext.chatId()
-        val profile = with(messageContext.user()) { TelegramUserProfile(firstName, lastName, userName) }
+        val profile = with(messageContext.user()) { TelegramUserProfileDto(firstName, lastName, userName) }
 
         telegramUserAccessService.restoreIfDeleted(externalUserId)
 
@@ -62,7 +62,7 @@ class NotificationServiceImpl(
     private fun createNewUser(
         externalUserId: Long,
         chatId: Long,
-        profile: TelegramUserProfile,
+        profile: TelegramUserProfileDto,
     ): NotificationSettingDto {
         val user = TelegramUserDto.create(externalUserId, profile)
         val chat = TelegramChatDto.create(chatId, user)

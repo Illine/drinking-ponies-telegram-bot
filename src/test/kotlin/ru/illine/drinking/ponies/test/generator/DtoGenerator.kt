@@ -12,10 +12,10 @@ import ru.illine.drinking.ponies.model.dto.internal.PauseStateDto
 import ru.illine.drinking.ponies.model.dto.internal.SettingDto
 import ru.illine.drinking.ponies.model.dto.internal.StatisticsDto
 import ru.illine.drinking.ponies.model.dto.internal.StatisticsPointDto
+import ru.illine.drinking.ponies.model.dto.internal.TelegramAuthUserDto
 import ru.illine.drinking.ponies.model.dto.internal.TelegramChatDto
-import ru.illine.drinking.ponies.model.dto.internal.TelegramUserProfile
+import ru.illine.drinking.ponies.model.dto.internal.TelegramUserProfileDto
 import ru.illine.drinking.ponies.model.dto.internal.WaterStatisticDto
-import ru.illine.drinking.ponies.model.dto.request.TelegramInitDataUser
 import ru.illine.drinking.ponies.model.dto.request.WaterEntryRequest
 import ru.illine.drinking.ponies.model.dto.response.NotificationHistoryEvent
 import java.time.DayOfWeek
@@ -131,25 +131,31 @@ class DtoGenerator {
                 amountMl = amountMl,
             )
 
-        fun generateTelegramUserDto(
+        fun generateTelegramAuthUserDto(
             externalUserId: Long = 1L,
             firstName: String? = "First Name",
             lastName: String? = null,
             username: String? = "username",
-        ): TelegramInitDataUser =
-            TelegramInitDataUser(
+            isAdmin: Boolean = false,
+            isBanned: Boolean = false,
+            isActive: Boolean = false,
+        ): TelegramAuthUserDto =
+            TelegramAuthUserDto(
                 externalUserId = externalUserId,
                 firstName = firstName,
                 lastName = lastName,
                 username = username,
+                isAdmin = isAdmin,
+                isBanned = isBanned,
+                isActive = isActive,
             )
 
-        fun generateTelegramUserProfile(
+        fun generateTelegramUserProfileDto(
             firstName: String? = "First Name",
             lastName: String? = null,
             username: String? = "username",
-        ): TelegramUserProfile =
-            TelegramUserProfile(
+        ): TelegramUserProfileDto =
+            TelegramUserProfileDto(
                 firstName = firstName,
                 lastName = lastName,
                 username = username,

@@ -15,7 +15,7 @@ import org.springframework.test.context.jdbc.SqlConfig
 import ru.illine.drinking.ponies.model.dto.internal.NotificationSettingDto
 import ru.illine.drinking.ponies.service.notification.NotificationSenderService
 import ru.illine.drinking.ponies.test.tag.SpringIntegrationTest
-import ru.illine.drinking.ponies.test.util.ClockHelperTest
+import ru.illine.drinking.ponies.test.util.TestClockHelper
 import java.time.Clock
 
 @SpringIntegrationTest
@@ -41,7 +41,7 @@ class NotificationSchedulerIntegrationTest
 
         @BeforeEach
         fun resetClock() {
-            (clock as ClockHelperTest.MutableClock).setTime(ClockHelperTest.DEFAULT_TIME)
+            (clock as TestClockHelper.MutableClock).setTime(TestClockHelper.DEFAULT_TIME)
         }
 
         @Test

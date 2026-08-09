@@ -8,6 +8,8 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.MethodSource
 import org.mockito.kotlin.doReturn
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.verify
@@ -16,9 +18,10 @@ import org.mockito.kotlin.whenever
 import org.springframework.web.method.HandlerMethod
 import ru.illine.drinking.ponies.config.web.security.AdminOnly
 import ru.illine.drinking.ponies.config.web.security.AuthErrorType
-import ru.illine.drinking.ponies.model.dto.request.TelegramInitDataUser
+import ru.illine.drinking.ponies.test.generator.DtoGenerator
 import ru.illine.drinking.ponies.test.tag.UnitTest
 import ru.illine.drinking.ponies.util.telegram.TelegramGeneralConstants
+import java.util.stream.Stream
 
 @UnitTest
 @DisplayName("AdminAuthInterceptor Unit Test")
@@ -28,23 +31,9 @@ class AdminAuthInterceptorTest {
     private lateinit var handlerMethod: HandlerMethod
     private lateinit var interceptor: AdminAuthInterceptor
 
-    private val adminUser =
-        TelegramInitDataUser(
-            externalUserId = 1L,
-            firstName = "Admin",
-            lastName = null,
-            username = null,
-            isAdmin = true,
-        )
+    private val adminUser = DtoGenerator.generateTelegramAuthUserDto(externalUserId = 1L, isAdmin = true)
 
-    private val nonAdminUser =
-        TelegramInitDataUser(
-            externalUserId = 2L,
-            firstName = "User",
-            lastName = null,
-            username = null,
-            isAdmin = false,
-        )
+    private val nonAdminUser = DtoGenerator.generateTelegramAuthUserDto(externalUserId = 2L, isAdmin = false)
 
     @BeforeEach
     fun setUp() {
@@ -130,19 +119,30 @@ class AdminAuthInterceptorTest {
         verify(response).setHeader(AuthErrorType.HEADER_NAME, AuthErrorType.FORBIDDEN_ADMIN.value)
     }
 
-    @Test
-    @DisplayName("preHandle(): @AdminOnly + missing telegramUser attribute - throws IllegalStateException")
-    fun `missing telegramUser attribute fails fast`() {
+    @ParameterizedTest(name = "[{index}] attribute={0} - throws IllegalStateException")
+    @MethodSource("provideAttributesWithoutAuthUser")
+    @DisplayName("preHandle(): @AdminOnly + no TelegramAuthUserDto attribute - throws IllegalStateException")
+    fun `attribute without an auth user fails fast`(attribute: Any?) {
         whenever(handlerMethod.getMethodAnnotation(AdminOnly::class.java)).thenReturn(AdminOnly())
-        whenever(request.getAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE)).thenReturn(null)
+        whenever(request.getAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE)).thenReturn(attribute)
 
         assertThrows<IllegalStateException> {
             interceptor.preHandle(request, response, handlerMethod)
         }
+        verifyNoInteractions(response)
     }
 
     @AdminOnly
     private class GuardedController
 
     private class OpenController
+
+    companion object {
+        @JvmStatic
+        fun provideAttributesWithoutAuthUser(): Stream<Any?> =
+            Stream.of(
+                null, // TelegramAuthInterceptor never ran
+                DtoGenerator.generateTelegramUserProfileDto(), // another type left under the key
+            )
+    }
 }

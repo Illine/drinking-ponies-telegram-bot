@@ -28,8 +28,8 @@ import ru.illine.drinking.ponies.config.cache.CacheConfig
 import ru.illine.drinking.ponies.config.web.interceptor.AdminAuthInterceptorIntegrationTest.AdminTestConfig
 import ru.illine.drinking.ponies.config.web.security.AdminOnly
 import ru.illine.drinking.ponies.config.web.security.AuthErrorType
-import ru.illine.drinking.ponies.model.dto.request.TelegramInitDataUser
 import ru.illine.drinking.ponies.service.telegram.TelegramValidatorService
+import ru.illine.drinking.ponies.test.generator.DtoGenerator
 import ru.illine.drinking.ponies.test.tag.SpringIntegrationTest
 
 @SpringIntegrationTest
@@ -54,13 +54,7 @@ class AdminAuthInterceptorIntegrationTest
         @MockitoBean
         private lateinit var telegramValidatorService: TelegramValidatorService
 
-        private val telegramUser =
-            TelegramInitDataUser(
-                externalUserId = ADMIN_USER_ID,
-                firstName = "First Name",
-                lastName = null,
-                username = "username",
-            )
+        private val telegramUser = DtoGenerator.generateTelegramAuthUserDto(externalUserId = ADMIN_USER_ID)
 
         @BeforeEach
         fun setUp() {

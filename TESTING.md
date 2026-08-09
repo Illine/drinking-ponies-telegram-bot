@@ -16,7 +16,9 @@ readable and consistent. The mocking idioms are the canonical reference for
   `TestRestTemplate` for integration tests.
 - **Testcontainers (PostgreSQL)** - real database for integration tests, wired
   through `TestDatabaseConfig`.
-- **JaCoCo** - coverage, emitted to `build/jacoco/coverage.xml`.
+- **Konsist** - source-tree assertions for the architecture tests.
+- **JaCoCo** - coverage report, emitted to `build/jacoco/coverage.xml`. There is
+  no threshold: the number is uploaded to Codecov, it does not fail the build.
 
 ## Test tags
 
@@ -28,8 +30,17 @@ Every test class carries exactly one tag, applied through a meta-annotation:
   `@SpringBootTest` with the real context, Testcontainers DB, and beans replaced
   via `@MockitoBean`. Bundles `TestDatabaseConfig` + `TestTimeConfig` and the
   `integration-test` profile.
+- `@ArchitectureTest` -> `@Tag("architecture")` - structural rules over the
+  source tree (package layout, annotations, naming). No Spring context, no
+  database; see [Architecture tests](#architecture-tests).
 
-Both tags run together:
+A tag is inherited from a superclass: the enum test classes extending
+`EnumTypeOfTest` carry no tag of their own.
+
+Every tag must be listed in `includeTags` in `build.gradle.kts` - a test whose
+tag is missing there is silently skipped rather than reported.
+
+All tags run together:
 
 ```bash
 ./gradlew test                                              # whole suite
@@ -40,6 +51,8 @@ Both tags run together:
 
 - **Co-located by package**: a test mirrors the package of its subject and is
   named `<Subject>Test.kt` (e.g. `service/notification/NotificationServiceTest`).
+  Architecture tests are the one exception - they have no single subject and
+  live in `architecture/`.
 - Test the public surface, not the `Impl`: the file is named after the
   interface/subject and lives in the interface package, even when it exercises
   the `*Impl`.
@@ -103,6 +116,49 @@ mockito-kotlin.
 - Build DTOs through `DtoGenerator` (e.g. `generateNotificationDto(...)`,
   `generateWaterStatisticDto(...)`). Add new factory methods there with sensible
   defaults rather than hand-constructing DTOs in each test.
+
+## Architecture tests
+
+The `architecture` package turns the conventions from
+[`DEVELOPMENT.md`](DEVELOPMENT.md) into assertions, so a drift fails the build
+instead of waiting for a reviewer. `CodeLayoutTest` reads the source tree with
+[Konsist](https://github.com/LemonAppDev/konsist) - no compilation, no context,
+the whole class runs in seconds; `ToolingConsistencyTest` compares version pins
+that live in different files.
+
+Which rule lives where is listed once, in
+[`DEVELOPMENT.md`](DEVELOPMENT.md#enforcement) - this file describes how to work
+with them, not what they check.
+
+The files `ToolingConsistencyTest` reads sit outside the test source set, so
+they are registered as inputs of the `test` task - otherwise editing one of them
+alone would leave the task UP-TO-DATE and the drift unseen.
+
+```bash
+./gradlew test --tests "*architecture*"   # the architecture package alone
+```
+
+Two rules for working with it:
+
+- **A new rule ships with its negative check.** Break the convention on purpose
+  once and confirm the test goes red. A rule that never fails is worse than no
+  rule - it reads as a guarantee while guaranteeing nothing.
+- **A rule failing on code you consider correct means the rule is wrong.** Fix
+  the assertion (or carve out the exception explicitly), do not reshape working
+  code to please it.
+
+`rules can fail` is a guard, not a convention: it asserts that a deliberately
+false rule still throws. Konsist parses sources with its own bundled Kotlin
+compiler, so a future language bump could leave it silently blind - this test
+goes red the day that happens. It exercises the production scope only.
+
+**A selection that narrows to nothing must fail, not pass.** By default Konsist
+accepts any assertion on an empty list, so a rule whose filter stops matching
+reads as a guarantee while checking nothing. Every rule that filters or picks a
+package therefore asserts with `strict = true`, which raises on an empty
+selection. `ToolingConsistencyTest` has the same trap in another shape: a regex
+that stops matching yields `null`, and two nulls compare equal - pins are read
+through `pin()`, which fails when a pattern finds nothing.
 
 ## What we do NOT test
 

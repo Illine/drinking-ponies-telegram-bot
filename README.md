@@ -1,4 +1,4 @@
-[![Kotlin](https://img.shields.io/badge/Kotlin-2.1-7F52FF?logo=kotlin&logoColor=white)](https://kotlinlang.org)
+[![Kotlin](https://img.shields.io/badge/Kotlin-2.3-7F52FF?logo=kotlin&logoColor=white)](https://kotlinlang.org)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5-6DB33F?logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
 [![JVM](https://img.shields.io/badge/JVM-17-007396?logo=openjdk&logoColor=white)](https://openjdk.org)
 [![codecov](https://codecov.io/gl/dptb/drinking-ponies-telegram-bot/branch/develop/graph/badge.svg?token=0M2W284MO2)](https://codecov.io/gl/dptb/drinking-ponies-telegram-bot)
@@ -54,8 +54,11 @@ Full schema: Swagger UI at `/docs`, OpenAPI at `/v3/api-docs`. Disabled in produ
 
 - **JUnit 5** for unit and slice tests
 - **Testcontainers** for integration tests against a real PostgreSQL container
+- **Konsist** for architecture tests: package layout, DTO boundaries and naming are asserted, not reviewed
 - **Codecov** integration via GitLab CI; coverage badge above
 - Tests run as a dedicated CI stage before any build artifact is produced
+
+Conventions and the checks behind them: [`DEVELOPMENT.md`](DEVELOPMENT.md) (code layout, linters), [`TESTING.md`](TESTING.md) (test style, tags, architecture tests).
 
 ## Local Development
 
@@ -97,6 +100,8 @@ docker run -d --name dptb-postgres \
 
 LIQUIBASE_USERNAME=dptb LIQUIBASE_PASSWORD=dptb ./gradlew update
 ```
+
+Migrations run through the official Liquibase image (Docker required), pinned to the same version the CI runner uses. `status`, `rollback`, `dropAll` and the other Liquibase commands are Gradle tasks of the same name; arguments go through `-PliquibaseArgs`, e.g. `./gradlew rollback -PliquibaseArgs="8.8.0"`.
 
 Then set `DATABASE_URL=jdbc:postgresql://localhost:5432/dptb` along with matching `DATABASE_USERNAME` and `DATABASE_PASSWORD`.
 
