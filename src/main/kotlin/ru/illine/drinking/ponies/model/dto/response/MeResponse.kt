@@ -10,11 +10,4 @@ data class MeResponse(
     val externalUserId: Long,
     @Schema(description = "Whether the user has admin privileges", example = "false")
     val isAdmin: Boolean,
-    @Schema(description = "Whether the user has been banned", example = "false")
-    val isBanned: Boolean,
-    @Schema(
-        description = "Whether the account is active; false means it was deleted and a /start brings it back",
-        example = "true",
-    )
-    val isActive: Boolean,
 )

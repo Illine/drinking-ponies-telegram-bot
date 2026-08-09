@@ -24,7 +24,5 @@ class UserController {
         MeResponse(
             externalUserId = telegramUser.externalUserId,
             isAdmin = telegramUser.isAdmin,
-            isBanned = telegramUser.isBanned,
-            isActive = telegramUser.isActive,
         )
 }

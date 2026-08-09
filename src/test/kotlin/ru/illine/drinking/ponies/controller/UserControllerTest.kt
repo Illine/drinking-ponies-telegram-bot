@@ -65,21 +65,16 @@ class UserControllerTest
                 set("X-Authorization-Telegram-Data", "test-init-data")
             }
 
-        @ParameterizedTest(name = "[{index}] externalUserId={0} - isAdmin={1}, isBanned={2}, isActive={3}")
+        @ParameterizedTest(name = "[{index}] externalUserId={0} - isAdmin={1}")
         @CsvSource(
-            "1,      true,  false, true",
-            "2,      false, false, true",
-            "777002, false, true,  true",
-            "777001, false, false, false",
-            "777004, false, true,  false",
-            "0,      false, false, true",
+            "1, true",
+            "2, false",
+            "0, false",
         )
-        @DisplayName("getMe(): returns 200 with the access flags of the caller, unknown callers included")
+        @DisplayName("getMe(): returns 200 with the identity of the caller, unknown callers included")
         fun `returns 200 with access flags`(
             externalUserId: Long,
             isAdmin: Boolean,
-            isBanned: Boolean,
-            isActive: Boolean,
         ) {
             whenever(telegramValidatorService.map(any()))
                 .thenReturn(telegramUser.copy(externalUserId = externalUserId))
@@ -96,26 +91,32 @@ class UserControllerTest
             assertNotNull(response.body)
             assertEquals(externalUserId, response.body!!.externalUserId)
             assertEquals(isAdmin, response.body!!.isAdmin)
-            assertEquals(isBanned, response.body!!.isBanned)
-            assertEquals(isActive, response.body!!.isActive)
         }
 
-        @Test
-        @DisplayName("getMe(): a soft-deleted caller still reaches the endpoint and learns they are inactive")
-        fun `stays open for a soft deleted caller`() {
+        @ParameterizedTest(name = "[{index}] externalUserId={0} - {1}")
+        @CsvSource(
+            "777002, BANNED",
+            "777004, BANNED",
+            "777001, DELETED",
+        )
+        @DisplayName("getMe(): a banned or deleted caller - returns 403 with the code the mini app reads")
+        fun `rejects a banned or deleted caller`(
+            externalUserId: Long,
+            expected: AuthErrorType,
+        ) {
             whenever(telegramValidatorService.map(any()))
-                .thenReturn(telegramUser.copy(externalUserId = DELETED_EXTERNAL_ID))
+                .thenReturn(telegramUser.copy(externalUserId = externalUserId))
 
             val response =
                 restTemplate.exchange(
                     "/users/me",
                     HttpMethod.GET,
                     HttpEntity<Void>(buildHeaders()),
-                    MeResponse::class.java,
+                    Void::class.java,
                 )
 
-            assertEquals(HttpStatus.OK, response.statusCode)
-            assertFalse(response.body!!.isActive)
+            assertEquals(HttpStatus.FORBIDDEN, response.statusCode)
+            assertEquals(expected.value, response.headers.getFirst(AuthErrorType.HEADER_NAME))
         }
 
         @Test
@@ -150,9 +151,6 @@ class UserControllerTest
             val body = objectMapper.readTree(response.body)
             assertEquals(ADMIN_EXTERNAL_ID, body.path("telegramUserId").asLong())
             assertTrue(body.path("isAdmin").asBoolean())
-            assertFalse(body.path("isBanned").asBoolean())
-            assertTrue(body.path("isActive").asBoolean())
-            assertFalse(body.path("isActive").isMissingNode, "The MiniApp reads the flag under this exact key")
         }
 
         @Test
@@ -196,6 +194,5 @@ class UserControllerTest
         companion object {
             private const val ADMIN_EXTERNAL_ID = 1L
             private const val PLAIN_EXTERNAL_ID = 2L
-            private const val DELETED_EXTERNAL_ID = 777001L
         }
     }
