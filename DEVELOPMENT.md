@@ -19,8 +19,11 @@ Formatting is owned exclusively by ktlint; detekt runs with its formatting rules
 ./gradlew formatKotlin        # auto-fix formatting (run this before committing)
 ./gradlew lintKotlin detekt   # formatting + static analysis
 ./gradlew check -x test       # exactly what the CI lint job runs
-./gradlew check               # full local verify: lint + detekt + tests + coverage
+./gradlew check               # full local verify: lint + detekt + tests
 ```
+
+Coverage is measured but not gated: `test` is finalized by `jacocoTestReport`,
+the report goes to Codecov, and no threshold can fail the build.
 
 CI runs `gradle check -x test` as the `lint` job, which the `test` job depends on (`needs`), so formatting/smell regressions fail fast before tests. The `lint` job deliberately runs `check` rather than a list of task names: a verification task that its plugin wires into `check` reaches CI on its own. Tasks that merely sit in the `verification` group without being attached to `check` - `detektMain`/`detektTest`, for instance - still need to be named explicitly.
 
@@ -28,9 +31,11 @@ CI runs `gradle check -x test` as the `lint` job, which the `test` job depends o
 
 [`gradle.properties`](gradle.properties) turns the configuration cache on for every build. Locally that pays off on every repeated command. In CI only the `lint` job benefits: an entry is keyed by the set of requested tasks, and `lint` is the one job that pushes the cache, so its entry survives to the next pipeline. `test` and `build-jar` request different tasks and run with `policy: pull` - whatever they write is thrown away with the container, so they pass `--no-configuration-cache` and skip writing it at all. Build logic must therefore read the environment and files through `providers` - a plain `System.getenv` or `File(...)` is invisible to the cache, and the build silently replays stale values. When a plugin upgrade breaks the cache the build fails rather than degrades; `--no-configuration-cache` unblocks a single invocation.
 
+The same file raises the daemon's memory (`org.gradle.jvmargs`, `kotlin.daemon.jvmargs`): kapt, KSP and the detekt alpha do not fit the Gradle defaults, and a daemon that runs out of metaspace restarts mid-build, throwing away both the warm state and the configuration cache. The values are chosen to stay well inside the CI runner, since `gradle.properties` applies there too.
+
 ### detekt baseline
 
-[`config/detekt/baseline.xml`](config/detekt/baseline.xml) freezes the pre-existing findings on legacy code so CI does not fail on them. New code is checked cleanly. To review what is currently baselined, see [`config/detekt/detekt.yml`](config/detekt/detekt.yml) for the active rules and regenerate the baseline with `./gradlew detektBaseline` after intentionally clearing findings.
+[`config/detekt/baseline.xml`](config/detekt/baseline.xml) freezes the pre-existing findings on legacy code so CI does not fail on them; new code is checked cleanly. The frozen findings are listed in that file, the active rules in [`config/detekt/detekt.yml`](config/detekt/detekt.yml). After clearing findings on purpose, regenerate the baseline with `./gradlew detektBaseline`. `MaxLineLength` overlaps with ktlint's line-length rule and is a planned follow-up to disable in detekt (ktlint owns line length).
 
 ### IntelliJ IDEA setup
 
@@ -47,7 +52,6 @@ With that, the native `Reformat Code` (Cmd/Ctrl+Alt+L) picks up `ktlint_official
 
 - **Kotlin 2.3.21.** detekt 2.0 (alpha) is compiled against an exact Kotlin compiler version and refuses to run on a mismatch. The project is pinned to the Kotlin version detekt's alpha targets. A Kotlin bump may require a matching detekt alpha (and vice versa) until detekt 2.0 reaches stable.
 - **No type resolution (yet).** CI runs the flat `detekt` task, which analyses sources without type resolution. The type-aware variants (`detektMain`/`detektTest`) are intentionally left out for now - they are the most fragile path on the detekt alpha. Rules that require type resolution therefore do not run yet; enabling them is a follow-up once detekt 2.0 stabilises.
-- **detekt baseline** currently freezes the existing legacy findings (`config/detekt/baseline.xml`). `MaxLineLength` overlaps with ktlint's line-length rule and is a planned follow-up to disable in detekt (ktlint owns line length).
 - Generated KSP/Konvert sources under `build/generated/**` are excluded from ktlint and are not picked up by detekt.
 
 ## Database migrations
@@ -60,9 +64,15 @@ One Liquibase, one version, everywhere. The CI `migration` stage runs the native
 ./gradlew rollback -PliquibaseArgs="8.8.0"  # arguments for a command
 ```
 
-The Liquibase commands used day to day are Gradle tasks of the same name, grouped under `liquibase` in `./gradlew tasks`. The list in [`build.gradle.kts`](build.gradle.kts) is not the full Liquibase surface - add the command there when a new one is needed.
+The Liquibase commands used day to day are Gradle tasks of the same name, grouped under `liquibase` in `./gradlew tasks`. The list in [`build.gradle.kts`](build.gradle.kts) is not the full Liquibase surface - add the command there when a new one is needed. Arguments passed through `-PliquibaseArgs` are split on spaces; quote a value that contains one (`-PliquibaseArgs="--label-filter='a b'"`).
 
-Connection settings come from `.liquibase/liquibase.properties` (`changeLogFile` is now relative to `src/main/resources`, not to the repository root), overridable by `LIQUIBASE_<KEY>` for any of them - `LIQUIBASE_URL`, `LIQUIBASE_USERNAME`, `LIQUIBASE_PASSWORD`, `LIQUIBASE_CONTEXT` - point them at another host and the changelog is applied there, exactly as the pipeline does it. Docker is required; `localhost` in the URL is rewritten to `host.docker.internal` so the container reaches a database on the host (Docker Desktop resolves that name, `--add-host` adds it on Linux).
+Connection settings come from `.liquibase/liquibase.properties`, whose path itself is overridable by `LIQUIBASE_PROPERTIES_PATH`. Every key in that file is overridable by the matching `LIQUIBASE_<KEY>` environment variable (`LIQUIBASE_URL`, `LIQUIBASE_USERNAME`, `LIQUIBASE_PASSWORD`, `LIQUIBASE_CONTEXT`, ...) - point them at another host and the changelog is applied there, exactly as the pipeline does it. The password reaches the container as an environment variable, so it stays out of `ps` and of the build log. Docker is required; `localhost` in the URL is rewritten to `host.docker.internal` so the container reaches a database on the host (Docker Desktop resolves that name, `--add-host` adds it on Linux).
+
+`changeLogFile` is relative to `src/main/resources`, which is what the pipeline uses as well. A database created before that, by the old Gradle plugin, holds the repository-root path in `DATABASECHANGELOG.FILENAME` and will read every changeset as new - recreate it, or realign it once:
+
+```sql
+UPDATE databasechangelog SET filename = replace(filename, 'src/main/resources/', '');
+```
 
 There is no Liquibase Gradle plugin: it needed Liquibase on the buildscript classpath, blocked the configuration cache, and gave us a second Liquibase version that the pipeline never used.
 
@@ -124,22 +134,29 @@ The rules above are not left to review attention - most of them fail the build.
 | Repositories and projections stay inside `dao` | detekt `ForbiddenImport/repositoryOutsideDao` |
 | Entities stay inside `dao` and `mapper` | detekt `ForbiddenImport/entityOutsideDao` |
 | HTTP types (`request` and `response`) stay in the web layer | detekt `ForbiddenImport/httpTypesOutsideWeb` |
-| Silencing a boundary with `@Suppress` is itself reported | detekt `ForbiddenSuppress` |
+| A foreign wire schema stays at its parser | detekt `ForbiddenImport/foreignSchemaOutsideParser` |
+| Tests mock through mockito-kotlin, not the raw Mockito API | detekt `ForbiddenImport/rawMockitoInTests` |
+| No `@Suppress` switches off a boundary or a whole ruleset | `architecture/CodeLayoutTest` |
 | Three packages under `model/dto`, empty root | `architecture/CodeLayoutTest` |
 | No serialization annotations in `internal` | `architecture/CodeLayoutTest` |
 | `@Schema` on every request and response DTO | `architecture/CodeLayoutTest` |
-| `*Response` and `*Request` suffixes reserved for their own packages | `architecture/CodeLayoutTest` |
+| `*Response`, `*Request` and `*Constants` suffixes reserved for their own packages | `architecture/CodeLayoutTest` |
 | Internal carriers end with `*Dto` or `*Context` | `architecture/CodeLayoutTest` |
-| `@Konverter` mappers live in `mapper` | `architecture/CodeLayoutTest` |
+| `@Konverter`, `@Entity` and `@RestController` each stay in one package | `architecture/CodeLayoutTest` |
 | Tests stay out of `impl` packages, each carries one tag | `architecture/CodeLayoutTest` |
 | One Liquibase version for tests and for the CI runner | `architecture/ToolingConsistencyTest` |
+| One Gradle version for the wrapper and the CI images | `architecture/ToolingConsistencyTest` |
+| Every declared test tag is executed by the `test` task | `architecture/ToolingConsistencyTest` |
+| Every CI job running gradle is pinned to the shared image | `architecture/ToolingConsistencyTest` |
 | `package` matches the directory | detekt `InvalidPackageDeclaration` |
 | Naming, formatting, import order | ktlint |
 
-`ForbiddenSuppress` matches literal strings, so every spelling that would silence
-a boundary is listed next to the rule ids - the blanket `all`/`style` forms and
-the same values with detekt's `detekt.` / `detekt:` prefix. A new rule id needs
-its prefixed spellings added too, otherwise the boundary stays suppressible.
+Silencing a boundary is caught by the architecture test rather than by detekt's
+own `ForbiddenSuppress`: detekt matches suppression ids as literals while
+accepting its prefix in any case, so `@Suppress("Detekt.all")` slips through any
+list one could write. The test matches the shape instead - the blanket
+`all`/`style` forms and every `ForbiddenImport` id, with or without a
+`detekt.`/`style.` prefix - and a new rule id needs nothing added.
 
 The reverse of the mapper rule is deliberately not enforced: `mapper` may hold a
 hand-written mapper when the conversion carries logic (`SettingMapper` formats
@@ -148,11 +165,14 @@ appearing outside the package - that is what the rule checks.
 
 Some packages cross a boundary by design, and each rule carries its own exclusion
 list: `mapper` is excluded everywhere (turning one shape into another is what it
-exists for), `dao` and `model/entity` from the dao-facing rules, and `controller`,
+exists for), `dao` and `model/entity` from the dao-facing rules, `controller` and
 `config/web` (interceptors and the exception handler are part of the web layer
 despite the package they live in) plus the test fixture factory `test/generator`
-from the HTTP-type rule. The lists live in
-[`config/detekt/detekt.yml`](config/detekt/detekt.yml) next to each rule.
+from the HTTP-type rule, `util/telegram` and `service/telegram` from the foreign
+schema rule (the schema is parsed there), and `util/sql` from the mockito rule
+(`CustomP6SpyLoggerTest` needs `mockStatic`, which mockito-kotlin does not wrap).
+The lists live in [`config/detekt/detekt.yml`](config/detekt/detekt.yml) next to
+each rule.
 
 What stays on review: whether a mapper or a constructor fits a given shape, and
 whether a comment earns its place. Neither is expressible as a rule.

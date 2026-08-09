@@ -16,7 +16,9 @@ readable and consistent. The mocking idioms are the canonical reference for
   `TestRestTemplate` for integration tests.
 - **Testcontainers (PostgreSQL)** - real database for integration tests, wired
   through `TestDatabaseConfig`.
-- **JaCoCo** - coverage, emitted to `build/jacoco/coverage.xml`.
+- **Konsist** - source-tree assertions for the architecture tests.
+- **JaCoCo** - coverage report, emitted to `build/jacoco/coverage.xml`. There is
+  no threshold: the number is uploaded to Codecov, it does not fail the build.
 
 ## Test tags
 
@@ -124,21 +126,17 @@ instead of waiting for a reviewer. `CodeLayoutTest` reads the source tree with
 the whole class runs in seconds; `ToolingConsistencyTest` compares version pins
 that live in different files.
 
-What `CodeLayoutTest` enforces: three packages under `model/dto` with an empty
-root, no serialization imports in `internal`, `@Schema` on every request and
-response DTO, the `*Response` and `*Request` suffixes reserved for their own
-packages, `*Dto`/`*Context` suffixes for internal carriers, `@Konverter` mappers
-only in `mapper`, no test inside an `impl` package, and exactly one tag per test
-class.
+Which rule lives where is listed once, in
+[`DEVELOPMENT.md`](DEVELOPMENT.md#enforcement) - this file describes how to work
+with them, not what they check.
 
-`ToolingConsistencyTest` compares pins that live in different files and would
-otherwise drift silently: the Liquibase version in `gradle/libs.versions.toml`
-against `ARG LIQUIBASE_VERSION` in `.ansible/Dockerfile`, the Gradle version in
-the wrapper against the `gradle:<version>-jdk17` images in `.gitlab-ci.yml`, and
-the tags declared in `test/tag` against `includeTags` in `build.gradle.kts`.
-Those files sit outside the test source set, so they are registered as inputs of
-the `test` task - otherwise editing one of them alone would leave the task
-UP-TO-DATE and the drift unseen.
+The files `ToolingConsistencyTest` reads sit outside the test source set, so
+they are registered as inputs of the `test` task - otherwise editing one of them
+alone would leave the task UP-TO-DATE and the drift unseen.
+
+```bash
+./gradlew test --tests "*architecture*"   # the architecture package alone
+```
 
 Two rules for working with it:
 
@@ -152,14 +150,15 @@ Two rules for working with it:
 `rules can fail` is a guard, not a convention: it asserts that a deliberately
 false rule still throws. Konsist parses sources with its own bundled Kotlin
 compiler, so a future language bump could leave it silently blind - this test
-goes red the day that happens.
+goes red the day that happens. It exercises the production scope only.
 
-Konsist passes an assertion on an *empty* list, so a rule whose selection
-quietly narrows to nothing reads as a guarantee while checking nothing. Every
-rule that filters or picks a package therefore calls `orFailIfEmpty` first and
-names what it expected to find. The same trap in `ToolingConsistencyTest`: a
-regex that stops matching yields `null`, and two nulls compare equal - the pins
-are read through `pin()`, which fails when a pattern finds nothing.
+**A selection that narrows to nothing must fail, not pass.** By default Konsist
+accepts any assertion on an empty list, so a rule whose filter stops matching
+reads as a guarantee while checking nothing. Every rule that filters or picks a
+package therefore asserts with `strict = true`, which raises on an empty
+selection. `ToolingConsistencyTest` has the same trap in another shape: a regex
+that stops matching yields `null`, and two nulls compare equal - pins are read
+through `pin()`, which fails when a pattern finds nothing.
 
 ## What we do NOT test
 
