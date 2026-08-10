@@ -5,4 +5,6 @@ enum class UserStateEventType {
     UNBANNED,
     DEACTIVATED,
     RESTORED,
+    PROMOTED,
+    DEMOTED,
 }

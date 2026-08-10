@@ -30,7 +30,7 @@ private val STRING_LITERAL = Regex(""""([^"]*)"""")
 
 private const val STATE_DOOR = "TelegramUserAccessServiceImpl"
 
-private val STATE_FLAGS = listOf("deleted", "isBanned")
+private val STATE_FLAGS = listOf("deleted", "isBanned", "isAdmin")
 
 // Both spellings of a write: qualified (user.deleted = ...) and bare inside an apply/with block. The
 // lookbehind drops a named argument, which reads exactly like a bare write once the call wraps over lines.
@@ -205,18 +205,20 @@ class CodeLayoutTest {
     @DisplayName("the account state flags are written through a single door")
     fun `account state has a single door`() {
         val (door, rest) = Konsist.scopeFromProduction().files.partition { it.name == STATE_DOOR }
+        val doorCode = door.single().code()
+        val restCode = rest.map { it.name to it.code() }
 
         STATE_FLAGS.forEach { flag ->
             val write = stateFlagWrite(flag)
 
             assertEquals(
                 emptyList<String>(),
-                rest.filter { write.containsMatchIn(it.code()) }.map { it.name },
+                restCode.filter { (_, code) -> write.containsMatchIn(code) }.map { (name, _) -> name },
                 "'$flag' is written in $STATE_DOOR only, so no write escapes its audit record and cache eviction",
             )
             // Per flag, because the rule would otherwise stay green on a rename as long as one flag still matches.
             assertTrue(
-                write.containsMatchIn(door.single().code()),
+                write.containsMatchIn(doorCode),
                 "$STATE_DOOR must still hold the '$flag' write this rule guards",
             )
         }

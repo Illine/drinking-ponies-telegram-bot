@@ -15,6 +15,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.MissingServletRequestParameterException
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException
 import org.springframework.web.servlet.resource.NoResourceFoundException
+import ru.illine.drinking.ponies.exception.LastAdminException
 import ru.illine.drinking.ponies.test.tag.UnitTest
 
 @UnitTest
@@ -99,6 +100,18 @@ class DefaultExceptionHandlerTest {
 
         assertEquals(HttpStatus.NOT_FOUND, response.statusCode)
         assertEquals("resource not found", response.body?.message)
+    }
+
+    @Test
+    @DisplayName("handleConflict(): returns 409 with the client message of the exception")
+    fun `handleConflict returns 409`() {
+        val exception = LastAdminException("the last admin would be left without privileges")
+
+        val response = handler.handleConflict(exception)
+
+        assertEquals(HttpStatus.CONFLICT, response.statusCode)
+        assertEquals(MediaType.APPLICATION_JSON, response.headers.contentType)
+        assertEquals("you cannot revoke the privileges of the last admin", response.body?.message)
     }
 
     @Test

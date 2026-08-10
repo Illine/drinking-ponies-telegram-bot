@@ -24,6 +24,7 @@ import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
+import org.springframework.http.HttpStatusCode
 import org.springframework.http.MediaType
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.jdbc.Sql
@@ -459,6 +460,53 @@ class UserAdminControllerTest
             }
 
             @Test
+            @DisplayName("isAdmin=true - returns 200 with the promoted card and the privileges stick")
+            fun `promotes the user`() {
+                val response = patchState(ACTIVE_USER_ID, """{"isAdmin": true}""")
+
+                assertEquals(HttpStatus.OK, response.statusCode)
+                assertTrue(objectMapper.readTree(response.body).path("isAdmin").asBoolean())
+                assertTrue(getUser(ACTIVE_USER_ID).isAdmin)
+            }
+
+            @Test
+            @DisplayName("isAdmin=false - revokes the privileges as long as another admin stays behind")
+            fun `demotes the user`() {
+                patchState(ACTIVE_USER_ID, """{"isAdmin": true}""")
+
+                val response = patchState(ACTIVE_USER_ID, """{"isAdmin": false}""")
+
+                assertEquals(HttpStatus.OK, response.statusCode)
+                assertFalse(objectMapper.readTree(response.body).path("isAdmin").asBoolean())
+                assertFalse(getUser(ACTIVE_USER_ID).isAdmin)
+            }
+
+            @ParameterizedTest(name = "[{index}] id={0}")
+            @ValueSource(longs = [BANNED_USER_ID, DELETED_USER_ID, BANNED_DELETED_USER_ID])
+            @DisplayName("isAdmin=true over a locked out user - returns 409 and grants nothing")
+            fun `refuses to promote a locked out user`(id: Long) {
+                val response = patchState(id, """{"isAdmin": true}""")
+
+                assertEquals(HttpStatus.CONFLICT, response.statusCode)
+                assertEquals(
+                    "you cannot grant admin privileges to a banned or deleted user",
+                    objectMapper.readTree(response.body).path("message").asText(),
+                )
+                assertFalse(getUser(id).isAdmin)
+            }
+
+            @Test
+            @DisplayName("lifting the ban and granting the privileges in one call is allowed")
+            fun `promotes a user the same call unbans`() {
+                val response = patchState(BANNED_USER_ID, """{"isBanned": false, "isAdmin": true}""")
+
+                assertEquals(HttpStatus.OK, response.statusCode)
+                val card = getUser(BANNED_USER_ID)
+                assertTrue(card.isAdmin)
+                assertFalse(card.isBanned)
+            }
+
+            @Test
             @DisplayName("own account - returns 409 with a readable message and leaves the account alone")
             fun `refuses to change own state`() {
                 val response = patchState(ADMIN_USER_ID, """{"isBanned": true}""")
@@ -533,11 +581,45 @@ class UserAdminControllerTest
                 whenever(telegramValidatorService.map(any())).thenReturn(adminUser)
                 assertTrue(getUser(ACTIVE_USER_ID).isActive)
             }
+
+            @Test
+            @DisplayName("promoted caller - passes the guard right away, the stale flags never served on")
+            fun `a promotion opens the admin endpoints`() {
+                whenever(telegramValidatorService.map(any())).thenReturn(nonAdminUser)
+                assertEquals(HttpStatus.FORBIDDEN, listUsersStatus())
+
+                whenever(telegramValidatorService.map(any())).thenReturn(adminUser)
+                patchState(PLAIN_USER_ID, """{"isAdmin": true}""")
+
+                whenever(telegramValidatorService.map(any())).thenReturn(nonAdminUser)
+                assertEquals(HttpStatus.OK, listUsersStatus())
+            }
+
+            @Test
+            @DisplayName("demoted caller - is turned away again on the very next request")
+            fun `a demotion closes the admin endpoints`() {
+                patchState(PLAIN_USER_ID, """{"isAdmin": true}""")
+                whenever(telegramValidatorService.map(any())).thenReturn(nonAdminUser)
+                assertEquals(HttpStatus.OK, listUsersStatus())
+
+                whenever(telegramValidatorService.map(any())).thenReturn(adminUser)
+                patchState(PLAIN_USER_ID, """{"isAdmin": false}""")
+
+                whenever(telegramValidatorService.map(any())).thenReturn(nonAdminUser)
+                assertEquals(HttpStatus.FORBIDDEN, listUsersStatus())
+            }
+
+            private fun listUsersStatus(): HttpStatusCode =
+                restTemplate
+                    .exchange("/users", HttpMethod.GET, HttpEntity<Void>(buildHeaders()), String::class.java)
+                    .statusCode
         }
 
         companion object {
             private const val ADMIN_USER_ID = 1L
+            private const val PLAIN_USER_ID = 2L
             private const val DELETED_USER_ID = 3L
+            private const val BANNED_USER_ID = 4L
             private const val ACTIVE_USER_ID = 5L
             private const val BANNED_DELETED_USER_ID = 6L
             private const val MISSING_USER_ID = 999L

@@ -6,6 +6,8 @@ import org.springframework.data.jpa.repository.query.EscapeCharacter
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import ru.illine.drinking.ponies.dao.access.TelegramUserAccessService
+import ru.illine.drinking.ponies.exception.InactiveUserPromotionException
+import ru.illine.drinking.ponies.exception.LastAdminException
 import ru.illine.drinking.ponies.exception.SelfStateChangeException
 import ru.illine.drinking.ponies.exception.TelegramUserNotFoundException
 import ru.illine.drinking.ponies.model.base.AdminUserStatusFilter
@@ -50,24 +52,51 @@ class UserAdminServiceImpl(
         actorId: Long,
         state: UserStateDto,
     ): AdminUserDto {
-        require(state.isActive != null || state.isBanned != null) {
+        require(state.isActive != null || state.isBanned != null || state.isAdmin != null) {
             "At least one state field is required, got an empty payload"
         }
         if (id == actorId) {
             throw SelfStateChangeException("Admin [$actorId] tried to change their own state")
         }
-
         val user = requireUser(id)
+        when {
+            state.isAdmin == true -> requireSignInPossible(id, state, user)
+            state.isAdmin == false && user.isAdmin -> requireAnotherAdminLeft(id)
+        }
 
-        logger.info("Setting isActive={}, isBanned={} for user [{}]", state.isActive, state.isBanned, id)
+        logger.info("Setting {} for user [{}]", state, id)
         val applied =
             telegramUserAccessService.updateState(
                 id = id,
                 actorId = actorId,
-                change = UserStateChangeDto(deleted = state.isActive?.not(), banned = state.isBanned),
+                change =
+                    UserStateChangeDto(
+                        deleted = state.isActive?.not(),
+                        banned = state.isBanned,
+                        admin = state.isAdmin,
+                    ),
             )
 
-        return user.copy(deleted = applied.isDeleted, isBanned = applied.isBanned)
+        return user.copy(deleted = applied.isDeleted, isBanned = applied.isBanned, isAdmin = applied.isAdmin)
+    }
+
+    private fun requireSignInPossible(
+        id: Long,
+        state: UserStateDto,
+        user: AdminUserDto,
+    ) {
+        val banned = state.isBanned ?: user.isBanned
+        val deleted = state.isActive?.not() ?: user.deleted
+
+        if (banned || deleted) {
+            throw InactiveUserPromotionException("User [$id] would stay locked out, so there is nothing to promote")
+        }
+    }
+
+    private fun requireAnotherAdminLeft(id: Long) {
+        if (telegramUserAccessService.findActiveAdminIdsForUpdate().singleOrNull() == id) {
+            throw LastAdminException("Demoting user [$id] would leave the system without an admin")
+        }
     }
 
     private fun String.toSearchPattern(): String = "%${EscapeCharacter.DEFAULT.escape(this)}%"

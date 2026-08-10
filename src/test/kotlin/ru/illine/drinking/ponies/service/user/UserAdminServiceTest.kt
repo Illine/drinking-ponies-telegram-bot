@@ -1,13 +1,16 @@
 package ru.illine.drinking.ponies.service.user
 
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.CsvSource
+import org.junit.jupiter.params.provider.MethodSource
 import org.junit.jupiter.params.provider.NullSource
 import org.junit.jupiter.params.provider.ValueSource
 import org.mockito.kotlin.any
@@ -20,6 +23,8 @@ import org.mockito.kotlin.verifyNoInteractions
 import org.mockito.kotlin.whenever
 import org.springframework.data.domain.PageRequest
 import ru.illine.drinking.ponies.dao.access.TelegramUserAccessService
+import ru.illine.drinking.ponies.exception.InactiveUserPromotionException
+import ru.illine.drinking.ponies.exception.LastAdminException
 import ru.illine.drinking.ponies.exception.SelfStateChangeException
 import ru.illine.drinking.ponies.exception.TelegramUserNotFoundException
 import ru.illine.drinking.ponies.model.base.AdminUserStatusFilter
@@ -29,8 +34,10 @@ import ru.illine.drinking.ponies.model.dto.internal.UserCountsDto
 import ru.illine.drinking.ponies.model.dto.internal.UserStateChangeDto
 import ru.illine.drinking.ponies.model.dto.internal.UserStateDto
 import ru.illine.drinking.ponies.service.user.impl.UserAdminServiceImpl
+import ru.illine.drinking.ponies.test.generator.DtoGenerator
 import ru.illine.drinking.ponies.test.tag.UnitTest
 import java.time.LocalDateTime
+import java.util.stream.Stream
 
 @UnitTest
 @DisplayName("UserAdminService Unit Test")
@@ -180,12 +187,170 @@ class UserAdminServiceTest {
         assertEquals(adminUser(deleted = false), result)
     }
 
+    @ParameterizedTest(name = "[{index}] isAdmin={0}")
+    @CsvSource("true", "false")
+    @DisplayName("updateState(): writes the admin flag and answers with it")
+    fun `updateState answers with the freshly written admin flag`(isAdmin: Boolean) {
+        whenever(telegramUserAccessService.findByIdForAdmin(USER_ID))
+            .thenReturn(adminUser(deleted = false, isAdmin = !isAdmin))
+        whenever(telegramUserAccessService.findActiveAdminIdsForUpdate()).thenReturn(listOf(ACTOR_ID, USER_ID))
+        stubApplied(deleted = false, admin = isAdmin)
+
+        val result = userAdminService.updateState(USER_ID, ACTOR_ID, UserStateDto(isAdmin = isAdmin))
+
+        assertEquals(isAdmin, result.isAdmin)
+        verify(telegramUserAccessService).updateState(
+            USER_ID,
+            ACTOR_ID,
+            UserStateChangeDto(admin = isAdmin),
+        )
+    }
+
+    @ParameterizedTest(name = "[{index}] banned={0}, deleted={1}")
+    @CsvSource(
+        "true,  false",
+        "false, true",
+        "true,  true",
+    )
+    @DisplayName("updateState(): refuses to promote a user who would stay locked out, and writes nothing")
+    fun `updateState refuses to promote a locked out user`(
+        banned: Boolean,
+        deleted: Boolean,
+    ) {
+        whenever(telegramUserAccessService.findByIdForAdmin(USER_ID))
+            .thenReturn(adminUser(deleted = deleted, banned = banned))
+
+        assertThrows<InactiveUserPromotionException> {
+            userAdminService.updateState(USER_ID, ACTOR_ID, UserStateDto(isAdmin = true))
+        }
+
+        verify(telegramUserAccessService, never()).updateState(any(), any(), any())
+    }
+
+    @ParameterizedTest(name = "[{index}] stored banned={0}, deleted={1} - {2}")
+    @MethodSource("providePromotionsThatUnlock")
+    @DisplayName("updateState(): a promotion that lifts the lockout in the same call goes through")
+    fun `updateState promotes a user the same call unlocks`(
+        banned: Boolean,
+        deleted: Boolean,
+        state: UserStateDto,
+    ) {
+        whenever(telegramUserAccessService.findByIdForAdmin(USER_ID))
+            .thenReturn(adminUser(deleted = deleted, banned = banned))
+        stubApplied(deleted = false, admin = true)
+
+        val result = userAdminService.updateState(USER_ID, ACTOR_ID, state)
+
+        assertTrue(result.isAdmin)
+        verify(telegramUserAccessService).updateState(any(), any(), any())
+    }
+
+    @Test
+    @DisplayName("updateState(): refuses to revoke the privileges of the only admin left and writes nothing")
+    fun `updateState refuses to demote the last admin`() {
+        whenever(telegramUserAccessService.findByIdForAdmin(USER_ID))
+            .thenReturn(adminUser(deleted = false, isAdmin = true))
+        whenever(telegramUserAccessService.findActiveAdminIdsForUpdate()).thenReturn(listOf(USER_ID))
+
+        assertThrows<LastAdminException> {
+            userAdminService.updateState(USER_ID, ACTOR_ID, UserStateDto(isAdmin = false))
+        }
+
+        verify(telegramUserAccessService, never()).updateState(any(), any(), any())
+    }
+
+    @ParameterizedTest(name = "[{index}] {0}")
+    @MethodSource("providePayloadsKeepingThePrivileges")
+    @DisplayName("updateState(): a payload that does not revoke the privileges locks no admin rows")
+    fun `updateState locks nothing outside a demotion`(state: UserStateDto) {
+        whenever(telegramUserAccessService.findByIdForAdmin(USER_ID)).thenReturn(adminUser(deleted = false))
+        stubApplied(deleted = false)
+
+        userAdminService.updateState(USER_ID, ACTOR_ID, state)
+
+        verify(telegramUserAccessService, never()).findActiveAdminIdsForUpdate()
+    }
+
+    @Test
+    @DisplayName("updateState(): an admin revoking their own privileges is a self change, nothing is even read")
+    fun `updateState rejects a self demotion`() {
+        assertThrows<SelfStateChangeException> {
+            userAdminService.updateState(USER_ID, USER_ID, UserStateDto(isAdmin = false))
+        }
+
+        verifyNoInteractions(telegramUserAccessService)
+    }
+
+    @Test
+    @DisplayName("updateState(): the only admin left being somebody else does not stand in the way of a demotion")
+    fun `updateState demotes a user who is not the last admin`() {
+        whenever(telegramUserAccessService.findByIdForAdmin(USER_ID))
+            .thenReturn(adminUser(deleted = false, isAdmin = true))
+        whenever(telegramUserAccessService.findActiveAdminIdsForUpdate()).thenReturn(listOf(ACTOR_ID))
+        stubApplied(deleted = false)
+
+        val result = userAdminService.updateState(USER_ID, ACTOR_ID, UserStateDto(isAdmin = false))
+
+        assertFalse(result.isAdmin)
+        verify(telegramUserAccessService).updateState(
+            USER_ID,
+            ACTOR_ID,
+            UserStateChangeDto(admin = false),
+        )
+    }
+
+    @Test
+    @DisplayName("updateState(): an unknown user is reported as not found on a demotion as well")
+    fun `updateState reports an unknown user on a demotion`() {
+        whenever(telegramUserAccessService.findByIdForAdmin(USER_ID)).thenReturn(null)
+
+        assertThrows<TelegramUserNotFoundException> {
+            userAdminService.updateState(USER_ID, ACTOR_ID, UserStateDto(isAdmin = false))
+        }
+
+        verify(telegramUserAccessService, never()).findActiveAdminIdsForUpdate()
+        verify(telegramUserAccessService, never()).updateState(any(), any(), any())
+    }
+
+    @Test
+    @DisplayName("updateState(): all three toggles reach the DAO as one change, the activity arriving inverted")
+    fun `updateState forwards all three fields at once`() {
+        whenever(telegramUserAccessService.findByIdForAdmin(USER_ID))
+            .thenReturn(adminUser(deleted = true, banned = true))
+        stubApplied(deleted = false, admin = true)
+
+        val result =
+            userAdminService.updateState(
+                USER_ID,
+                ACTOR_ID,
+                UserStateDto(isActive = true, isBanned = false, isAdmin = true),
+            )
+
+        assertFalse(result.deleted)
+        assertFalse(result.isBanned)
+        assertTrue(result.isAdmin)
+        verify(telegramUserAccessService).updateState(
+            USER_ID,
+            ACTOR_ID,
+            UserStateChangeDto(deleted = false, banned = false, admin = true),
+        )
+    }
+
     private fun stubApplied(
         deleted: Boolean,
         banned: Boolean = false,
+        admin: Boolean = false,
     ) {
         whenever(telegramUserAccessService.updateState(any(), any(), any()))
-            .thenReturn(UserAccessDto(USER_ID, EXTERNAL_USER_ID, isBanned = banned, isDeleted = deleted))
+            .thenReturn(
+                DtoGenerator.generateUserAccessDto(
+                    id = USER_ID,
+                    externalUserId = EXTERNAL_USER_ID,
+                    isAdmin = admin,
+                    isBanned = banned,
+                    isDeleted = deleted,
+                ),
+            )
     }
 
     @Test
@@ -205,15 +370,19 @@ class UserAdminServiceTest {
         whenever(telegramUserAccessService.countForAdmin(anyOrNull())).thenReturn(EMPTY_COUNTS)
     }
 
-    private fun adminUser(deleted: Boolean): AdminUserDto =
+    private fun adminUser(
+        deleted: Boolean,
+        isAdmin: Boolean = false,
+        banned: Boolean = false,
+    ): AdminUserDto =
         AdminUserDto(
             id = USER_ID,
             externalUserId = EXTERNAL_USER_ID,
             firstName = "Alisa",
             lastName = "Petrova",
             username = "alisaadmin",
-            isAdmin = false,
-            isBanned = false,
+            isAdmin = isAdmin,
+            isBanned = banned,
             deleted = deleted,
             timeZone = "Europe/Moscow",
             created = LocalDateTime.of(2026, 1, 1, 10, 0),
@@ -221,6 +390,21 @@ class UserAdminServiceTest {
         )
 
     companion object {
+        @JvmStatic
+        fun providePayloadsKeepingThePrivileges(): Stream<UserStateDto> =
+            Stream.of(
+                UserStateDto(isAdmin = true),
+                UserStateDto(isActive = false, isBanned = true),
+            )
+
+        @JvmStatic
+        fun providePromotionsThatUnlock(): Stream<Arguments> =
+            Stream.of(
+                Arguments.of(true, false, UserStateDto(isBanned = false, isAdmin = true)),
+                Arguments.of(false, true, UserStateDto(isActive = true, isAdmin = true)),
+                Arguments.of(true, true, UserStateDto(isActive = true, isBanned = false, isAdmin = true)),
+            )
+
         private const val USER_ID = 1042L
         private const val EXTERNAL_USER_ID = 482719301L
         private const val ACTOR_ID = 1L
