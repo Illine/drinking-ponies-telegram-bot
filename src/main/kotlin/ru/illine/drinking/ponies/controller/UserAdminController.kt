@@ -59,7 +59,7 @@ class UserAdminController(
     ): UserDetailsResponse = AdminUserResponseMapper.toDetails(userAdminService.getUser(id))
 
     @PatchMapping("/{id}")
-    @Operation(summary = "Update user state: soft delete, restore, ban or unban")
+    @Operation(summary = "Update the state of a user account, one field per toggle of the admin card")
     fun updateUserState(
         @Parameter(description = "Internal user id", example = "1042")
         @PathVariable(name = "id") id: Long,
@@ -67,7 +67,7 @@ class UserAdminController(
         @RequestAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) actor: TelegramAuthUserDto,
         @Valid @RequestBody request: UserStateRequest,
     ): UserDetailsResponse {
-        val state = UserStateDto(isActive = request.isActive, isBanned = request.isBanned)
+        val state = UserStateDto(isActive = request.isActive, isBanned = request.isBanned, isAdmin = request.isAdmin)
         val actorId = requireNotNull(actor.id) { "An admin without a stored account cannot reach this endpoint" }
 
         return AdminUserResponseMapper.toDetails(userAdminService.updateState(id, actorId, state))

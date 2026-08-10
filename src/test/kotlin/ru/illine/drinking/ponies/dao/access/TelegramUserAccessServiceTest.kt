@@ -19,6 +19,8 @@ import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.data.domain.PageRequest
 import org.springframework.test.context.jdbc.Sql
 import org.springframework.test.context.jdbc.SqlConfig
+import org.springframework.transaction.IllegalTransactionStateException
+import org.springframework.transaction.support.TransactionTemplate
 import ru.illine.drinking.ponies.config.cache.CacheConfig
 import ru.illine.drinking.ponies.dao.repository.TelegramUserRepository
 import ru.illine.drinking.ponies.dao.repository.UserStateEventRepository
@@ -53,6 +55,7 @@ class TelegramUserAccessServiceTest
         private val userStateEventRepository: UserStateEventRepository,
         private val cacheManager: CacheManager,
         private val clock: Clock,
+        private val transactionTemplate: TransactionTemplate,
     ) {
         @BeforeEach
         fun clearCache() {
@@ -592,6 +595,74 @@ class TelegramUserAccessServiceTest
                 assertEquals(LocalDateTime.now(clock), event.eventTime)
             }
 
+            @ParameterizedTest(name = "[{index}] id={0} - admin={1} - {2}")
+            @CsvSource(
+                "5, true,  PROMOTED",
+                "1, false, DEMOTED",
+            )
+            @DisplayName("writes the admin flag and records who granted or revoked it")
+            fun `records the admin event`(
+                id: Long,
+                admin: Boolean,
+                expected: UserStateEventType,
+            ) {
+                accessService.updateState(id, ADMIN_USER_ID, UserStateChangeDto(admin = admin))
+
+                assertEquals(admin, accessService.findByIdForAdmin(id)!!.isAdmin)
+                val event = userStateEventRepository.findAll().single()
+                assertEquals(id, event.userId)
+                assertEquals(ADMIN_USER_ID, event.actorUserId)
+                assertEquals(expected, event.eventType)
+            }
+
+            @ParameterizedTest(name = "[{index}] id={0} - admin={1}")
+            @CsvSource(
+                "1, true",
+                "5, false",
+            )
+            @DisplayName("an admin flag set to the value it already carries records nothing")
+            fun `an unchanged admin flag records nothing`(
+                id: Long,
+                admin: Boolean,
+            ) {
+                accessService.updateState(id, ADMIN_USER_ID, UserStateChangeDto(admin = admin))
+
+                assertEquals(admin, accessService.findByIdForAdmin(id)!!.isAdmin)
+                assertTrue(userStateEventRepository.findAll().isEmpty(), "Nothing changed, nothing to record")
+            }
+
+            @Test
+            @DisplayName("all three fields at once are applied and recorded as three events of one moment")
+            fun `applies all three fields at once`() {
+                val applied =
+                    accessService.updateState(
+                        ACTIVE_USER_ID,
+                        ADMIN_USER_ID,
+                        UserStateChangeDto(deleted = true, banned = true, admin = true),
+                    )
+
+                assertEquals(
+                    UserAccessDto(
+                        ACTIVE_USER_ID,
+                        ACTIVE_EXTERNAL_ID,
+                        isAdmin = true,
+                        isBanned = true,
+                        isDeleted = true,
+                    ),
+                    applied,
+                )
+                val events = userStateEventRepository.findAll().sortedBy { it.id }
+                assertEquals(
+                    listOf(
+                        UserStateEventType.DEACTIVATED,
+                        UserStateEventType.BANNED,
+                        UserStateEventType.PROMOTED,
+                    ),
+                    events.map { it.eventType },
+                )
+                assertEquals(listOf(LocalDateTime.now(clock)), events.map { it.eventTime }.distinct())
+            }
+
             @Test
             @DisplayName("repeating the same update leaves the flag as it is and records a single event")
             fun `repeating the same update is idempotent`() {
@@ -652,6 +723,39 @@ class TelegramUserAccessServiceTest
                 accessService.updateState(ACTIVE_USER_ID, ADMIN_USER_ID, UserStateChangeDto(deleted = null))
 
                 assertNull(cache.get(ACTIVE_EXTERNAL_ID))
+            }
+        }
+
+        @Nested
+        @DisplayName("findActiveAdminIdsForUpdate()")
+        inner class FindAdminIdsForUpdate {
+            @Test
+            @DisplayName("returns the ids of the admins alone, a promotion showing up right away")
+            fun `returns the admin ids`() {
+                transactionTemplate.execute {
+                    assertEquals(listOf(ADMIN_USER_ID), accessService.findActiveAdminIdsForUpdate())
+
+                    accessService.updateState(ACTIVE_USER_ID, ADMIN_USER_ID, UserStateChangeDto(admin = true))
+
+                    assertEquals(listOf(ADMIN_USER_ID, ACTIVE_USER_ID), accessService.findActiveAdminIdsForUpdate())
+                }
+            }
+
+            @Test
+            @DisplayName("leaves out the admins who are turned away at the door anyway")
+            fun `skips banned and deleted admins`() {
+                transactionTemplate.execute {
+                    accessService.updateState(BANNED_USER_ID, ADMIN_USER_ID, UserStateChangeDto(admin = true))
+                    accessService.updateState(DELETED_USER_ID, ADMIN_USER_ID, UserStateChangeDto(admin = true))
+
+                    assertEquals(listOf(ADMIN_USER_ID), accessService.findActiveAdminIdsForUpdate())
+                }
+            }
+
+            @Test
+            @DisplayName("refuses to lock outside a transaction, where the lock would not outlive the call")
+            fun `refuses to run without a transaction`() {
+                assertThrows<IllegalTransactionStateException> { accessService.findActiveAdminIdsForUpdate() }
             }
         }
 

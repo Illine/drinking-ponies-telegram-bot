@@ -20,4 +20,11 @@ data class UserStateRequest(
         requiredMode = Schema.RequiredMode.NOT_REQUIRED,
     )
     val isBanned: Boolean?,
+    @Schema(
+        description = "True grants admin privileges, false revokes them",
+        example = "false",
+        nullable = true,
+        requiredMode = Schema.RequiredMode.NOT_REQUIRED,
+    )
+    val isAdmin: Boolean?,
 )

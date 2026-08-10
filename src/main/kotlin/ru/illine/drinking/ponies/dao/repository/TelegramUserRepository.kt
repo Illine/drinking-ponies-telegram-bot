@@ -27,6 +27,24 @@ interface TelegramUserRepository : JpaRepository<TelegramUserEntity, Long> {
         @Param("id") id: Long,
     ): TelegramUserEntity?
 
+    // Locks the admin rows for the rest of the transaction, so two admins demoting each other at the same time
+    // are serialized instead of both reading a state where the other is still an admin. The weaker "no key update"
+    // is enough: it conflicts with the other writers of these rows, but not with the foreign key checks of the
+    // child tables, which take a key share lock on every water intake.
+    @Query(
+        value = """
+            select u.id
+            from telegram_users u
+            where u.is_admin = true
+              and u.deleted = false
+              and u.is_banned = false
+            order by u.id
+            for no key update
+        """,
+        nativeQuery = true,
+    )
+    fun findActiveAdminIdsForUpdate(): List<Long>
+
     @Query(
         value = """
             $ADMIN_USER_SELECT

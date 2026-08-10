@@ -11,7 +11,6 @@ import ru.illine.drinking.ponies.model.dto.internal.UserStateChangeDto
 interface TelegramUserAccessService {
     fun resolveAccessFlags(externalUserId: Long): UserAccessDto
 
-    /** Returns null when the caller carries no profile, true when the stored one was refreshed. */
     fun syncProfile(
         externalUserId: Long,
         profile: TelegramUserProfileDto,
@@ -26,6 +25,8 @@ interface TelegramUserAccessService {
     fun findByIdForAdmin(id: Long): AdminUserDto?
 
     fun countForAdmin(search: String?): UserCountsDto
+
+    fun findActiveAdminIdsForUpdate(): List<Long>
 
     fun updateState(
         id: Long,

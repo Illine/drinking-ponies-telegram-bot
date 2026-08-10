@@ -23,3 +23,6 @@ databaseChangeLog:
   - include:
       file: ddl/05_grants.sql
       relativeToChangelogFile: true
+  - include:
+      file: ddl/06_state_comments_without_value_lists.sql
+      relativeToChangelogFile: true

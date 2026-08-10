@@ -152,7 +152,7 @@ The rules above are not left to review attention - most of them fail the build.
 | `package` matches the directory | detekt `InvalidPackageDeclaration` |
 | Naming, formatting, import order | ktlint |
 
-`deleted` and `is_banned` are written through `TelegramUserAccessServiceImpl` and nowhere else: every write there
+`deleted`, `is_banned` and `is_admin` are written through `TelegramUserAccessServiceImpl` and nowhere else: every write there
 records an audit event in `user_state_events` and drops the cached access flags. A second writer would produce a state
 change that the history never saw, so the rule matches both spellings of an assignment and any update statement over
 the users table.

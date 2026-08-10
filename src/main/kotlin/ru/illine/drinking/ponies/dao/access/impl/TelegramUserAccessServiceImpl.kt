@@ -5,6 +5,7 @@ import org.springframework.cache.annotation.CacheEvict
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Propagation
 import org.springframework.transaction.annotation.Transactional
 import ru.illine.drinking.ponies.config.cache.CacheConfig
 import ru.illine.drinking.ponies.dao.access.TelegramUserAccessService
@@ -99,6 +100,11 @@ class TelegramUserAccessServiceImpl(
         return AdminUserMapper.toCounts(telegramUserRepository.countForAdmin(search))
     }
 
+    // Mandatory rather than required: a transaction of its own would release the lock on the way out, and the
+    // caller would hold a guarantee that no longer exists.
+    @Transactional(propagation = Propagation.MANDATORY)
+    override fun findActiveAdminIdsForUpdate(): List<Long> = telegramUserRepository.findActiveAdminIdsForUpdate()
+
     @Transactional
     @CacheEvict(CacheConfig.USER_ACCESS_FLAGS, key = "#result.externalUserId")
     override fun updateState(
@@ -119,6 +125,10 @@ class TelegramUserAccessServiceImpl(
                 change.banned?.takeIf { it != user.isBanned }?.let {
                     user.isBanned = it
                     add(if (it) UserStateEventType.BANNED else UserStateEventType.UNBANNED)
+                }
+                change.admin?.takeIf { it != user.isAdmin }?.let {
+                    user.isAdmin = it
+                    add(if (it) UserStateEventType.PROMOTED else UserStateEventType.DEMOTED)
                 }
             }
 
