@@ -2,13 +2,13 @@ package ru.illine.drinking.ponies.config.web.interceptor
 
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
-import org.slf4j.LoggerFactory
 import org.springframework.http.HttpMethod
 import org.springframework.stereotype.Component
 import org.springframework.web.servlet.HandlerInterceptor
 import ru.illine.drinking.ponies.config.web.security.AuthErrorType
 import ru.illine.drinking.ponies.dao.access.TelegramUserAccessService
 import ru.illine.drinking.ponies.exception.InvalidAuthSignatureException
+import ru.illine.drinking.ponies.model.base.AppLogger
 import ru.illine.drinking.ponies.model.dto.internal.TelegramAuthUserDto
 import ru.illine.drinking.ponies.model.dto.internal.TelegramUserProfileDto
 import ru.illine.drinking.ponies.model.dto.internal.UserAccessDto
@@ -20,7 +20,7 @@ class TelegramAuthInterceptor(
     private val telegramValidatorService: TelegramValidatorService,
     private val telegramUserAccessService: TelegramUserAccessService,
 ) : HandlerInterceptor {
-    private val logger = LoggerFactory.getLogger("INTERCEPTOR")
+    private val logger = AppLogger.INTERCEPTOR.logger
 
     private val defaultHeaderName = "X-Authorization-Telegram-Data"
 

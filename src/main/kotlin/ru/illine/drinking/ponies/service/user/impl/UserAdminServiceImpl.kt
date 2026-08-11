@@ -1,6 +1,5 @@
 package ru.illine.drinking.ponies.service.user.impl
 
-import org.slf4j.LoggerFactory
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.jpa.repository.query.EscapeCharacter
 import org.springframework.stereotype.Service
@@ -11,6 +10,7 @@ import ru.illine.drinking.ponies.exception.LastAdminException
 import ru.illine.drinking.ponies.exception.SelfStateChangeException
 import ru.illine.drinking.ponies.exception.TelegramUserNotFoundException
 import ru.illine.drinking.ponies.model.base.AdminUserStatusFilter
+import ru.illine.drinking.ponies.model.base.AppLogger
 import ru.illine.drinking.ponies.model.dto.internal.AdminUserDto
 import ru.illine.drinking.ponies.model.dto.internal.AdminUserPageDto
 import ru.illine.drinking.ponies.model.dto.internal.UserCountsDto
@@ -22,7 +22,7 @@ import ru.illine.drinking.ponies.service.user.UserAdminService
 class UserAdminServiceImpl(
     private val telegramUserAccessService: TelegramUserAccessService,
 ) : UserAdminService {
-    private val logger = LoggerFactory.getLogger("SERVICE")
+    private val logger = AppLogger.SERVICE.logger
 
     override fun getUsers(
         search: String?,

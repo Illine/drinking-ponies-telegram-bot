@@ -1,6 +1,5 @@
 package ru.illine.drinking.ponies.bot
 
-import org.slf4j.LoggerFactory
 import org.telegram.telegrambots.abilitybots.api.bot.AbilityBot
 import org.telegram.telegrambots.abilitybots.api.bot.BaseAbilityBot
 import org.telegram.telegrambots.abilitybots.api.objects.Ability
@@ -14,6 +13,7 @@ import org.telegram.telegrambots.meta.api.objects.Update
 import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.illine.drinking.ponies.config.property.TelegramBotProperties
 import ru.illine.drinking.ponies.dao.access.TelegramUserAccessService
+import ru.illine.drinking.ponies.model.base.AppLogger
 import ru.illine.drinking.ponies.model.base.TelegramCommandType
 import ru.illine.drinking.ponies.service.button.ReplyButtonFactory
 import ru.illine.drinking.ponies.service.command.CommandService
@@ -33,7 +33,7 @@ class DrinkingPoniesTelegramBot(
         InMemoryDBContext(),
         BareboneToggle(),
     ) {
-    private val logger = LoggerFactory.getLogger("BOT")
+    private val logger = AppLogger.BOT.logger
 
     override fun creatorId(): Long = 0L
 

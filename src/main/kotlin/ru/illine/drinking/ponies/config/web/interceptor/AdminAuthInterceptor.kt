@@ -2,18 +2,18 @@ package ru.illine.drinking.ponies.config.web.interceptor
 
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
-import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import org.springframework.web.method.HandlerMethod
 import org.springframework.web.servlet.HandlerInterceptor
 import ru.illine.drinking.ponies.config.web.security.AdminOnly
 import ru.illine.drinking.ponies.config.web.security.AuthErrorType
+import ru.illine.drinking.ponies.model.base.AppLogger
 import ru.illine.drinking.ponies.model.dto.internal.TelegramAuthUserDto
 import ru.illine.drinking.ponies.util.telegram.TelegramGeneralConstants
 
 @Component
 class AdminAuthInterceptor : HandlerInterceptor {
-    private val logger = LoggerFactory.getLogger("INTERCEPTOR")
+    private val logger = AppLogger.INTERCEPTOR.logger
 
     override fun preHandle(
         request: HttpServletRequest,

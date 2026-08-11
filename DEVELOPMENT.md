@@ -145,6 +145,8 @@ The rules above are not left to review attention - most of them fail the build.
 | `@Konverter`, `@Entity` and `@RestController` each stay in one package | `architecture/CodeLayoutTest` |
 | Tests stay out of `impl` packages, each carries one tag | `architecture/CodeLayoutTest` |
 | Account state flags are written in one place only | `architecture/CodeLayoutTest` |
+| A logger comes from `AppLogger`, the slf4j factory is imported nowhere else | `architecture/CodeLayoutTest` |
+| An `*AdminController` carries `@AdminOnly` | `architecture/CodeLayoutTest` |
 | One Liquibase version for tests and for the CI runner | `architecture/ToolingConsistencyTest` |
 | One Gradle version for the wrapper and the CI images | `architecture/ToolingConsistencyTest` |
 | Every declared test tag is executed by the `test` task | `architecture/ToolingConsistencyTest` |
@@ -156,6 +158,15 @@ The rules above are not left to review attention - most of them fail the build.
 records an audit event in `user_state_events` and drops the cached access flags. A second writer would produce a state
 change that the history never saw, so the rule matches both spellings of an assignment and any update statement over
 the users table.
+
+Loggers are named, not per-class, and every name is an `AppLogger` entry that hands out the logger itself
+(`AppLogger.SERVICE.logger`). The admin API lists exactly those entries, so a name invented at a call site would
+be a logger the page never shows; the rule therefore forbids importing `org.slf4j.LoggerFactory` anywhere but the
+enum, which also covers `getLogger(Foo::class.java)` that no list of literals would catch.
+
+The admin API does not reuse Actuator's `loggers` endpoint even though the starter is a dependency: Actuator listens
+on its own management port with no Telegram admin check, and `application-deploy.yaml` excludes that endpoint on
+purpose. The controller talks to the `LoggingSystem` bean directly, which keeps the exclusion intact.
 
 Silencing a boundary is caught by the architecture test rather than by detekt's
 own `ForbiddenSuppress`: detekt matches suppression ids as literals while

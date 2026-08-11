@@ -62,5 +62,3 @@ logbook:
   minimum-status: 200
   format:
     style: http
-  logger:
-    name: API

@@ -2,11 +2,11 @@ package ru.illine.drinking.ponies.service.telegram.impl
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
-import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import ru.illine.drinking.ponies.config.property.TelegramBotProperties
 import ru.illine.drinking.ponies.exception.InvalidAuthSignatureException
 import ru.illine.drinking.ponies.mapper.TelegramAuthUserMapper
+import ru.illine.drinking.ponies.model.base.AppLogger
 import ru.illine.drinking.ponies.model.dto.internal.TelegramAuthUserDto
 import ru.illine.drinking.ponies.service.telegram.TelegramValidatorService
 import ru.illine.drinking.ponies.util.telegram.TelegramInitDataUser
@@ -21,7 +21,7 @@ import java.time.Duration
 class TelegramValidatorServiceImpl(
     private val telegramBotProperties: TelegramBotProperties,
 ) : TelegramValidatorService {
-    private val logger = LoggerFactory.getLogger("SERVICE")
+    private val logger = AppLogger.SERVICE.logger
 
     private val objectMapper = jacksonObjectMapper()
 

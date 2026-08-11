@@ -1,23 +1,19 @@
 package ru.illine.drinking.ponies.config
 
-import ch.qos.logback.classic.Logger
-import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.zalando.logbook.Correlation
 import org.zalando.logbook.HttpLogWriter
 import org.zalando.logbook.Precorrelation
-import ru.illine.drinking.ponies.config.property.LogbookProperties
+import ru.illine.drinking.ponies.model.base.AppLogger
 
 @Configuration
 class LogbookConfig {
     @Bean
-    fun writer(properties: LogbookProperties) = DefaultHttpLogWriter(properties)
+    fun writer() = DefaultHttpLogWriter()
 
-    class DefaultHttpLogWriter(
-        properties: LogbookProperties,
-    ) : HttpLogWriter {
-        private val logger: Logger
+    class DefaultHttpLogWriter : HttpLogWriter {
+        private val logger = AppLogger.API.logger
 
         override fun isActive(): Boolean = logger.isInfoEnabled
 
@@ -33,10 +29,6 @@ class LogbookConfig {
             response: String,
         ) {
             logger.info(response)
-        }
-
-        init {
-            logger = LoggerFactory.getILoggerFactory().getLogger(properties.name) as Logger
         }
     }
 }

@@ -1,10 +1,10 @@
 package ru.illine.drinking.ponies.service.statistic.impl
 
-import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
 import ru.illine.drinking.ponies.dao.access.WaterStatisticAccessService
 import ru.illine.drinking.ponies.model.base.AnswerNotificationType
+import ru.illine.drinking.ponies.model.base.AppLogger
 import ru.illine.drinking.ponies.model.dto.internal.InsightStatsContext
 import ru.illine.drinking.ponies.model.dto.internal.NotificationSettingDto
 import ru.illine.drinking.ponies.model.dto.internal.StatisticsDto
@@ -27,7 +27,7 @@ class StatisticsServiceImpl(
     private val messageProvider: MessageProvider,
     private val clock: Clock,
 ) : StatisticsService {
-    private val logger = LoggerFactory.getLogger("SERVICE")
+    private val logger = AppLogger.SERVICE.logger
 
     override fun getToday(externalUserId: Long): List<WaterStatisticDto> {
         logger.debug("Getting today entries for telegram user [{}]", externalUserId)

@@ -1,7 +1,7 @@
 package ru.illine.drinking.ponies.service.notification.impl
 
-import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
+import ru.illine.drinking.ponies.model.base.AppLogger
 import ru.illine.drinking.ponies.model.dto.internal.NotificationSettingDto
 import ru.illine.drinking.ponies.service.notification.NotificationTimeService
 import ru.illine.drinking.ponies.util.statistics.toUtcInstant
@@ -22,7 +22,7 @@ class NotificationTimeServiceImpl(
         private const val NEXT_DAY_OFFSET = 1L
     }
 
-    private val logger = LoggerFactory.getLogger("SERVICE")
+    private val logger = AppLogger.SERVICE.logger
 
     override fun isOutsideQuietTime(dto: NotificationSettingDto): Boolean {
         logger.debug("Checking quiet mode for user id: [{}]", dto.id)

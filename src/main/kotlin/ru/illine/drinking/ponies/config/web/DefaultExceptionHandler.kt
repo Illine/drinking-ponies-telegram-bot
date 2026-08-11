@@ -1,7 +1,6 @@
 package ru.illine.drinking.ponies.config.web
 
 import jakarta.validation.ConstraintViolationException
-import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
@@ -14,11 +13,12 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.servlet.resource.NoResourceFoundException
 import ru.illine.drinking.ponies.exception.ConflictException
 import ru.illine.drinking.ponies.exception.NotFoundException
+import ru.illine.drinking.ponies.model.base.AppLogger
 import ru.illine.drinking.ponies.model.dto.response.ErrorResponse
 
 @RestControllerAdvice
 class DefaultExceptionHandler {
-    private val logger = LoggerFactory.getLogger("EXCEPTION-HANDLER")
+    private val logger = AppLogger.EXCEPTION_HANDLER.logger
 
     @ExceptionHandler(value = [MissingServletRequestParameterException::class])
     fun handleMissingParamsException(e: MissingServletRequestParameterException): ResponseEntity<ErrorResponse> {

@@ -20,6 +20,7 @@ import ru.illine.drinking.ponies.mapper.AdminUserResponseMapper
 import ru.illine.drinking.ponies.model.base.AdminUserStatusFilter
 import ru.illine.drinking.ponies.model.dto.internal.TelegramAuthUserDto
 import ru.illine.drinking.ponies.model.dto.internal.UserStateDto
+import ru.illine.drinking.ponies.model.dto.internal.requireStoredId
 import ru.illine.drinking.ponies.model.dto.request.UserStateRequest
 import ru.illine.drinking.ponies.model.dto.response.UserDetailsResponse
 import ru.illine.drinking.ponies.model.dto.response.UsersResponse
@@ -68,8 +69,7 @@ class UserAdminController(
         @Valid @RequestBody request: UserStateRequest,
     ): UserDetailsResponse {
         val state = UserStateDto(isActive = request.isActive, isBanned = request.isBanned, isAdmin = request.isAdmin)
-        val actorId = requireNotNull(actor.id) { "An admin without a stored account cannot reach this endpoint" }
 
-        return AdminUserResponseMapper.toDetails(userAdminService.updateState(id, actorId, state))
+        return AdminUserResponseMapper.toDetails(userAdminService.updateState(id, actor.requireStoredId(), state))
     }
 }

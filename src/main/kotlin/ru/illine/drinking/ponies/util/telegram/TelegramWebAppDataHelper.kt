@@ -1,7 +1,7 @@
 package ru.illine.drinking.ponies.util.telegram
 
 import org.apache.commons.codec.digest.HmacUtils
-import org.slf4j.LoggerFactory
+import ru.illine.drinking.ponies.model.base.AppLogger
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 import java.time.Duration
@@ -10,7 +10,7 @@ import java.time.ZoneId
 import java.time.ZonedDateTime
 
 object TelegramWebAppDataHelper {
-    private val logger = LoggerFactory.getLogger("HELPER")
+    private val logger = AppLogger.HELPER.logger
 
     private val ALGORITHM_NAME = "HmacSHA256"
     private val ALGORITHM_HASH_KEY = "WebAppData"
