@@ -8,3 +8,6 @@ data class TelegramAuthUserDto(
     val username: String? = null,
     val isAdmin: Boolean = false,
 )
+
+fun TelegramAuthUserDto.requireStoredId(): Long =
+    requireNotNull(id) { "An admin without a stored account cannot reach this endpoint" }

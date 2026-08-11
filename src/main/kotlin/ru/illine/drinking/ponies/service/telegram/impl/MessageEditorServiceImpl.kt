@@ -1,12 +1,12 @@
 package ru.illine.drinking.ponies.service.telegram.impl
 
-import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.DeleteMessage
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageReplyMarkup
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup
 import org.telegram.telegrambots.meta.generics.TelegramClient
+import ru.illine.drinking.ponies.model.base.AppLogger
 import ru.illine.drinking.ponies.service.telegram.MessageEditorService
 import ru.illine.drinking.ponies.util.FunctionHelper
 
@@ -14,7 +14,7 @@ import ru.illine.drinking.ponies.util.FunctionHelper
 class MessageEditorServiceImpl(
     private val sender: TelegramClient,
 ) : MessageEditorService {
-    private val logger = LoggerFactory.getLogger("SERVICE")
+    private val logger = AppLogger.SERVICE.logger
 
     override fun deleteReplyMarkup(
         chatId: Long,

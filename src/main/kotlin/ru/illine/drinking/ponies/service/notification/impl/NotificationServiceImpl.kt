@@ -1,12 +1,12 @@
 package ru.illine.drinking.ponies.service.notification.impl
 
-import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.telegram.telegrambots.abilitybots.api.objects.MessageContext
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
 import ru.illine.drinking.ponies.dao.access.TelegramUserAccessService
+import ru.illine.drinking.ponies.model.base.AppLogger
 import ru.illine.drinking.ponies.model.dto.internal.DefaultSettingsContext
 import ru.illine.drinking.ponies.model.dto.internal.GreetingContext
 import ru.illine.drinking.ponies.model.dto.internal.NotificationSettingDto
@@ -25,7 +25,7 @@ class NotificationServiceImpl(
     private val telegramUserAccessService: TelegramUserAccessService,
     private val messageProvider: MessageProvider,
 ) : NotificationService {
-    private val logger = LoggerFactory.getLogger("SERVICE")
+    private val logger = AppLogger.SERVICE.logger
 
     override fun start(messageContext: MessageContext) {
         SendMessage(

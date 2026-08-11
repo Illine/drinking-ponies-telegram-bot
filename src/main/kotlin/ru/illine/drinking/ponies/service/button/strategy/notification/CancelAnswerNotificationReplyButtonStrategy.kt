@@ -1,10 +1,10 @@
 package ru.illine.drinking.ponies.service.button.strategy.notification
 
-import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.telegram.telegrambots.meta.api.objects.CallbackQuery
 import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.illine.drinking.ponies.model.base.AnswerNotificationType
+import ru.illine.drinking.ponies.model.base.AppLogger
 import ru.illine.drinking.ponies.model.dto.internal.NoContext
 import ru.illine.drinking.ponies.model.dto.internal.NotificationSettingDto
 import ru.illine.drinking.ponies.service.button.strategy.AbstractAnswerNotificationReplyButtonStrategy
@@ -29,7 +29,7 @@ class CancelAnswerNotificationReplyButtonStrategy(
         messageEditorService,
         messageProvider,
     ) {
-    private val logger = LoggerFactory.getLogger("STRATEGY")
+    private val logger = AppLogger.STRATEGY.logger
 
     override fun updateLastNotificationTime(callbackQuery: CallbackQuery): () -> NotificationSettingDto =
         {

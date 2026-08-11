@@ -1,8 +1,8 @@
 package ru.illine.drinking.ponies.scheduler
 
-import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
+import ru.illine.drinking.ponies.model.base.AppLogger
 import ru.illine.drinking.ponies.model.dto.internal.NotificationSettingDto
 import ru.illine.drinking.ponies.service.notification.NotificationSenderService
 import ru.illine.drinking.ponies.service.notification.NotificationSettingsService
@@ -14,7 +14,7 @@ class NotificationScheduler(
     private val notificationSenderService: NotificationSenderService,
     private val notificationTimeService: NotificationTimeService,
 ) {
-    private val logger = LoggerFactory.getLogger("SCHEDULER")
+    private val logger = AppLogger.SCHEDULER.logger
 
     @Scheduled(cron = "\${telegram-bot.schedule.notification.cron}")
     fun sendDrinkingReminders() {

@@ -1,6 +1,5 @@
 package ru.illine.drinking.ponies.dao.access.impl
 
-import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
@@ -11,6 +10,7 @@ import ru.illine.drinking.ponies.exception.NotificationSettingsNotFoundException
 import ru.illine.drinking.ponies.mapper.NotificationSettingMapper
 import ru.illine.drinking.ponies.mapper.TelegramChatMapper
 import ru.illine.drinking.ponies.mapper.TelegramUserMapper
+import ru.illine.drinking.ponies.model.base.AppLogger
 import ru.illine.drinking.ponies.model.base.IntervalNotificationType
 import ru.illine.drinking.ponies.model.dto.internal.NotificationSettingDto
 import ru.illine.drinking.ponies.model.dto.internal.TelegramChatDto
@@ -27,7 +27,7 @@ class NotificationAccessServiceImpl(
     private val chatRepository: TelegramChatRepository,
     private val clock: Clock,
 ) : NotificationAccessService {
-    private val logger = LoggerFactory.getLogger("ACCESS-SERVICE")
+    private val logger = AppLogger.ACCESS_SERVICE.logger
 
     @Transactional(readOnly = true)
     override fun findAllNotificationSettings(): Set<NotificationSettingDto> {

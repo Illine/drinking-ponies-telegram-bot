@@ -37,6 +37,10 @@ private val STATE_FLAGS = listOf("deleted", "isBanned", "isAdmin")
 private fun stateFlagWrite(flag: String) =
     Regex("""(?<![(,]\s{0,64})(?:^|\.)\s*$flag\s*=(?!=)""", RegexOption.MULTILINE)
 
+private const val LOGGER_FACTORY = "org.slf4j.LoggerFactory"
+
+private const val LOGGER_HOME = "AppLogger"
+
 private val STATE_UPDATE_STATEMENT =
     Regex("""update\s+(telegram_users|TelegramUserEntity)""", RegexOption.IGNORE_CASE)
 
@@ -143,6 +147,18 @@ class CodeLayoutTest {
     }
 
     @Test
+    @DisplayName("an admin controller carries the @AdminOnly guard")
+    fun `admin controllers are guarded`() {
+        // Cheaper and wider than replaying a 403 per route in every controller test: this also covers the
+        // admin controller nobody has written yet.
+        Konsist
+            .scopeFromProduction()
+            .classes()
+            .filter { it.hasNameEndingWith("AdminController") }
+            .assertTrue(strict = true) { it.hasAnnotationWithName("AdminOnly") }
+    }
+
+    @Test
     @DisplayName("no test lives in an impl package")
     fun `tests avoid impl packages`() {
         Konsist
@@ -245,6 +261,25 @@ class CodeLayoutTest {
             samples,
             samples.mapValues { (code, _) -> write.containsMatchIn(code) },
             "a named argument stays a read however the call is wrapped, or the rule guards formatting",
+        )
+    }
+
+    @Test
+    @DisplayName("a logger is taken from AppLogger, the factory is reachable nowhere else")
+    fun `loggers come from a single place`() {
+        // The factory itself, not a spelling of the name: this also covers getLogger(Foo::class.java),
+        // which no list of literals would catch.
+        val callers =
+            Konsist
+                .scopeFromProduction()
+                .files
+                .filter { file -> file.imports.any { it.name == LOGGER_FACTORY } }
+                .map { it.name }
+
+        assertEquals(
+            listOf(LOGGER_HOME),
+            callers.map { it.substringBefore(".") },
+            "A logger is an AppLogger entry, otherwise the admin page lists a logger nobody writes to",
         )
     }
 

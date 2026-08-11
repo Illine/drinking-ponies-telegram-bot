@@ -1,6 +1,5 @@
 package ru.illine.drinking.ponies.dao.access.impl
 
-import org.slf4j.LoggerFactory
 import org.springframework.cache.annotation.CacheEvict
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
@@ -12,6 +11,7 @@ import ru.illine.drinking.ponies.dao.repository.WaterStatisticRepository
 import ru.illine.drinking.ponies.mapper.TelegramUserMapper
 import ru.illine.drinking.ponies.mapper.WaterStatisticMapper
 import ru.illine.drinking.ponies.model.base.AnswerNotificationType
+import ru.illine.drinking.ponies.model.base.AppLogger
 import ru.illine.drinking.ponies.model.base.WaterEntrySourceType
 import ru.illine.drinking.ponies.model.dto.internal.WaterStatisticDto
 import java.time.LocalDateTime
@@ -21,7 +21,7 @@ class WaterStatisticAccessServiceImpl(
     private val waterStatisticRepository: WaterStatisticRepository,
     private val userRepository: TelegramUserRepository,
 ) : WaterStatisticAccessService {
-    private val logger = LoggerFactory.getLogger("ACCESS-SERVICE")
+    private val logger = AppLogger.ACCESS_SERVICE.logger
 
     @Transactional(readOnly = true)
     override fun findByUserAndEventTimeBetween(

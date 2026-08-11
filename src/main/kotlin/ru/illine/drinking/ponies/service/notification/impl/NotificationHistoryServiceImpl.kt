@@ -1,11 +1,11 @@
 package ru.illine.drinking.ponies.service.notification.impl
 
-import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
 import ru.illine.drinking.ponies.dao.access.WaterStatisticAccessService
 import ru.illine.drinking.ponies.exception.NotificationHistoryEntryNotEditableException
 import ru.illine.drinking.ponies.exception.NotificationHistoryEntryNotFoundException
+import ru.illine.drinking.ponies.model.base.AppLogger
 import ru.illine.drinking.ponies.model.base.NotificationHistoryStatus
 import ru.illine.drinking.ponies.model.base.WaterEntrySourceType
 import ru.illine.drinking.ponies.model.dto.internal.NotificationHistoryDayDto
@@ -28,7 +28,7 @@ class NotificationHistoryServiceImpl(
     private val waterStatisticAccessService: WaterStatisticAccessService,
     private val clock: Clock,
 ) : NotificationHistoryService {
-    private val logger = LoggerFactory.getLogger("SERVICE")
+    private val logger = AppLogger.SERVICE.logger
 
     override fun getHistory(
         externalUserId: Long,

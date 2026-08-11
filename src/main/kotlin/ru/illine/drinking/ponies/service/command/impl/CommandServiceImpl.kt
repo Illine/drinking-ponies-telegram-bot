@@ -1,12 +1,12 @@
 package ru.illine.drinking.ponies.service.command.impl
 
-import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.telegram.telegrambots.meta.api.methods.menubutton.SetChatMenuButton
 import org.telegram.telegrambots.meta.api.objects.menubutton.MenuButtonWebApp
 import org.telegram.telegrambots.meta.api.objects.webapp.WebAppInfo
 import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.illine.drinking.ponies.config.property.TelegramBotProperties
+import ru.illine.drinking.ponies.model.base.AppLogger
 import ru.illine.drinking.ponies.service.command.CommandService
 import ru.illine.drinking.ponies.util.telegram.TelegramMenuConstants
 
@@ -15,7 +15,7 @@ class CommandServiceImpl(
     private val telegramBotProperties: TelegramBotProperties,
     private val sender: TelegramClient,
 ) : CommandService {
-    private val logger = LoggerFactory.getLogger("SERVICE")
+    private val logger = AppLogger.SERVICE.logger
 
     override fun register() {
         if (!telegramBotProperties.autoUpdateTelegramConfig) {

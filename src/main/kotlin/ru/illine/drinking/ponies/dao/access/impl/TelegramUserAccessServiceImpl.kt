@@ -1,6 +1,5 @@
 package ru.illine.drinking.ponies.dao.access.impl
 
-import org.slf4j.LoggerFactory
 import org.springframework.cache.annotation.CacheEvict
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.data.domain.Pageable
@@ -14,6 +13,7 @@ import ru.illine.drinking.ponies.dao.repository.UserStateEventRepository
 import ru.illine.drinking.ponies.exception.TelegramUserNotFoundException
 import ru.illine.drinking.ponies.mapper.AdminUserMapper
 import ru.illine.drinking.ponies.model.base.AdminUserStatusFilter
+import ru.illine.drinking.ponies.model.base.AppLogger
 import ru.illine.drinking.ponies.model.base.UserStateEventType
 import ru.illine.drinking.ponies.model.dto.internal.AdminUserDto
 import ru.illine.drinking.ponies.model.dto.internal.TelegramUserProfileDto
@@ -31,7 +31,7 @@ class TelegramUserAccessServiceImpl(
     private val userStateEventRepository: UserStateEventRepository,
     private val clock: Clock,
 ) : TelegramUserAccessService {
-    private val logger = LoggerFactory.getLogger("ACCESS-SERVICE")
+    private val logger = AppLogger.ACCESS_SERVICE.logger
 
     @Cacheable(CacheConfig.USER_ACCESS_FLAGS, key = "#externalUserId")
     override fun resolveAccessFlags(externalUserId: Long): UserAccessDto {

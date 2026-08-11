@@ -1,9 +1,9 @@
 package ru.illine.drinking.ponies.service.notification.impl
 
-import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
 import ru.illine.drinking.ponies.mapper.SettingMapper
+import ru.illine.drinking.ponies.model.base.AppLogger
 import ru.illine.drinking.ponies.model.base.IntervalNotificationType
 import ru.illine.drinking.ponies.model.dto.internal.NotificationSettingDto
 import ru.illine.drinking.ponies.model.dto.internal.PauseStateDto
@@ -24,7 +24,7 @@ class NotificationSettingsServiceImpl(
     private val notificationTimeService: NotificationTimeService,
     private val clock: Clock,
 ) : NotificationSettingsService {
-    private val logger = LoggerFactory.getLogger("SERVICE")
+    private val logger = AppLogger.SERVICE.logger
 
     override fun getNextNotificationAt(externalUserId: Long): Instant {
         logger.info("Getting next notification time for telegram user [$externalUserId]")

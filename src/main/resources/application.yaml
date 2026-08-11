@@ -110,8 +110,6 @@ logbook:
   minimum-status: ${LOGBOOK_MINIMUM_STATUS:200}
   format:
     style: http
-  logger:
-    name: API
   exclude:
     - /docs/**
     - /swagger-ui/**
