@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import ru.illine.drinking.ponies.config.web.security.AdminOnly
+import ru.illine.drinking.ponies.mapper.LoggerLevelResponseMapper
 import ru.illine.drinking.ponies.model.dto.internal.TelegramAuthUserDto
 import ru.illine.drinking.ponies.model.dto.internal.requireStoredId
 import ru.illine.drinking.ponies.model.dto.request.LoggerLevelRequest
@@ -35,11 +36,7 @@ class LoggerAdminController(
     @GetMapping
     @Operation(summary = "List our own loggers plus every logger that carries an explicit level")
     fun getLoggers(): LoggersResponse =
-        LoggersResponse(
-            loggerAdminService.getKnownLevels().map {
-                LoggerLevelResponse(it.name, it.configuredLevel, it.effectiveLevel)
-            },
-        )
+        LoggersResponse(loggerAdminService.getKnownLevels().map(LoggerLevelResponseMapper::toResponse))
 
     @GetMapping("/{name}")
     @Operation(summary = "Get the level of any logger, including one of a third-party library")
@@ -47,10 +44,7 @@ class LoggerAdminController(
         @Parameter(description = "Logger name", example = "org.hibernate.SQL")
         @PathVariable(name = "name")
         @Pattern(regexp = LoggingConstants.LOGGER_NAME_PATTERN) name: String,
-    ): LoggerLevelResponse =
-        loggerAdminService.getLevel(name).let {
-            LoggerLevelResponse(it.name, it.configuredLevel, it.effectiveLevel)
-        }
+    ): LoggerLevelResponse = LoggerLevelResponseMapper.toResponse(loggerAdminService.getLevel(name))
 
     @PutMapping("/{name}")
     @Operation(summary = "Set the level of a logger until the application restarts")
@@ -62,9 +56,9 @@ class LoggerAdminController(
         @RequestAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) actor: TelegramAuthUserDto,
         @Valid @RequestBody request: LoggerLevelRequest,
     ): LoggerLevelResponse =
-        loggerAdminService.setLevel(name, request.level, actor.requireStoredId()).let {
-            LoggerLevelResponse(it.name, it.configuredLevel, it.effectiveLevel)
-        }
+        LoggerLevelResponseMapper.toResponse(
+            loggerAdminService.setLevel(name, request.level, actor.requireStoredId()),
+        )
 
     @PostMapping("/reset")
     @Operation(summary = "Return every logger to the level it had at startup")
@@ -73,8 +67,6 @@ class LoggerAdminController(
         @RequestAttribute(TelegramGeneralConstants.TELEGRAM_USER_ATTRIBUTE) actor: TelegramAuthUserDto,
     ): LoggersResponse =
         LoggersResponse(
-            loggerAdminService.resetLevels(actor.requireStoredId()).map {
-                LoggerLevelResponse(it.name, it.configuredLevel, it.effectiveLevel)
-            },
+            loggerAdminService.resetLevels(actor.requireStoredId()).map(LoggerLevelResponseMapper::toResponse),
         )
 }

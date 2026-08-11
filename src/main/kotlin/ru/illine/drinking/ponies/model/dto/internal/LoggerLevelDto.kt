@@ -6,4 +6,5 @@ data class LoggerLevelDto(
     val name: String,
     val configuredLevel: LogLevel?,
     val effectiveLevel: LogLevel?,
+    val application: Boolean,
 )
