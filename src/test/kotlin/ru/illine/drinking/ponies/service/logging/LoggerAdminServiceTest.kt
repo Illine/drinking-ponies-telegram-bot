@@ -4,11 +4,15 @@ import ch.qos.logback.classic.Logger
 import ch.qos.logback.classic.spi.ILoggingEvent
 import ch.qos.logback.core.read.ListAppender
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.EnumSource
+import org.junit.jupiter.params.provider.ValueSource
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.eq
@@ -42,6 +46,26 @@ class LoggerAdminServiceTest {
         PUBLISHED_LOGGERS.forEach { verify(loggingSystem).getLoggerConfiguration(it.value) }
     }
 
+    @ParameterizedTest(name = "[{index}] {0}")
+    @EnumSource(AppLogger::class)
+    @DisplayName("getLevel(): a logger the application declares is reported as its own")
+    fun `declared loggers are reported as ours`(appLogger: AppLogger) {
+        whenever(loggingSystem.getLoggerConfiguration(appLogger.value))
+            .thenReturn(LoggerConfiguration(appLogger.value, null, LogLevel.INFO))
+
+        assertTrue(service.getLevel(appLogger.value).application)
+    }
+
+    @ParameterizedTest(name = "[{index}] {0}")
+    @ValueSource(strings = [THIRD_PARTY_LOGGER, UNKNOWN_LOGGER])
+    @DisplayName("getLevel(): a logger outside the enum is not reported as ours, the dots in its name aside")
+    fun `foreign loggers are not reported as ours`(name: String) {
+        whenever(loggingSystem.getLoggerConfiguration(name))
+            .thenReturn(LoggerConfiguration(name, null, LogLevel.INFO))
+
+        assertFalse(service.getLevel(name).application)
+    }
+
     @Test
     @DisplayName("getKnownLevels(): a third-party logger with an explicit level joins the list, once")
     fun `known levels pick up configured outsiders`() {
@@ -60,6 +84,19 @@ class LoggerAdminServiceTest {
         val names = service.getKnownLevels().map { it.name }
 
         assertEquals(PUBLISHED_LOGGERS.map { it.value } + THIRD_PARTY_LOGGER, names)
+    }
+
+    @Test
+    @DisplayName("getKnownLevels(): tells our loggers from the libraries', the flat list carrying both")
+    fun `known levels tell ours from the libraries`() {
+        whenever(loggingSystem.loggerConfigurations)
+            .thenReturn(listOf(LoggerConfiguration(THIRD_PARTY_LOGGER, LogLevel.DEBUG, LogLevel.DEBUG)))
+        whenever(loggingSystem.getLoggerConfiguration(any()))
+            .thenAnswer { LoggerConfiguration(it.arguments[0] as String, null, LogLevel.INFO) }
+
+        val ours = service.getKnownLevels().filter { it.application }.map { it.name }
+
+        assertEquals(PUBLISHED_LOGGERS.map { it.value }, ours)
     }
 
     @Test
@@ -123,6 +160,7 @@ class LoggerAdminServiceTest {
         verify(loggingSystem).setLogLevel(eq(AppLogger.SQL.value), eq(LogLevel.DEBUG))
         assertEquals(LogLevel.DEBUG, applied.configuredLevel)
         assertEquals(LogLevel.DEBUG, applied.effectiveLevel)
+        assertTrue(applied.application)
     }
 
     @Test

@@ -19,4 +19,9 @@ data class LoggerLevelResponse(
         nullable = true,
     )
     val effectiveLevel: LogLevel?,
+    @Schema(
+        description = "True for a logger the application declares itself, false for one coming from a library",
+        example = "true",
+    )
+    val application: Boolean,
 )

@@ -26,12 +26,6 @@ class LoggerAdminServiceImpl(
             .filterNot { it == logger.name }
             .map { readLevel(it) }
 
-    private fun configuredLoggerNames(): List<String> =
-        loggingSystem
-            .loggerConfigurations
-            .filter { it.configuredLevel != null }
-            .map { it.name }
-
     override fun getLevel(name: String): LoggerLevelDto = readLevel(name)
 
     override fun setLevel(
@@ -63,8 +57,19 @@ class LoggerAdminServiceImpl(
         return getKnownLevels()
     }
 
+    private fun configuredLoggerNames(): List<String> =
+        loggingSystem
+            .loggerConfigurations
+            .filter { it.configuredLevel != null }
+            .map { it.name }
+
     private fun readLevel(name: String): LoggerLevelDto =
         loggingSystem.getLoggerConfiguration(name).let {
-            LoggerLevelDto(name = name, configuredLevel = it?.configuredLevel, effectiveLevel = it?.effectiveLevel)
+            LoggerLevelDto(
+                name = name,
+                configuredLevel = it?.configuredLevel,
+                effectiveLevel = it?.effectiveLevel,
+                application = AppLogger.entries.any { appLogger -> name == appLogger.value },
+            )
         }
 }

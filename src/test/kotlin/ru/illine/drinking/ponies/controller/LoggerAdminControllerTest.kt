@@ -117,6 +117,22 @@ class LoggerAdminControllerTest
             String::class.java,
         )
 
+        private fun putLevelForResponse(
+            name: String,
+            body: String,
+        ): LoggerLevelResponse {
+            val response =
+                restTemplate.exchange(
+                    "/systems/loggers/$name",
+                    HttpMethod.PUT,
+                    HttpEntity(body, buildHeaders()),
+                    LoggerLevelResponse::class.java,
+                )
+
+            assertEquals(HttpStatus.OK, response.statusCode)
+            return response.body!!
+        }
+
         private fun resetLevels(): LoggersResponse {
             val response =
                 restTemplate.exchange(
@@ -158,6 +174,17 @@ class LoggerAdminControllerTest
             }
 
             @Test
+            @DisplayName("tells our loggers from the libraries', so the client does not guess by the dot in a name")
+            fun `marks which loggers are ours`() {
+                putLevel(SANDBOX_LOGGER, """{"level": "DEBUG"}""")
+
+                val loggers = getLoggers().loggers
+
+                assertEquals(PUBLISHED_LOGGERS.map { it.value }, loggers.filter { it.application }.map { it.name })
+                assertFalse(loggers.single { it.name == SANDBOX_LOGGER }.application)
+            }
+
+            @Test
             @DisplayName("a logger with no level of its own reports the one inherited from the root")
             fun `reports the inherited level`() {
                 val loggers = getLoggers().loggers
@@ -179,6 +206,13 @@ class LoggerAdminControllerTest
 
                 assertEquals(THIRD_PARTY_LOGGER, body.name)
                 assertNotNull(body.effectiveLevel)
+                assertFalse(body.application)
+            }
+
+            @Test
+            @DisplayName("one of our own loggers is answered as ours, read by name and not only in the list")
+            fun `marks a single logger of ours`() {
+                assertTrue(getLogger(AppLogger.SERVICE.value).application)
             }
 
             @Test
@@ -188,6 +222,7 @@ class LoggerAdminControllerTest
 
                 assertNull(body.configuredLevel)
                 assertNull(body.effectiveLevel)
+                assertFalse(body.application)
             }
         }
 
@@ -204,6 +239,20 @@ class LoggerAdminControllerTest
                 assertEquals(HttpStatus.OK, response.statusCode)
                 assertFalse(LoggerFactory.getLogger(SANDBOX_LOGGER).isErrorEnabled)
                 assertEquals(LogLevel.OFF, getLogger(SANDBOX_LOGGER).configuredLevel)
+            }
+
+            @Test
+            @DisplayName("the answer says whether the logger is ours, so the changed row keeps its section")
+            fun `reports ownership of the changed logger`() {
+                val sqlWas = loggingSystem.getLoggerConfiguration(AppLogger.SQL.value).configuredLevel
+
+                try {
+                    assertTrue(putLevelForResponse(AppLogger.SQL.value, """{"level": "DEBUG"}""").application)
+                } finally {
+                    loggingSystem.setLogLevel(AppLogger.SQL.value, sqlWas)
+                }
+
+                assertFalse(putLevelForResponse(SANDBOX_LOGGER, """{"level": "DEBUG"}""").application)
             }
 
             @ParameterizedTest(name = "[{index}] {0}")
@@ -268,6 +317,14 @@ class LoggerAdminControllerTest
                 resetLevels()
 
                 assertEquals(configured, getLoggers().loggers.filter { it.configuredLevel != null })
+            }
+
+            @Test
+            @DisplayName("the answer keeps the ownership flag, both sections being redrawn from it")
+            fun `reset reports ownership`() {
+                val loggers = resetLevels().loggers
+
+                assertEquals(PUBLISHED_LOGGERS.map { it.value }, loggers.filter { it.application }.map { it.name })
             }
 
             @Test
