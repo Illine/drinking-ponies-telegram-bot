@@ -24,6 +24,7 @@ import org.springframework.boot.logging.LogLevel
 import org.springframework.boot.logging.LoggerConfiguration
 import org.springframework.boot.logging.LoggingSystem
 import ru.illine.drinking.ponies.model.base.AppLogger
+import ru.illine.drinking.ponies.model.base.LogLevelType
 import ru.illine.drinking.ponies.service.logging.impl.LoggerAdminServiceImpl
 import ru.illine.drinking.ponies.test.tag.UnitTest
 
@@ -103,7 +104,7 @@ class LoggerAdminServiceTest {
     @DisplayName("setLevel(): refuses to touch the audit logger, which would silence the record of doing so")
     fun `audit logger cannot be reconfigured`() {
         assertThrows<IllegalArgumentException> {
-            service.setLevel(AppLogger.AUDIT.value, LogLevel.OFF, ACTOR_ID)
+            service.setLevel(AppLogger.AUDIT.value, LogLevelType.OFF, ACTOR_ID)
         }
 
         verify(loggingSystem, never()).setLogLevel(any(), eq(LogLevel.OFF))
@@ -155,11 +156,11 @@ class LoggerAdminServiceTest {
             .thenReturn(LoggerConfiguration(AppLogger.SQL.value, null, LogLevel.WARN))
             .thenReturn(LoggerConfiguration(AppLogger.SQL.value, LogLevel.DEBUG, LogLevel.DEBUG))
 
-        val applied = service.setLevel(AppLogger.SQL.value, LogLevel.DEBUG, ACTOR_ID)
+        val applied = service.setLevel(AppLogger.SQL.value, LogLevelType.DEBUG, ACTOR_ID)
 
         verify(loggingSystem).setLogLevel(eq(AppLogger.SQL.value), eq(LogLevel.DEBUG))
-        assertEquals(LogLevel.DEBUG, applied.configuredLevel)
-        assertEquals(LogLevel.DEBUG, applied.effectiveLevel)
+        assertEquals(LogLevelType.DEBUG, applied.configuredLevel)
+        assertEquals(LogLevelType.DEBUG, applied.effectiveLevel)
         assertTrue(applied.application)
     }
 
@@ -176,7 +177,7 @@ class LoggerAdminServiceTest {
             .setLogLevel(any(), any())
 
         try {
-            service.setLevel(AppLogger.SQL.value, LogLevel.OFF, ACTOR_ID)
+            service.setLevel(AppLogger.SQL.value, LogLevelType.OFF, ACTOR_ID)
         } finally {
             auditLogger.detachAppender(auditRecords)
         }
@@ -184,7 +185,7 @@ class LoggerAdminServiceTest {
         val record = auditRecords.list.single().formattedMessage
         assertTrue(record.contains(ACTOR_ID.toString()), "the audit record names the actor: $record")
         assertTrue(record.contains(AppLogger.SQL.value), "the audit record names the logger: $record")
-        assertTrue(record.contains(LogLevel.OFF.name), "the audit record names the new level: $record")
+        assertTrue(record.contains(LogLevelType.OFF.name), "the audit record names the new level: $record")
     }
 
     companion object {

@@ -1,6 +1,6 @@
 package ru.illine.drinking.ponies.service.logging
 
-import org.springframework.boot.logging.LogLevel
+import ru.illine.drinking.ponies.model.base.LogLevelType
 import ru.illine.drinking.ponies.model.dto.internal.LoggerLevelDto
 
 interface LoggerAdminService {
@@ -10,7 +10,7 @@ interface LoggerAdminService {
 
     fun setLevel(
         name: String,
-        level: LogLevel,
+        level: LogLevelType,
         actorId: Long,
     ): LoggerLevelDto
 
