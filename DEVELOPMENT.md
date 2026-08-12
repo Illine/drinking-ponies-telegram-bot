@@ -135,6 +135,7 @@ The rules above are not left to review attention - most of them fail the build.
 | Entities stay inside `dao` and `mapper` | detekt `ForbiddenImport/entityOutsideDao` |
 | HTTP types (`request` and `response`) stay in the web layer | detekt `ForbiddenImport/httpTypesOutsideWeb` |
 | A foreign wire schema stays at its parser | detekt `ForbiddenImport/foreignSchemaOutsideParser` |
+| Spring's `LogLevel` stays at the `LoggingSystem` boundary | detekt `ForbiddenImport/springLogLevelOutsideLoggingService` |
 | Tests mock through mockito-kotlin, not the raw Mockito API | detekt `ForbiddenImport/rawMockitoInTests` |
 | No `@Suppress` switches off a boundary or a whole ruleset | `architecture/CodeLayoutTest` |
 | Three packages under `model/dto`, empty root | `architecture/CodeLayoutTest` |
@@ -167,6 +168,11 @@ enum, which also covers `getLogger(Foo::class.java)` that no list of literals wo
 The admin API does not reuse Actuator's `loggers` endpoint even though the starter is a dependency: Actuator listens
 on its own management port with no Telegram admin check, and `application-deploy.yaml` excludes that endpoint on
 purpose. The controller talks to the `LoggingSystem` bean directly, which keeps the exclusion intact.
+
+The levels that API speaks are `LogLevelType`, not Spring's own `LogLevel`, which stays at the `LoggingSystem`
+boundary. The two differ by one value: `FATAL` has no counterpart underneath, the logging system applies it as
+`ERROR`, and the endpoint would answer with a level nobody asked for. Leaving it out of the enum makes the parser
+reject it as a 400 before any code runs, so the contract offers exactly the levels it can honour.
 
 Silencing a boundary is caught by the architecture test rather than by detekt's
 own `ForbiddenSuppress`: detekt matches suppression ids as literals while

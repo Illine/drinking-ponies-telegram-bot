@@ -652,6 +652,14 @@ style:
     forbiddenImports:
       - reason: 'A schema owned by Telegram stops at the parser and is converted into an internal DTO right away'
         value: 'ru.illine.drinking.ponies.util.telegram.TelegramInitDataUser'
+  # The enum owns the translation, the logging service is the one caller that talks to LoggingSystem.
+  # Tests are excluded: the ones covering this very boundary have to see both types.
+  ForbiddenImport/springLogLevelOutsideLoggingService:
+    active: true
+    excludes: ['**/model/base/**', '**/service/logging/**', '**/src/test/**']
+    forbiddenImports:
+      - reason: 'The API speaks LogLevelType, the Spring level stops at the LoggingSystem boundary'
+        value: 'org.springframework.boot.logging.LogLevel'
   # Test style, see TESTING.md. util/sql is the one legal consumer: mockito-kotlin ships no mockStatic wrapper.
   ForbiddenImport/rawMockitoInTests:
     active: true

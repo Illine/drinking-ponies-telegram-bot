@@ -4,6 +4,7 @@ import org.springframework.boot.logging.LogLevel
 import org.springframework.boot.logging.LoggingSystem
 import org.springframework.stereotype.Service
 import ru.illine.drinking.ponies.model.base.AppLogger
+import ru.illine.drinking.ponies.model.base.LogLevelType
 import ru.illine.drinking.ponies.model.dto.internal.LoggerLevelDto
 import ru.illine.drinking.ponies.service.logging.LoggerAdminService
 
@@ -30,7 +31,7 @@ class LoggerAdminServiceImpl(
 
     override fun setLevel(
         name: String,
-        level: LogLevel,
+        level: LogLevelType,
         actorId: Long,
     ): LoggerLevelDto {
         require(name != logger.name) { "The audit logger cannot be reconfigured through the API" }
@@ -42,7 +43,7 @@ class LoggerAdminServiceImpl(
             level,
             loggingSystem.getLoggerConfiguration(name)?.effectiveLevel,
         )
-        loggingSystem.setLogLevel(name, level)
+        loggingSystem.setLogLevel(name, level.level)
 
         return readLevel(name)
     }
@@ -67,8 +68,8 @@ class LoggerAdminServiceImpl(
         loggingSystem.getLoggerConfiguration(name).let {
             LoggerLevelDto(
                 name = name,
-                configuredLevel = it?.configuredLevel,
-                effectiveLevel = it?.effectiveLevel,
+                configuredLevel = LogLevelType.of(it?.configuredLevel),
+                effectiveLevel = LogLevelType.of(it?.effectiveLevel),
                 application = AppLogger.entries.any { appLogger -> name == appLogger.value },
             )
         }

@@ -11,6 +11,7 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.EnumSource
 import org.junit.jupiter.params.provider.ValueSource
 import org.mockito.kotlin.any
 import org.mockito.kotlin.whenever
@@ -31,6 +32,7 @@ import org.springframework.test.context.jdbc.SqlConfig
 import ru.illine.drinking.ponies.config.cache.CacheConfig
 import ru.illine.drinking.ponies.config.web.security.AuthErrorType
 import ru.illine.drinking.ponies.model.base.AppLogger
+import ru.illine.drinking.ponies.model.base.LogLevelType
 import ru.illine.drinking.ponies.model.dto.response.LoggerLevelResponse
 import ru.illine.drinking.ponies.model.dto.response.LoggersResponse
 import ru.illine.drinking.ponies.service.telegram.TelegramValidatorService
@@ -238,7 +240,20 @@ class LoggerAdminControllerTest
 
                 assertEquals(HttpStatus.OK, response.statusCode)
                 assertFalse(LoggerFactory.getLogger(SANDBOX_LOGGER).isErrorEnabled)
-                assertEquals(LogLevel.OFF, getLogger(SANDBOX_LOGGER).configuredLevel)
+            }
+
+            @ParameterizedTest(name = "[{index}] {0}")
+            @EnumSource(LogLevelType::class)
+            @DisplayName("a level of the contract is applied as asked and answered back as the very same level")
+            fun `answers with the level that was asked for`(level: LogLevelType) {
+                val body = putLevelForResponse(SANDBOX_LOGGER, """{"level": "${level.name}"}""")
+
+                assertEquals(level, body.configuredLevel)
+                assertEquals(level, body.effectiveLevel)
+                assertEquals(
+                    LogLevel.valueOf(level.name),
+                    loggingSystem.getLoggerConfiguration(SANDBOX_LOGGER)?.configuredLevel,
+                )
             }
 
             @Test
@@ -256,10 +271,17 @@ class LoggerAdminControllerTest
             }
 
             @ParameterizedTest(name = "[{index}] {0}")
-            @ValueSource(strings = ["""{"level": "LOUD"}""", """{"level": null}""", "{}"])
-            @DisplayName("a level outside the enum is rejected with 400")
+            @ValueSource(
+                strings = ["""{"level": "FATAL"}""", """{"level": "LOUD"}""", """{"level": null}""", "{}"],
+            )
+            @DisplayName("a level outside the contract is rejected with 400, the logger keeping the level it had")
             fun `rejects an unknown level`(body: String) {
-                assertEquals(HttpStatus.BAD_REQUEST, putLevel(SANDBOX_LOGGER, body).statusCode)
+                loggingSystem.setLogLevel(SANDBOX_LOGGER, LogLevel.DEBUG)
+
+                val response = putLevel(SANDBOX_LOGGER, body)
+
+                assertEquals(HttpStatus.BAD_REQUEST, response.statusCode)
+                assertEquals(LogLevel.DEBUG, loggingSystem.getLoggerConfiguration(SANDBOX_LOGGER)?.configuredLevel)
             }
 
             @Test
