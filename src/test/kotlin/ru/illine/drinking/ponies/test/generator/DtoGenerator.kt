@@ -4,18 +4,21 @@ import ru.illine.drinking.ponies.model.base.AnswerNotificationType
 import ru.illine.drinking.ponies.model.base.IntervalNotificationType
 import ru.illine.drinking.ponies.model.base.NotificationHistoryStatus
 import ru.illine.drinking.ponies.model.base.WaterEntrySourceType
-import ru.illine.drinking.ponies.model.dto.BestDayDto
-import ru.illine.drinking.ponies.model.dto.SettingDto
-import ru.illine.drinking.ponies.model.dto.StatisticsDto
-import ru.illine.drinking.ponies.model.dto.StatisticsPointDto
-import ru.illine.drinking.ponies.model.dto.TelegramUserDto
+import ru.illine.drinking.ponies.model.dto.internal.BestDayDto
+import ru.illine.drinking.ponies.model.dto.internal.InsightStatsContext
+import ru.illine.drinking.ponies.model.dto.internal.NotificationHistoryEventDto
 import ru.illine.drinking.ponies.model.dto.internal.NotificationSettingDto
+import ru.illine.drinking.ponies.model.dto.internal.PauseStateDto
+import ru.illine.drinking.ponies.model.dto.internal.SettingDto
+import ru.illine.drinking.ponies.model.dto.internal.StatisticsDto
+import ru.illine.drinking.ponies.model.dto.internal.StatisticsPointDto
+import ru.illine.drinking.ponies.model.dto.internal.TelegramAuthUserDto
 import ru.illine.drinking.ponies.model.dto.internal.TelegramChatDto
+import ru.illine.drinking.ponies.model.dto.internal.TelegramUserProfileDto
+import ru.illine.drinking.ponies.model.dto.internal.UserAccessDto
 import ru.illine.drinking.ponies.model.dto.internal.WaterStatisticDto
-import ru.illine.drinking.ponies.model.dto.message.InsightStatsContext
 import ru.illine.drinking.ponies.model.dto.request.WaterEntryRequest
 import ru.illine.drinking.ponies.model.dto.response.NotificationHistoryEvent
-import ru.illine.drinking.ponies.model.dto.response.PauseStateResponse
 import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
@@ -129,14 +132,44 @@ class DtoGenerator {
                 amountMl = amountMl,
             )
 
-        fun generateTelegramUserDto(
+        fun generateTelegramAuthUserDto(
+            id: Long? = null,
             externalUserId: Long = 1L,
             firstName: String? = "First Name",
             lastName: String? = null,
             username: String? = "username",
-        ): TelegramUserDto =
-            TelegramUserDto(
+            isAdmin: Boolean = false,
+        ): TelegramAuthUserDto =
+            TelegramAuthUserDto(
+                id = id,
                 externalUserId = externalUserId,
+                firstName = firstName,
+                lastName = lastName,
+                username = username,
+                isAdmin = isAdmin,
+            )
+
+        fun generateUserAccessDto(
+            id: Long? = null,
+            externalUserId: Long = 1L,
+            isAdmin: Boolean = false,
+            isBanned: Boolean = false,
+            isDeleted: Boolean = false,
+        ): UserAccessDto =
+            UserAccessDto(
+                id = id,
+                externalUserId = externalUserId,
+                isAdmin = isAdmin,
+                isBanned = isBanned,
+                isDeleted = isDeleted,
+            )
+
+        fun generateTelegramUserProfileDto(
+            firstName: String? = "First Name",
+            lastName: String? = null,
+            username: String? = "username",
+        ): TelegramUserProfileDto =
+            TelegramUserProfileDto(
                 firstName = firstName,
                 lastName = lastName,
                 username = username,
@@ -191,6 +224,23 @@ class DtoGenerator {
                 firstEntryAt = firstEntryAt,
             )
 
+        fun generateNotificationHistoryEventDto(
+            id: Long = 1042L,
+            eventTime: Instant = Instant.parse("2026-05-10T09:30:00Z"),
+            status: NotificationHistoryStatus = NotificationHistoryStatus.CONFIRMED,
+            amountMl: Int = 300,
+            source: WaterEntrySourceType = WaterEntrySourceType.NOTIFICATION,
+            editable: Boolean = true,
+        ): NotificationHistoryEventDto =
+            NotificationHistoryEventDto(
+                id = id,
+                eventTime = eventTime,
+                status = status,
+                amountMl = amountMl,
+                source = source,
+                editable = editable,
+            )
+
         fun generateNotificationHistoryEvent(
             id: Long = 1042L,
             eventTime: Instant = Instant.parse("2026-05-10T09:30:00Z"),
@@ -208,11 +258,11 @@ class DtoGenerator {
                 editable = editable,
             )
 
-        fun generatePauseStateResponse(
+        fun generatePauseStateDto(
             paused: Boolean = true,
             pauseUntil: Instant? = Instant.parse("2025-01-01T18:00:00Z"),
-        ): PauseStateResponse =
-            PauseStateResponse(
+        ): PauseStateDto =
+            PauseStateDto(
                 paused = paused,
                 pauseUntil = pauseUntil,
             )

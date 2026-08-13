@@ -31,6 +31,8 @@ import ru.illine.drinking.ponies.exception.NotificationHistoryEntryNotEditableEx
 import ru.illine.drinking.ponies.exception.NotificationHistoryEntryNotFoundException
 import ru.illine.drinking.ponies.exception.NotificationSettingsNotFoundException
 import ru.illine.drinking.ponies.model.base.NotificationHistoryStatus
+import ru.illine.drinking.ponies.model.dto.internal.NotificationHistoryDayDto
+import ru.illine.drinking.ponies.model.dto.internal.NotificationHistoryDto
 import ru.illine.drinking.ponies.model.dto.response.ErrorResponse
 import ru.illine.drinking.ponies.model.dto.response.NotificationHistoryDay
 import ru.illine.drinking.ponies.model.dto.response.NotificationHistoryEvent
@@ -63,7 +65,7 @@ class NotificationControllerTest
         @MockitoBean
         private lateinit var notificationHistoryService: NotificationHistoryService
 
-        private val telegramUser = DtoGenerator.generateTelegramUserDto()
+        private val telegramUser = DtoGenerator.generateTelegramAuthUserDto()
 
         @BeforeEach
         fun setUp() {
@@ -162,8 +164,8 @@ class NotificationControllerTest
             @DisplayName("paused user - returns 200 with paused=true and pauseUntil")
             fun `returns 200 with paused true`() {
                 val expectedPauseUntil = Instant.parse("2025-01-01T18:00:00Z")
-                val expected = PauseStateResponse(paused = true, pauseUntil = expectedPauseUntil)
-                whenever(notificationSettingsService.getPauseState(any())).thenReturn(expected)
+                val state = DtoGenerator.generatePauseStateDto(paused = true, pauseUntil = expectedPauseUntil)
+                whenever(notificationSettingsService.getPauseState(any())).thenReturn(state)
                 val headers = buildHeaders()
 
                 val response =
@@ -184,8 +186,8 @@ class NotificationControllerTest
             @Test
             @DisplayName("not paused - returns 200 with paused=false and null pauseUntil")
             fun `returns 200 with paused false`() {
-                val expected = PauseStateResponse(paused = false, pauseUntil = null)
-                whenever(notificationSettingsService.getPauseState(any())).thenReturn(expected)
+                val state = DtoGenerator.generatePauseStateDto(paused = false, pauseUntil = null)
+                whenever(notificationSettingsService.getPauseState(any())).thenReturn(state)
                 val headers = buildHeaders()
 
                 val response =
@@ -369,6 +371,24 @@ class NotificationControllerTest
             private val from = LocalDate.of(2026, 5, 4)
             private val to = LocalDate.of(2026, 5, 10)
 
+            private fun journalDto() =
+                NotificationHistoryDto(
+                    days =
+                        listOf(
+                            NotificationHistoryDayDto(
+                                date = from,
+                                events =
+                                    listOf(
+                                        DtoGenerator.generateNotificationHistoryEventDto(
+                                            eventTime = Instant.parse("2026-05-04T09:30:00Z"),
+                                            status = NotificationHistoryStatus.MISSED,
+                                            amountMl = 0,
+                                        ),
+                                    ),
+                            ),
+                        ),
+                )
+
             private fun journal() =
                 NotificationHistoryResponse(
                     days =
@@ -398,13 +418,12 @@ class NotificationControllerTest
             @Test
             @DisplayName("valid range - returns 200 with the journal and forwards from/to")
             fun `returns 200 with the journal`() {
-                whenever(notificationHistoryService.getHistory(any(), any(), any())).thenReturn(journal())
+                whenever(notificationHistoryService.getHistory(any(), any(), any())).thenReturn(journalDto())
 
                 val response = get("from=$from&to=$to")
 
                 assertEquals(HttpStatus.OK, response.statusCode)
                 assertEquals(journal(), objectMapper.readValue(response.body, NotificationHistoryResponse::class.java))
-                // Dates and instants go over the wire as ISO 8601 strings, not as numbers.
                 val day = objectMapper.readTree(response.body).path("days").path(0)
                 val event = day.path("events").path(0)
                 assertEquals("2026-05-04", day.path("date").asText())
@@ -416,7 +435,7 @@ class NotificationControllerTest
             @DisplayName("no entries in the range - returns 200 with an empty days array")
             fun `returns 200 with empty days`() {
                 whenever(notificationHistoryService.getHistory(any(), any(), any()))
-                    .thenReturn(NotificationHistoryResponse(days = emptyList()))
+                    .thenReturn(NotificationHistoryDto(days = emptyList()))
 
                 val response = get("from=$from&to=$to")
 
@@ -492,6 +511,11 @@ class NotificationControllerTest
                 expectedAmountMl: Int?,
             ) {
                 val updated =
+                    DtoGenerator.generateNotificationHistoryEventDto(
+                        status = expectedStatus,
+                        amountMl = expectedAmountMl ?: 0,
+                    )
+                val expected =
                     DtoGenerator.generateNotificationHistoryEvent(
                         status = expectedStatus,
                         amountMl = expectedAmountMl ?: 0,
@@ -501,7 +525,7 @@ class NotificationControllerTest
                 val response = patch("1042", body)
 
                 assertEquals(HttpStatus.OK, response.statusCode)
-                assertEquals(updated, objectMapper.readValue(response.body, NotificationHistoryEvent::class.java))
+                assertEquals(expected, objectMapper.readValue(response.body, NotificationHistoryEvent::class.java))
                 verify(notificationHistoryService)
                     .updateEntry(telegramUser.externalUserId, 1042L, expectedStatus, expectedAmountMl)
             }
@@ -601,7 +625,6 @@ class NotificationControllerTest
                         NotificationHistoryStatus.CONFIRMED,
                         300,
                     ),
-                    // A missed entry ignores the amount, but whatever the form sent still reaches the service.
                     Arguments.of("""{"status":"MISSED"}""", NotificationHistoryStatus.MISSED, null),
                     Arguments.of("""{"status":"MISSED","amountMl":0}""", NotificationHistoryStatus.MISSED, 0),
                 )

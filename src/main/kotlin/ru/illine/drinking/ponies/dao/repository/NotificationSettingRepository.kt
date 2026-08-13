@@ -5,18 +5,39 @@ import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import ru.illine.drinking.ponies.model.entity.NotificationSettingEntity
+import java.time.LocalDateTime
 import java.time.LocalTime
 
 interface NotificationSettingRepository : JpaRepository<NotificationSettingEntity, Long> {
-    // Spring Data derived query: the underscore explicitly resolves the nested property path
-    // telegramUser.externalUserId. Renaming it would break query derivation, so the ktlint
-    // naming rule is suppressed here intentionally.
+    // Spring Data resolves the nested property by the underscore, so the rule cannot apply here.
     @Suppress("ktlint:standard:function-naming")
     fun findByTelegramUser_ExternalUserId(externalUserId: Long): NotificationSettingEntity?
 
     @Query(
         value = """
-            select ns.enabled 
+            select ns from NotificationSettingEntity ns
+            join fetch ns.telegramUser u
+            join fetch ns.telegramChat
+            where u.isBanned = false
+        """,
+    )
+    fun findAllNotBannedWithUserAndChat(): List<NotificationSettingEntity>
+
+    @Query(
+        value = """
+            select ns from NotificationSettingEntity ns
+            join fetch ns.telegramUser u
+            join fetch ns.telegramChat
+            where u.externalUserId in :externalUserIds
+        """,
+    )
+    fun findAllWithUserAndChatByExternalUserIdIn(
+        @Param("externalUserIds") externalUserIds: Collection<Long>,
+    ): List<NotificationSettingEntity>
+
+    @Query(
+        value = """
+            select ns.enabled
             from notification_settings ns
             inner join telegram_users u on ns.telegram_user_id = u.id
             where u.external_user_id = :externalUserId
@@ -60,11 +81,14 @@ interface NotificationSettingRepository : JpaRepository<NotificationSettingEntit
         @Param("end") end: LocalTime? = null,
     )
 
+    // A pause is a forward shift of time_of_last_notification, so dropping the mark alone would leave
+    // the user silent until the shift runs out.
     @Modifying
     @Query(
         value = """
         update notification_settings ns
-        set pause_until = null
+        set pause_until = null,
+            time_of_last_notification = least(ns.time_of_last_notification, :now)
         from telegram_users u
         where ns.telegram_user_id = u.id
           and u.external_user_id = :externalUserId
@@ -73,6 +97,7 @@ interface NotificationSettingRepository : JpaRepository<NotificationSettingEntit
     )
     fun clearPause(
         @Param("externalUserId") externalUserId: Long,
+        @Param("now") now: LocalDateTime,
     )
 
     @Modifying

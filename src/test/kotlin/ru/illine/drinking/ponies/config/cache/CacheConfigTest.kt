@@ -26,18 +26,18 @@ class CacheConfigTest {
 
         val manager = CacheConfig(properties).cacheManager()
 
-        assertTrue(manager.cacheNames.contains(CacheConfig.USER_IS_ADMIN))
+        assertTrue(manager.cacheNames.contains(CacheConfig.USER_ACCESS_FLAGS))
+        assertTrue(manager.cacheNames.contains(CacheConfig.USER_PROFILE_SYNC))
         assertTrue(manager.cacheNames.contains(CacheConfig.WATER_FIRST_ENTRY))
-        assertNotNull(manager.getCache(CacheConfig.USER_IS_ADMIN))
+        assertNotNull(manager.getCache(CacheConfig.USER_ACCESS_FLAGS))
+        assertNotNull(manager.getCache(CacheConfig.USER_PROFILE_SYNC))
         assertNotNull(manager.getCache(CacheConfig.WATER_FIRST_ENTRY))
-        assertEquals(2, manager.cacheNames.size)
+        assertEquals(3, manager.cacheNames.size)
     }
 
     @Test
     @DisplayName("cacheManager(): returns a TransactionAwareCacheManagerProxy so evicts defer until commit")
     fun `cacheManager wraps caffeine in transaction aware proxy`() {
-        // Without this proxy, @CacheEvict happens before the @Transactional method commits,
-        // and a concurrent reader can re-cache the stale value. The proxy is load-bearing.
         val properties =
             CacheProperties(
                 default = CacheEntry(ttl = Duration.ofMinutes(7), maximumSize = 50),
@@ -60,7 +60,7 @@ class CacheConfigTest {
                 default = CacheEntry(ttl = Duration.ofMinutes(7), maximumSize = 50),
                 overrides =
                     mapOf(
-                        CacheConfig.USER_IS_ADMIN to
+                        CacheConfig.USER_ACCESS_FLAGS to
                             CacheEntryOverride(
                                 ttl = Duration.ofMinutes(15),
                                 maximumSize = 200,
@@ -70,9 +70,10 @@ class CacheConfigTest {
 
         val manager = CacheConfig(properties).cacheManager()
 
-        assertNotNull(manager.getCache(CacheConfig.USER_IS_ADMIN))
+        assertNotNull(manager.getCache(CacheConfig.USER_ACCESS_FLAGS))
+        assertNotNull(manager.getCache(CacheConfig.USER_PROFILE_SYNC))
         assertNotNull(manager.getCache(CacheConfig.WATER_FIRST_ENTRY))
-        assertEquals(2, manager.cacheNames.size)
+        assertEquals(3, manager.cacheNames.size)
     }
 
     @Test
@@ -83,7 +84,7 @@ class CacheConfigTest {
                 default = CacheEntry(ttl = Duration.ofMinutes(7), maximumSize = 50),
                 overrides =
                     mapOf(
-                        CacheConfig.USER_IS_ADMIN to
+                        CacheConfig.USER_ACCESS_FLAGS to
                             CacheEntryOverride(
                                 ttl = null,
                                 maximumSize = null,
@@ -93,8 +94,9 @@ class CacheConfigTest {
 
         val manager = CacheConfig(properties).cacheManager()
 
-        assertNotNull(manager.getCache(CacheConfig.USER_IS_ADMIN))
+        assertNotNull(manager.getCache(CacheConfig.USER_ACCESS_FLAGS))
+        assertNotNull(manager.getCache(CacheConfig.USER_PROFILE_SYNC))
         assertNotNull(manager.getCache(CacheConfig.WATER_FIRST_ENTRY))
-        assertEquals(2, manager.cacheNames.size)
+        assertEquals(3, manager.cacheNames.size)
     }
 }

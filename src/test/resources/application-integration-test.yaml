@@ -47,7 +47,9 @@ telegram-bot:
     max-connection-total: 100
   schedule:
     notification:
-      cron: "*/15 * * * * *"
+      # Disabled on purpose: the scheduler tests call sendDrinkingReminders() directly, while a live
+      # tick would hit the mocked beans of unrelated integration tests.
+      cron: "-"
 
 springdoc:
   api-docs:
@@ -60,5 +62,3 @@ logbook:
   minimum-status: 200
   format:
     style: http
-  logger:
-    name: API

@@ -1,13 +1,13 @@
 package ru.illine.drinking.ponies.service.notification.impl
 
-import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
 import ru.illine.drinking.ponies.mapper.SettingMapper
+import ru.illine.drinking.ponies.model.base.AppLogger
 import ru.illine.drinking.ponies.model.base.IntervalNotificationType
-import ru.illine.drinking.ponies.model.dto.SettingDto
 import ru.illine.drinking.ponies.model.dto.internal.NotificationSettingDto
-import ru.illine.drinking.ponies.model.dto.response.PauseStateResponse
+import ru.illine.drinking.ponies.model.dto.internal.PauseStateDto
+import ru.illine.drinking.ponies.model.dto.internal.SettingDto
 import ru.illine.drinking.ponies.service.notification.NotificationSettingsService
 import ru.illine.drinking.ponies.service.notification.NotificationTimeService
 import ru.illine.drinking.ponies.util.statistics.toUtcInstant
@@ -24,7 +24,7 @@ class NotificationSettingsServiceImpl(
     private val notificationTimeService: NotificationTimeService,
     private val clock: Clock,
 ) : NotificationSettingsService {
-    private val logger = LoggerFactory.getLogger("SERVICE")
+    private val logger = AppLogger.SERVICE.logger
 
     override fun getNextNotificationAt(externalUserId: Long): Instant {
         logger.info("Getting next notification time for telegram user [$externalUserId]")
@@ -156,7 +156,7 @@ class NotificationSettingsServiceImpl(
         notificationAccessService.updateDailyGoal(externalUserId, goalMl)
     }
 
-    override fun getPauseState(externalUserId: Long): PauseStateResponse {
+    override fun getPauseState(externalUserId: Long): PauseStateDto {
         logger.info("Getting pause state for telegram user [$externalUserId]")
         val settings = notificationAccessService.findNotificationSettingByExternalUserId(externalUserId)
         val now = LocalDateTime.now(clock)
@@ -164,7 +164,7 @@ class NotificationSettingsServiceImpl(
             settings.pauseUntil
                 ?.takeIf { it.isAfter(now) }
                 ?.toUtcInstant()
-        return PauseStateResponse(
+        return PauseStateDto(
             paused = activePauseUntil != null,
             pauseUntil = activePauseUntil,
         )

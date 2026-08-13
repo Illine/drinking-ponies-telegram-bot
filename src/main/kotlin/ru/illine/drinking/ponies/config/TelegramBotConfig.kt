@@ -12,6 +12,7 @@ import org.zalando.logbook.Logbook
 import org.zalando.logbook.okhttp.LogbookInterceptor
 import ru.illine.drinking.ponies.bot.DrinkingPoniesTelegramBot
 import ru.illine.drinking.ponies.config.property.TelegramBotProperties
+import ru.illine.drinking.ponies.dao.access.TelegramUserAccessService
 import ru.illine.drinking.ponies.service.button.ReplyButtonFactory
 import ru.illine.drinking.ponies.service.command.CommandService
 import ru.illine.drinking.ponies.service.notification.NotificationService
@@ -36,6 +37,7 @@ class TelegramBotConfig {
         notificationService: NotificationService,
         replyButtonFactory: ReplyButtonFactory,
         commandService: CommandService,
+        telegramUserAccessService: TelegramUserAccessService,
     ): BaseAbilityBot =
         DrinkingPoniesTelegramBot(
             telegramClient,
@@ -43,6 +45,7 @@ class TelegramBotConfig {
             notificationService,
             replyButtonFactory,
             commandService,
+            telegramUserAccessService,
         )
 
     @Bean

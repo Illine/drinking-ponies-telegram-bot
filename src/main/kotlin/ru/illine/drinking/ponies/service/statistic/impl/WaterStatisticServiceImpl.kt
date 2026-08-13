@@ -1,9 +1,9 @@
 package ru.illine.drinking.ponies.service.statistic.impl
 
-import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import ru.illine.drinking.ponies.dao.access.WaterStatisticAccessService
 import ru.illine.drinking.ponies.model.base.AnswerNotificationType
+import ru.illine.drinking.ponies.model.base.AppLogger
 import ru.illine.drinking.ponies.model.base.WaterEntrySourceType
 import ru.illine.drinking.ponies.model.dto.internal.TelegramUserDto
 import ru.illine.drinking.ponies.model.dto.internal.WaterStatisticDto
@@ -20,7 +20,7 @@ class WaterStatisticServiceImpl(
     private val waterStatisticAccessService: WaterStatisticAccessService,
     private val clock: Clock,
 ) : WaterStatisticService {
-    private val logger = LoggerFactory.getLogger("SERVICE")
+    private val logger = AppLogger.SERVICE.logger
 
     override fun recordEvent(
         telegramUser: TelegramUserDto,

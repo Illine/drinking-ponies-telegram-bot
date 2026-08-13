@@ -21,9 +21,9 @@ import org.mockito.kotlin.whenever
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
 import ru.illine.drinking.ponies.dao.access.WaterStatisticAccessService
 import ru.illine.drinking.ponies.model.base.AnswerNotificationType
+import ru.illine.drinking.ponies.model.dto.internal.InsightStatsContext
+import ru.illine.drinking.ponies.model.dto.internal.MessageDto
 import ru.illine.drinking.ponies.model.dto.internal.WaterStatisticDto
-import ru.illine.drinking.ponies.model.dto.message.InsightStatsContext
-import ru.illine.drinking.ponies.model.dto.message.MessageDto
 import ru.illine.drinking.ponies.service.message.MessageProvider
 import ru.illine.drinking.ponies.service.statistic.impl.StatisticsServiceImpl
 import ru.illine.drinking.ponies.test.generator.DtoGenerator
@@ -177,7 +177,6 @@ class StatisticsServiceTest {
     @Test
     @DisplayName("getStatistics(from < to): builds daily points, bestDay set with weekday")
     fun `getStatistics daily when range over multiple days`() {
-        // 2026-05-04 (Mon) .. 2026-05-10 (Sun) = 7 days
         buildService(clockAt("2026-05-10T12:00:00Z"))
         stubSettings()
         stubEvents(
@@ -237,7 +236,6 @@ class StatisticsServiceTest {
         assertEquals(24, result.points.size)
         assertEquals(400, result.points[9].valueMl)
         assertEquals(0, result.points[8].valueMl)
-        // sanity: today not used as the bucket day
         assertNotNull(today)
     }
 
@@ -283,9 +281,6 @@ class StatisticsServiceTest {
     @Test
     @DisplayName("getStatistics: streak counts back from today even when 'to' is far in the past")
     fun `getStatistics streak still anchored to today when to is before today`() {
-        // Critical regression target: streak must be computed from `today` back, not from `to` back.
-        // today=2026-05-20, range = [2026-04-01 .. 2026-04-30].
-        // Goal met for every day from 2026-05-14..2026-05-20 (7 days back through today).
         val today = LocalDate.of(2026, 5, 20)
         buildService(clockAt("2026-05-20T12:00:00Z"))
         stubSettings()
@@ -309,8 +304,6 @@ class StatisticsServiceTest {
     @Test
     @DisplayName("getStatistics: streak is bounded by STREAK_LIMIT_DAYS even for a very large past range")
     fun `getStatistics streak bounded by limit`() {
-        // Far-past range plus today met for every day for 500 days back.
-        // Streak loop iterates 366 days back from today-1 + today itself -> 367.
         val today = LocalDate.of(2026, 5, 20)
         buildService(clockAt("2026-05-20T12:00:00Z"))
         stubSettings()
@@ -339,20 +332,16 @@ class StatisticsServiceTest {
     @Test
     @DisplayName("getStatistics: bestDay only considers events in [from..to], not the streak window")
     fun `getStatistics bestDay scoped to range`() {
-        // Range is [05-15 .. 05-20] (today=05-20). The huge 9999 on 05-01 must NOT be bestDay
-        // even though it is fetched for the streak look-back window.
         val today = LocalDate.of(2026, 5, 20)
         buildService(clockAt("2026-05-20T12:00:00Z"))
         stubSettings()
         stubEvents(
             listOf(
-                // outside range, fetched only for streak
                 DtoGenerator.generateWaterStatisticDto(
                     externalUserId = externalUserId,
                     eventTime = LocalDateTime.of(2026, 5, 1, 10, 0),
                     waterAmountMl = 9999,
                 ),
-                // inside range
                 DtoGenerator.generateWaterStatisticDto(
                     externalUserId = externalUserId,
                     eventTime = LocalDateTime.of(2026, 5, 17, 10, 0),
@@ -380,7 +369,6 @@ class StatisticsServiceTest {
     @DisplayName("getStatistics: from > to -> IllegalArgumentException")
     fun `getStatistics rejects from after to`() {
         buildService(clockAt("2026-05-20T12:00:00Z"))
-        // settings stub not needed: validation runs before user context fetch
         stubSettings()
 
         val ex =
@@ -504,7 +492,6 @@ class StatisticsServiceTest {
                     LocalDateTime.of(2026, 5, 8, 18, 30),
                     "UTC+5:30, fractional offset",
                 ),
-                // DST spring-forward (23h day)
                 Arguments.of(
                     "America/New_York",
                     "2026-03-08T07:30:00Z",

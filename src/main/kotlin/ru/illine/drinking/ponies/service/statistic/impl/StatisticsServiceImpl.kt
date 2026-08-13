@@ -1,14 +1,14 @@
 package ru.illine.drinking.ponies.service.statistic.impl
 
-import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
 import ru.illine.drinking.ponies.dao.access.WaterStatisticAccessService
 import ru.illine.drinking.ponies.model.base.AnswerNotificationType
-import ru.illine.drinking.ponies.model.dto.StatisticsDto
+import ru.illine.drinking.ponies.model.base.AppLogger
+import ru.illine.drinking.ponies.model.dto.internal.InsightStatsContext
 import ru.illine.drinking.ponies.model.dto.internal.NotificationSettingDto
+import ru.illine.drinking.ponies.model.dto.internal.StatisticsDto
 import ru.illine.drinking.ponies.model.dto.internal.WaterStatisticDto
-import ru.illine.drinking.ponies.model.dto.message.InsightStatsContext
 import ru.illine.drinking.ponies.service.message.MessageProvider
 import ru.illine.drinking.ponies.service.statistic.StatisticsService
 import ru.illine.drinking.ponies.util.message.MessageSpec
@@ -27,9 +27,8 @@ class StatisticsServiceImpl(
     private val messageProvider: MessageProvider,
     private val clock: Clock,
 ) : StatisticsService {
-    private val logger = LoggerFactory.getLogger("SERVICE")
+    private val logger = AppLogger.SERVICE.logger
 
-    // Returns RAW events (unfiltered by YES) for the home widget's per-event diary.
     override fun getToday(externalUserId: Long): List<WaterStatisticDto> {
         logger.debug("Getting today entries for telegram user [{}]", externalUserId)
 
@@ -55,10 +54,6 @@ class StatisticsServiceImpl(
 
         val days = ChronoUnit.DAYS.between(from, to).toInt() + 1
 
-        // Streak counts back from today up to STREAK_LIMIT_DAYS, so we must fetch a window
-        // wide enough to cover both the requested [from..to] range and the streak look-back.
-        // Otherwise byDate would be missing days outside [from..to] and the streak would be wrong
-        // whenever `to != today` or `from > today - STREAK_LIMIT_DAYS`.
         val streakWindowStart = ctx.today.minusDays(StatisticsAggregator.STREAK_LIMIT_DAYS)
         val fetchStart = minOf(from, streakWindowStart)
         val fetchEndExclusive = maxOf(to, ctx.today).plusDays(1)
@@ -66,7 +61,6 @@ class StatisticsServiceImpl(
         val allEvents = fetchYesEvents(externalUserId, fetchStart, fetchEndExclusive, ctx.zone)
         val byDate = StatisticsAggregator.sumByLocalDate(allEvents, ctx.zone)
 
-        // Points are built from events in the requested [from..to] window only.
         val rangeEvents =
             allEvents.filter {
                 val date = StatisticsPeriodHelper.toLocal(it.eventTime, ctx.zone).toLocalDate()

@@ -1,12 +1,12 @@
 package ru.illine.drinking.ponies.util.message
 
-import ru.illine.drinking.ponies.model.dto.message.DefaultSettingsContext
-import ru.illine.drinking.ponies.model.dto.message.GreetingContext
-import ru.illine.drinking.ponies.model.dto.message.InsightStatsContext
-import ru.illine.drinking.ponies.model.dto.message.MessageContext
-import ru.illine.drinking.ponies.model.dto.message.NoContext
-import ru.illine.drinking.ponies.model.dto.message.NotificationQuestionEditedContext
-import ru.illine.drinking.ponies.model.dto.message.NotificationSuspendContext
+import ru.illine.drinking.ponies.model.dto.internal.DefaultSettingsContext
+import ru.illine.drinking.ponies.model.dto.internal.GreetingContext
+import ru.illine.drinking.ponies.model.dto.internal.InsightStatsContext
+import ru.illine.drinking.ponies.model.dto.internal.MessageContext
+import ru.illine.drinking.ponies.model.dto.internal.NoContext
+import ru.illine.drinking.ponies.model.dto.internal.NotificationQuestionEditedContext
+import ru.illine.drinking.ponies.model.dto.internal.NotificationSuspendContext
 
 sealed class MessageSpec<C : MessageContext>(
     val id: String,

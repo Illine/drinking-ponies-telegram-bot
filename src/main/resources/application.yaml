@@ -86,10 +86,13 @@ cache:
   default:
     ttl: ${CACHE_DEFAULT_TTL:5m}
     maximum-size: ${CACHE_DEFAULT_MAXIMUM_SIZE:100}
-  # Per-cache overrides (optional). Example:
-  # overrides:
-  #   user-is-admin:
-  #     ttl: 10m
+  overrides:
+    # How stale an access decision may be: a ban has to take effect quickly.
+    user-access-flags:
+      ttl: ${CACHE_USER_ACCESS_FLAGS_TTL:1m}
+    # How often the Telegram profile is re-read: a name changes rarely, the write is pure overhead.
+    user-profile-sync:
+      ttl: ${CACHE_USER_PROFILE_SYNC_TTL:1h}
 
 springdoc:
   api-docs:
@@ -107,8 +110,6 @@ logbook:
   minimum-status: ${LOGBOOK_MINIMUM_STATUS:200}
   format:
     style: http
-  logger:
-    name: API
   exclude:
     - /docs/**
     - /swagger-ui/**

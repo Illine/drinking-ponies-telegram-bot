@@ -20,7 +20,7 @@ import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import org.springframework.test.context.bean.override.mockito.MockitoBean
 import ru.illine.drinking.ponies.model.base.IntervalNotificationType
-import ru.illine.drinking.ponies.model.dto.SettingDto
+import ru.illine.drinking.ponies.model.dto.internal.SettingDto
 import ru.illine.drinking.ponies.model.dto.response.SettingResponse
 import ru.illine.drinking.ponies.service.notification.NotificationSettingsService
 import ru.illine.drinking.ponies.service.telegram.TelegramValidatorService
@@ -40,7 +40,7 @@ class SettingControllerTest
         @MockitoBean
         private lateinit var notificationSettingsService: NotificationSettingsService
 
-        private val telegramUser = DtoGenerator.generateTelegramUserDto()
+        private val telegramUser = DtoGenerator.generateTelegramAuthUserDto()
 
         @BeforeEach
         fun setUp() {

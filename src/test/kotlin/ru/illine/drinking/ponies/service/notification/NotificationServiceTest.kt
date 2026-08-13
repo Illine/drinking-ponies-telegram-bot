@@ -5,6 +5,7 @@ import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.mockito.kotlin.any
 import org.mockito.kotlin.doReturn
+import org.mockito.kotlin.inOrder
 import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.times
@@ -15,6 +16,7 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.User
 import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
+import ru.illine.drinking.ponies.dao.access.TelegramUserAccessService
 import ru.illine.drinking.ponies.service.message.impl.LocalMessageProvider
 import ru.illine.drinking.ponies.service.notification.impl.NotificationServiceImpl
 import ru.illine.drinking.ponies.test.generator.DtoGenerator
@@ -29,16 +31,19 @@ class NotificationServiceTest {
 
     private lateinit var sender: TelegramClient
     private lateinit var notificationAccessService: NotificationAccessService
+    private lateinit var telegramUserAccessService: TelegramUserAccessService
     private lateinit var service: NotificationService
 
     @BeforeEach
     fun setUp() {
         sender = mock<TelegramClient>()
         notificationAccessService = mock<NotificationAccessService>()
+        telegramUserAccessService = mock<TelegramUserAccessService>()
         service =
             NotificationServiceImpl(
                 sender,
                 notificationAccessService,
+                telegramUserAccessService,
                 LocalMessageProvider(Random(42)),
             )
     }
@@ -69,6 +74,22 @@ class NotificationServiceTest {
         verify(notificationAccessService).save(any(), any(), any())
         verify(notificationAccessService).findNotificationSettingByExternalUserId(externalUserId)
         verify(sender, times(2)).execute(any<SendMessage>())
+    }
+
+    @Test
+    @DisplayName("start(): asks to undo a soft delete before deciding whether the user is new")
+    fun `start restores a soft deleted user before the existence check`() {
+        val dto = DtoGenerator.generateNotificationDto(externalUserId = externalUserId)
+        doReturn(true).whenever(notificationAccessService).existsByExternalUserId(externalUserId)
+        whenever(notificationAccessService.findNotificationSettingByExternalUserId(externalUserId)).thenReturn(dto)
+
+        service.start(buildMessageContext())
+
+        inOrder(telegramUserAccessService, notificationAccessService) {
+            verify(telegramUserAccessService).restoreIfDeleted(externalUserId)
+            verify(notificationAccessService).existsByExternalUserId(externalUserId)
+        }
+        verify(notificationAccessService, never()).save(any(), any(), any())
     }
 
     private fun buildMessageContext(): MessageContext {

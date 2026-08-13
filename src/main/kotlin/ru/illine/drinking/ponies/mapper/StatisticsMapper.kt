@@ -3,9 +3,9 @@ package ru.illine.drinking.ponies.mapper
 import io.mcarle.konvert.api.Konvert
 import io.mcarle.konvert.api.Konverter
 import io.mcarle.konvert.api.Mapping
-import ru.illine.drinking.ponies.model.dto.BestDayDto
-import ru.illine.drinking.ponies.model.dto.StatisticsDto
-import ru.illine.drinking.ponies.model.dto.StatisticsPointDto
+import ru.illine.drinking.ponies.model.dto.internal.BestDayDto
+import ru.illine.drinking.ponies.model.dto.internal.StatisticsDto
+import ru.illine.drinking.ponies.model.dto.internal.StatisticsPointDto
 import ru.illine.drinking.ponies.model.dto.response.BestDayInfo
 import ru.illine.drinking.ponies.model.dto.response.StatisticsPoint
 import ru.illine.drinking.ponies.model.dto.response.StatisticsResponse

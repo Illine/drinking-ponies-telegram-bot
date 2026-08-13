@@ -1,6 +1,6 @@
 package ru.illine.drinking.ponies.util.message.templates
 
-import ru.illine.drinking.ponies.model.dto.message.DefaultSettingsContext
+import ru.illine.drinking.ponies.model.dto.internal.DefaultSettingsContext
 import ru.illine.drinking.ponies.util.message.RuleBucket
 import ru.illine.drinking.ponies.util.message.singlePhrase
 

@@ -8,6 +8,7 @@ build/
 .env
 plans/
 .kotlin/
+CLAUDE.md
 
 ### AbilityBot local SQLite (MapDB) ###
 DrinkingPoniesBot

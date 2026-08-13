@@ -11,13 +11,11 @@ import ru.illine.drinking.ponies.test.tag.UnitTest
 class PluralizationHelperTest {
     @ParameterizedTest(name = "[{index}] n={0} -> {1}")
     @CsvSource(
-        // singular form (1, 21, 31, 101, ..., excluding 11)
         "1,         день",
         "21,        день",
         "31,        день",
         "101,       день",
         "1001,      день",
-        // few form (2-4, 22-24, 32-34, ..., excluding 12-14)
         "2,         дня",
         "3,         дня",
         "4,         дня",
@@ -25,7 +23,6 @@ class PluralizationHelperTest {
         "24,        дня",
         "33,        дня",
         "104,       дня",
-        // many form (5-20, 25-30, ..., 11-14 special)
         "0,         дней",
         "5,         дней",
         "10,        дней",
@@ -42,7 +39,6 @@ class PluralizationHelperTest {
         "113,       дней",
         "114,       дней",
         "366,       дней",
-        // negative numbers - use absolute value
         "-1,        день",
         "-2,        дня",
         "-5,        дней",

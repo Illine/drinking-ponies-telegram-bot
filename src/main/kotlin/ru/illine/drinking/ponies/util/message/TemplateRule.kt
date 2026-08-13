@@ -1,8 +1,7 @@
 package ru.illine.drinking.ponies.util.message
 
-import ru.illine.drinking.ponies.model.dto.message.MessageContext
+import ru.illine.drinking.ponies.model.dto.internal.MessageContext
 
-// Rules with equal priority - the provider picks first non-empty bucket, then random within it.
 typealias RuleBucket<C> = List<TemplateRule<C>>
 
 data class TemplateRule<C : MessageContext>(

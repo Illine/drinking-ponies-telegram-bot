@@ -19,7 +19,6 @@ class StatisticsPeriodHelperTest {
     @Test
     @DisplayName("toLocal(): converts UTC LocalDateTime to user zone LocalDateTime")
     fun `toLocal converts utc to user zone`() {
-        // 03:30 UTC -> +5 zone = 08:30 local
         val utc = LocalDateTime.of(2026, 5, 12, 3, 30)
         val zone = ZoneId.of("Asia/Yekaterinburg") // +5
 
@@ -31,7 +30,6 @@ class StatisticsPeriodHelperTest {
     @Test
     @DisplayName("toLocal(): crosses day boundary in positive zone")
     fun `toLocal crosses day boundary`() {
-        // 19:30 UTC -> +5 zone = next day 00:30 local
         val utc = LocalDateTime.of(2026, 5, 11, 19, 30)
         val zone = ZoneId.of("Asia/Yekaterinburg") // +5
 
@@ -95,7 +93,6 @@ class StatisticsPeriodHelperTest {
         @JvmStatic
         fun provideLocalDayBoundsCases(): Stream<Arguments> =
             Stream.of(
-                // UTC
                 Arguments.of(
                     "UTC",
                     LocalDate.of(2026, 5, 12),
@@ -103,7 +100,6 @@ class StatisticsPeriodHelperTest {
                     LocalDateTime.of(2026, 5, 13, 0, 0),
                     "UTC",
                 ),
-                // Asia/Yekaterinburg (+5)
                 Arguments.of(
                     "Asia/Yekaterinburg",
                     LocalDate.of(2026, 5, 12),
@@ -111,7 +107,6 @@ class StatisticsPeriodHelperTest {
                     LocalDateTime.of(2026, 5, 12, 19, 0),
                     "UTC+5",
                 ),
-                // Pacific/Kiritimati (+14)
                 Arguments.of(
                     "Pacific/Kiritimati",
                     LocalDate.of(2026, 5, 12),
@@ -119,7 +114,6 @@ class StatisticsPeriodHelperTest {
                     LocalDateTime.of(2026, 5, 12, 10, 0),
                     "UTC+14 extreme",
                 ),
-                // Etc/GMT+12 is UTC-12 (POSIX sign-flip).
                 Arguments.of(
                     "Etc/GMT+12",
                     LocalDate.of(2026, 5, 12),
@@ -127,7 +121,6 @@ class StatisticsPeriodHelperTest {
                     LocalDateTime.of(2026, 5, 13, 12, 0),
                     "UTC-12 extreme",
                 ),
-                // Asia/Kolkata (+5:30) fractional
                 Arguments.of(
                     "Asia/Kolkata",
                     LocalDate.of(2026, 5, 12),
@@ -135,7 +128,6 @@ class StatisticsPeriodHelperTest {
                     LocalDateTime.of(2026, 5, 12, 18, 30),
                     "UTC+5:30 fractional",
                 ),
-                // DST spring-forward NY: 2026-03-08 is a 23-hour day in NY.
                 Arguments.of(
                     "America/New_York",
                     LocalDate.of(2026, 3, 8),
@@ -143,7 +135,6 @@ class StatisticsPeriodHelperTest {
                     LocalDateTime.of(2026, 3, 9, 4, 0),
                     "DST spring-forward (23-hour day)",
                 ),
-                // DST fall-back NY: 2026-11-01 is a 25-hour day in NY.
                 Arguments.of(
                     "America/New_York",
                     LocalDate.of(2026, 11, 1),

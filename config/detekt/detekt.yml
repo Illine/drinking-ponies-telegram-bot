@@ -632,6 +632,51 @@ style:
     active: false
     forbiddenImports: []
     allowedImports: []
+  # Layer boundaries, see DEVELOPMENT.md. Values are simple patterns (* and ?), not regexes,
+  # and excludes are matched against './src/...', hence the leading '**/'.
+  ForbiddenImport/repositoryOutsideDao:
+    active: true
+    excludes: ['**/dao/**', '**/mapper/**']
+    forbiddenImports:
+      - reason: 'Repositories and projections stay inside the dao layer, the access layer hands out internal DTOs'
+        value: 'ru.illine.drinking.ponies.dao.repository.*'
+  ForbiddenImport/entityOutsideDao:
+    active: true
+    excludes: ['**/dao/**', '**/mapper/**', '**/model/entity/**']
+    forbiddenImports:
+      - reason: 'JPA entities stay inside the dao layer, mappers turn them into internal DTOs'
+        value: 'ru.illine.drinking.ponies.model.entity.*'
+  ForbiddenImport/foreignSchemaOutsideParser:
+    active: true
+    excludes: ['**/util/telegram/**', '**/mapper/**', '**/service/telegram/**']
+    forbiddenImports:
+      - reason: 'A schema owned by Telegram stops at the parser and is converted into an internal DTO right away'
+        value: 'ru.illine.drinking.ponies.util.telegram.TelegramInitDataUser'
+  # The enum owns the translation, the logging service is the one caller that talks to LoggingSystem.
+  # Tests are excluded: the ones covering this very boundary have to see both types.
+  ForbiddenImport/springLogLevelOutsideLoggingService:
+    active: true
+    excludes: ['**/model/base/**', '**/service/logging/**', '**/src/test/**']
+    forbiddenImports:
+      - reason: 'The API speaks LogLevelType, the Spring level stops at the LoggingSystem boundary'
+        value: 'org.springframework.boot.logging.LogLevel'
+  # Test style, see TESTING.md. util/sql is the one legal consumer: mockito-kotlin ships no mockStatic wrapper.
+  ForbiddenImport/rawMockitoInTests:
+    active: true
+    excludes: ['**/util/sql/**']
+    forbiddenImports:
+      - reason: 'Tests mock through mockito-kotlin, never through the raw Mockito API'
+        value: 'org.mockito.Mockito*'
+      - reason: 'Matchers come from mockito-kotlin (any/anyOrNull/eq), not from ArgumentMatchers'
+        value: 'org.mockito.ArgumentMatchers*'
+  ForbiddenImport/httpTypesOutsideWeb:
+    active: true
+    excludes: ['**/controller/**', '**/mapper/**', '**/config/web/**', '**/test/generator/**']
+    forbiddenImports:
+      - reason: 'A service never returns an HTTP response type, the response is assembled in the controller'
+        value: 'ru.illine.drinking.ponies.model.dto.response.*'
+      - reason: 'A request DTO is unpacked in the controller, services take named parameters or an internal DTO'
+        value: 'ru.illine.drinking.ponies.model.dto.request.*'
   ForbiddenMethodCall:
     active: false
     methods:
@@ -651,6 +696,8 @@ style:
   ForbiddenOptIn:
     active: false
     markerClasses: []
+  # Silencing a boundary is caught by architecture/CodeLayoutTest instead: detekt matches suppression ids
+  # as literals while accepting any case of the `detekt.` prefix, so no list here can be complete.
   ForbiddenSuppress:
     active: false
     rules: []
@@ -679,7 +726,9 @@ style:
     ignoreLocalVariableDeclaration: true
     ignoreConstantDeclaration: true
     ignoreCompanionObjectPropertyDeclaration: true
-    ignoreAnnotation: false
+    # A number inside an annotation is a declaration, not a magic value: @Max(100) already
+    # says what 100 means. Naming it costs a constant and reads worse at the call site.
+    ignoreAnnotation: true
     ignoreNamedArgument: true
     ignoreEnums: false
     ignoreRanges: false

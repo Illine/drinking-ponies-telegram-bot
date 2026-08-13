@@ -1,7 +1,6 @@
 package ru.illine.drinking.ponies.config.web
 
 import jakarta.validation.ConstraintViolationException
-import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
@@ -12,13 +11,14 @@ import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException
 import org.springframework.web.servlet.resource.NoResourceFoundException
+import ru.illine.drinking.ponies.exception.ConflictException
 import ru.illine.drinking.ponies.exception.NotFoundException
-import ru.illine.drinking.ponies.exception.NotificationHistoryEntryNotEditableException
+import ru.illine.drinking.ponies.model.base.AppLogger
 import ru.illine.drinking.ponies.model.dto.response.ErrorResponse
 
 @RestControllerAdvice
 class DefaultExceptionHandler {
-    private val logger = LoggerFactory.getLogger("EXCEPTION-HANDLER")
+    private val logger = AppLogger.EXCEPTION_HANDLER.logger
 
     @ExceptionHandler(value = [MissingServletRequestParameterException::class])
     fun handleMissingParamsException(e: MissingServletRequestParameterException): ResponseEntity<ErrorResponse> {
@@ -76,12 +76,10 @@ class DefaultExceptionHandler {
             .body(response)
     }
 
-    @ExceptionHandler(NotificationHistoryEntryNotEditableException::class)
-    fun handleNotificationHistoryEntryNotEditable(
-        e: NotificationHistoryEntryNotEditableException,
-    ): ResponseEntity<ErrorResponse> {
-        logger.warn("Notification history entry is not editable: ${e.message}")
-        val response = ErrorResponse("notification history entry is not editable")
+    @ExceptionHandler(ConflictException::class)
+    fun handleConflict(e: ConflictException): ResponseEntity<ErrorResponse> {
+        logger.warn("${e.clientMessage}: ${e.message}")
+        val response = ErrorResponse(e.clientMessage)
         return ResponseEntity
             .status(HttpStatus.CONFLICT)
             .contentType(MediaType.APPLICATION_JSON)

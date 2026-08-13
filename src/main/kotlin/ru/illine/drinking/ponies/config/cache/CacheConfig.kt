@@ -15,15 +15,13 @@ class CacheConfig(
     private val cacheProperties: CacheProperties,
 ) {
     companion object {
-        const val USER_IS_ADMIN = "user-is-admin"
+        const val USER_ACCESS_FLAGS = "user-access-flags"
+        const val USER_PROFILE_SYNC = "user-profile-sync"
         const val WATER_FIRST_ENTRY = "water-first-entry"
 
-        private val ALL_CACHES = listOf(USER_IS_ADMIN, WATER_FIRST_ENTRY)
+        private val ALL_CACHES = listOf(USER_ACCESS_FLAGS, USER_PROFILE_SYNC, WATER_FIRST_ENTRY)
     }
 
-    // Wraps the underlying Caffeine manager so cache mutations (@CacheEvict, @CachePut) inside a
-    // @Transactional method are deferred until the transaction commits. Without this, an evict
-    // can happen before commit and a concurrent reader may re-cache the stale value.
     @Bean
     fun cacheManager(): CacheManager {
         val target = CaffeineCacheManager()
@@ -40,6 +38,7 @@ class CacheConfig(
                     .build(),
             )
         }
+        // Defers evictions until commit: without it a concurrent reader can re-cache the stale value.
         return TransactionAwareCacheManagerProxy(target)
     }
 }

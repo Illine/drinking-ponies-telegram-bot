@@ -1,13 +1,13 @@
 package ru.illine.drinking.ponies.util.sql
 
 import com.p6spy.engine.spy.appender.Slf4JLogger
-import org.slf4j.LoggerFactory
 import org.springframework.util.ReflectionUtils
+import ru.illine.drinking.ponies.model.base.AppLogger
 
 class CustomP6SpyLogger : Slf4JLogger() {
     companion object {
         private const val SLF4J_LOGGER_NAME = "logger"
-        private val LOGGER = LoggerFactory.getLogger("SQL")
+        private val LOGGER = AppLogger.SQL.logger
     }
 
     init {

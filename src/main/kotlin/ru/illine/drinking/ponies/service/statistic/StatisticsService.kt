@@ -1,6 +1,6 @@
 package ru.illine.drinking.ponies.service.statistic
 
-import ru.illine.drinking.ponies.model.dto.StatisticsDto
+import ru.illine.drinking.ponies.model.dto.internal.StatisticsDto
 import ru.illine.drinking.ponies.model.dto.internal.WaterStatisticDto
 import java.time.LocalDate
 
