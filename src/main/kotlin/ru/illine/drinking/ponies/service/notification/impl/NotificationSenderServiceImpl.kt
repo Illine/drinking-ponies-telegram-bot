@@ -16,6 +16,7 @@ import ru.illine.drinking.ponies.service.message.MessageProvider
 import ru.illine.drinking.ponies.service.notification.NotificationSenderService
 import ru.illine.drinking.ponies.service.statistic.WaterStatisticService
 import ru.illine.drinking.ponies.service.telegram.MessageEditorService
+import ru.illine.drinking.ponies.util.FunctionHelper
 import ru.illine.drinking.ponies.util.TimeHelper
 import ru.illine.drinking.ponies.util.message.MessageSpec
 import ru.illine.drinking.ponies.util.telegram.TelegramBotKeyboardHelper
@@ -44,7 +45,7 @@ class NotificationSenderServiceImpl(
 
         val sent =
             notifications.filter {
-                trySend(it) {
+                sendOrHandleFailure(it) {
                     ++it.notificationAttempts
                     it.timeOfLastNotification =
                         TimeHelper.nextNotificationTimeByNow(
@@ -76,7 +77,7 @@ class NotificationSenderServiceImpl(
 
         val sent =
             notifications.filter {
-                trySend(it) {
+                sendOrHandleFailure(it) {
                     SendMessage(
                         it.telegramChat.externalChatId.toString(),
                         messageProvider
@@ -101,7 +102,7 @@ class NotificationSenderServiceImpl(
         )
     }
 
-    private fun trySend(
+    private fun sendOrHandleFailure(
         notification: NotificationSettingDto,
         send: () -> Unit,
     ): Boolean =
@@ -114,10 +115,41 @@ class NotificationSenderServiceImpl(
                     "User (externalUserId: [{}]) blocked the bot, disabling notifications",
                     notification.telegramUser.externalUserId,
                 )
-                notificationAccessService.updateNotificationsDisabled(notification.telegramUser.externalUserId)
+                FunctionHelper.catchAny(
+                    action = {
+                        notificationAccessService.updateNotificationsDisabled(notification.telegramUser.externalUserId)
+                    },
+                    errorLogging = {
+                        logger.error(
+                            "Notification cannot be disabled for user (externalUserId: [{}])",
+                            notification.telegramUser.externalUserId,
+                            it,
+                        )
+                    },
+                )
                 false
             } else if (e.errorCode == HttpStatus.BAD_REQUEST.value()) {
-                logger.info("Bad request: [{}]", e.message)
+                logger.info(
+                    "Bad request: [{}], a notification will be delayed for user (externalUserId: [{}])",
+                    e.message,
+                    notification.telegramUser.externalUserId,
+                )
+                FunctionHelper.catchAny(
+                    action = {
+                        notificationAccessService.updateTimeOfLastNotification(
+                            notification.telegramUser.externalUserId,
+                            LocalDateTime.now(clock),
+                        )
+                    },
+                    errorLogging = {
+                        logger.error(
+                            "Notification cannot be deferred for user (externalUserId: [{}])",
+                            notification.telegramUser.externalUserId,
+                            it,
+                        )
+                    },
+                )
+
                 false
             } else {
                 throw e

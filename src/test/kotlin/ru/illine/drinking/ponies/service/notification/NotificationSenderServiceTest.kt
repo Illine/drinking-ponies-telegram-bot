@@ -6,7 +6,10 @@ import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.ValueSource
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argThat
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.doAnswer
 import org.mockito.kotlin.doReturn
@@ -23,6 +26,7 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiRequestException
 import org.telegram.telegrambots.meta.generics.TelegramClient
 import ru.illine.drinking.ponies.config.property.TelegramBotProperties
 import ru.illine.drinking.ponies.dao.access.NotificationAccessService
+import ru.illine.drinking.ponies.exception.NotificationSettingsNotFoundException
 import ru.illine.drinking.ponies.model.base.AnswerNotificationType
 import ru.illine.drinking.ponies.model.base.IntervalNotificationType
 import ru.illine.drinking.ponies.model.dto.internal.NotificationSettingDto
@@ -131,8 +135,10 @@ class NotificationSenderServiceTest {
 
         service.sendNotifications(listOf(dto))
 
+        val captor = argumentCaptor<Collection<NotificationSettingDto>>()
         verify(notificationAccessService).updateNotificationsDisabled(externalUserId)
-        verify(notificationAccessService).recordMailingResults(any())
+        verify(notificationAccessService).recordMailingResults(captor.capture())
+        assertEquals(emptyList<NotificationSettingDto>(), captor.firstValue.toList())
     }
 
     @Test
@@ -187,6 +193,104 @@ class NotificationSenderServiceTest {
     }
 
     @Test
+    @DisplayName("sendNotifications(): 400 error - updates time of last notification to now")
+    fun `sendNotifications on 400 updates time of last notification`() {
+        val dto = DtoGenerator.generateNotificationDto(externalUserId = externalUserId, externalChatId = chatId)
+        val exception = mock<TelegramApiRequestException>()
+        whenever(exception.errorCode).thenReturn(400)
+        doThrow(exception).whenever(sender).execute(any<SendMessage>())
+
+        service.sendNotifications(listOf(dto))
+
+        verify(notificationAccessService).updateTimeOfLastNotification(externalUserId, LocalDateTime.now(clock))
+    }
+
+    @Test
+    @DisplayName("sendNotifications(): 400 error in a batch - updates time of last notification only for failing user")
+    fun `sendNotifications on 400 updates time of last notification only for failing user`() {
+        val failingUserId = externalUserId + 1
+        val failingChatId = chatId + 1
+        val first = DtoGenerator.generateNotificationDto(externalUserId = externalUserId, externalChatId = chatId)
+        val failing =
+            DtoGenerator.generateNotificationDto(
+                externalUserId = failingUserId,
+                externalChatId = failingChatId,
+            )
+        val last =
+            DtoGenerator.generateNotificationDto(
+                externalUserId = externalUserId + 2,
+                externalChatId = chatId + 2,
+            )
+        val exception = mock<TelegramApiRequestException>()
+        whenever(exception.errorCode).thenReturn(400)
+        val returnedMessage = mock<Message>()
+        whenever(returnedMessage.messageId).thenReturn(2)
+        doAnswer { invocation ->
+            if (invocation.getArgument<SendMessage>(0).chatId == failingChatId.toString()) {
+                throw exception
+            }
+            returnedMessage
+        }.whenever(sender).execute(any<SendMessage>())
+
+        service.sendNotifications(listOf(first, failing, last))
+
+        verify(notificationAccessService).updateTimeOfLastNotification(failingUserId, LocalDateTime.now(clock))
+        verify(notificationAccessService, times(1)).updateTimeOfLastNotification(any(), any())
+    }
+
+    @Test
+    @DisplayName("sendNotifications(): 403 error - disables notifications without updating time of last notification")
+    fun `sendNotifications on 403 does not update time of last notification`() {
+        val dto = DtoGenerator.generateNotificationDto(externalUserId = externalUserId, externalChatId = chatId)
+        val exception = mock<TelegramApiRequestException>()
+        whenever(exception.errorCode).thenReturn(403)
+        doThrow(exception).whenever(sender).execute(any<SendMessage>())
+
+        service.sendNotifications(listOf(dto))
+
+        verify(notificationAccessService).updateNotificationsDisabled(externalUserId)
+        verify(notificationAccessService, never()).updateTimeOfLastNotification(any(), any())
+    }
+
+    @ParameterizedTest(name = "[{index}] errorCode={0}")
+    @ValueSource(ints = [400, 403])
+    @DisplayName("sendNotifications(): DB write for a rejected user fails - the rest of the batch is still recorded")
+    fun `sendNotifications survives a failing db write for a rejected user`(errorCode: Int) {
+        val failingChatId = chatId + 1
+        val first = DtoGenerator.generateNotificationDto(externalUserId = externalUserId, externalChatId = chatId)
+        val failing =
+            DtoGenerator.generateNotificationDto(
+                externalUserId = externalUserId + 1,
+                externalChatId = failingChatId,
+            )
+        val last =
+            DtoGenerator.generateNotificationDto(
+                externalUserId = externalUserId + 2,
+                externalChatId = chatId + 2,
+            )
+        val exception = mock<TelegramApiRequestException>()
+        whenever(exception.errorCode).thenReturn(errorCode)
+        val returnedMessage = mock<Message>()
+        whenever(returnedMessage.messageId).thenReturn(2)
+        doAnswer { invocation ->
+            if (invocation.getArgument<SendMessage>(0).chatId == failingChatId.toString()) {
+                throw exception
+            }
+            returnedMessage
+        }.whenever(sender).execute(any<SendMessage>())
+        val dbFailure = NotificationSettingsNotFoundException("not found")
+        doThrow(dbFailure).whenever(notificationAccessService).updateTimeOfLastNotification(any(), any())
+        doThrow(dbFailure).whenever(notificationAccessService).updateNotificationsDisabled(any())
+
+        service.sendNotifications(listOf(first, failing, last))
+
+        val captor = argumentCaptor<Collection<NotificationSettingDto>>()
+        verify(sender, times(3)).execute(any<SendMessage>())
+        verify(notificationAccessService).recordMailingResults(captor.capture())
+        assertEquals(listOf(first, last), captor.firstValue.toList())
+    }
+
+    @Test
     @DisplayName("suspendNotifications(): empty collection - no interactions with sender or access service")
     fun `suspendNotifications with empty list does nothing`() {
         service.suspendNotifications(emptyList())
@@ -236,8 +340,11 @@ class NotificationSenderServiceTest {
 
         service.suspendNotifications(listOf(dto))
 
+        val captor = argumentCaptor<Collection<NotificationSettingDto>>()
         verify(notificationAccessService).updateNotificationsDisabled(externalUserId)
-        verify(notificationAccessService).recordMailingResults(any())
+        verify(notificationAccessService).recordMailingResults(captor.capture())
+        assertEquals(emptyList<NotificationSettingDto>(), captor.firstValue.toList())
+        verify(waterStatisticService, never()).recordEvents(argThat { contains(dto.telegramUser) }, any())
     }
 
     @Test
@@ -257,8 +364,74 @@ class NotificationSenderServiceTest {
     }
 
     @Test
-    @DisplayName("sendNotifications(): non-403 error - rethrows exception")
-    fun `sendNotifications rethrows non-403 exception`() {
+    @DisplayName("suspendNotifications(): 400 error - updates time of last notification to now")
+    fun `suspendNotifications on 400 updates time of last notification`() {
+        val dto = DtoGenerator.generateNotificationDto(externalUserId = externalUserId, externalChatId = chatId)
+        val exception = mock<TelegramApiRequestException>()
+        whenever(exception.errorCode).thenReturn(400)
+        doThrow(exception).whenever(sender).execute(any<SendMessage>())
+
+        service.suspendNotifications(listOf(dto))
+
+        verify(notificationAccessService).updateTimeOfLastNotification(externalUserId, LocalDateTime.now(clock))
+    }
+
+    @Test
+    @DisplayName("suspendNotifications(): 400 error - records no CANCEL water statistic for the failing user")
+    fun `suspendNotifications on 400 records no cancel statistic`() {
+        val dto = DtoGenerator.generateNotificationDto(externalUserId = externalUserId, externalChatId = chatId)
+        val exception = mock<TelegramApiRequestException>()
+        whenever(exception.errorCode).thenReturn(400)
+        doThrow(exception).whenever(sender).execute(any<SendMessage>())
+
+        service.suspendNotifications(listOf(dto))
+
+        verify(waterStatisticService, never()).recordEvents(argThat { contains(dto.telegramUser) }, any())
+    }
+
+    @ParameterizedTest(name = "[{index}] errorCode={0}")
+    @ValueSource(ints = [400, 403])
+    @DisplayName("suspendNotifications(): DB write for a rejected user fails - the rest of the batch is still recorded")
+    fun `suspendNotifications survives a failing db write for a rejected user`(errorCode: Int) {
+        val failingChatId = chatId + 1
+        val first = DtoGenerator.generateNotificationDto(externalUserId = externalUserId, externalChatId = chatId)
+        val failing =
+            DtoGenerator.generateNotificationDto(
+                externalUserId = externalUserId + 1,
+                externalChatId = failingChatId,
+            )
+        val last =
+            DtoGenerator.generateNotificationDto(
+                externalUserId = externalUserId + 2,
+                externalChatId = chatId + 2,
+            )
+        val exception = mock<TelegramApiRequestException>()
+        whenever(exception.errorCode).thenReturn(errorCode)
+        doAnswer { invocation ->
+            if (invocation.getArgument<SendMessage>(0).chatId == failingChatId.toString()) {
+                throw exception
+            }
+            null
+        }.whenever(sender).execute(any<SendMessage>())
+        val dbFailure = NotificationSettingsNotFoundException("not found")
+        doThrow(dbFailure).whenever(notificationAccessService).updateTimeOfLastNotification(any(), any())
+        doThrow(dbFailure).whenever(notificationAccessService).updateNotificationsDisabled(any())
+
+        service.suspendNotifications(listOf(first, failing, last))
+
+        val captor = argumentCaptor<Collection<NotificationSettingDto>>()
+        verify(sender, times(3)).execute(any<SendMessage>())
+        verify(notificationAccessService).recordMailingResults(captor.capture())
+        assertEquals(listOf(first, last), captor.firstValue.toList())
+        verify(waterStatisticService).recordEvents(
+            listOf(first.telegramUser, last.telegramUser),
+            AnswerNotificationType.CANCEL,
+        )
+    }
+
+    @Test
+    @DisplayName("sendNotifications(): error other than 400/403 - rethrows exception")
+    fun `sendNotifications rethrows exception other than 400 and 403`() {
         val dto = DtoGenerator.generateNotificationDto(externalUserId = externalUserId, externalChatId = chatId)
         val exception = mock<TelegramApiRequestException>()
         whenever(exception.errorCode).thenReturn(500)
@@ -283,8 +456,8 @@ class NotificationSenderServiceTest {
     }
 
     @Test
-    @DisplayName("suspendNotifications(): non-403 error - rethrows exception")
-    fun `suspendNotifications rethrows non-403 exception`() {
+    @DisplayName("suspendNotifications(): error other than 400/403 - rethrows exception")
+    fun `suspendNotifications rethrows exception other than 400 and 403`() {
         val dto = DtoGenerator.generateNotificationDto(externalUserId = externalUserId, externalChatId = chatId)
         val exception = mock<TelegramApiRequestException>()
         whenever(exception.errorCode).thenReturn(500)
